@@ -48,7 +48,7 @@
    Dark Mode
 ======================================== */
 
-body.dark-mode {
+body.dark-theme {
     --page: #0f1115;
     --surface: #171a20;
     --surface-soft: #1d2128;
