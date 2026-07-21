@@ -1,82 +1,626 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OSGuide</title>
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="description"
+        content="Discover, learn about, and download trusted open-source Android applications."
+    >
+
+    <title>OSGuide — Trusted Open-Source Android Apps</title>
 
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-    <header class="navbar">
+    <!-- Header -->
+    <header class="site-header">
+        <div class="header-container">
 
-        <div class="logo">
-            <h1>OSGuide</h1>
-        </div>
+            <!-- OSGuide Logo -->
+            <a class="brand" href="#" aria-label="OSGuide home">
 
-        <nav class="menu">
-            <a href="#">Apps</a>
-            <a href="#">Guide</a>
-            <a href="#">About</a>
+                <svg
+                    class="brand-mark"
+                    viewBox="0 0 48 48"
+                    aria-hidden="true"
+                >
+                    <rect
+                        x="4"
+                        y="4"
+                        width="40"
+                        height="40"
+                        rx="12"
+                        fill="currentColor"
+                    />
 
-            <button id="theme-btn" class="theme-btn"></button>
-        </nav>
+                    <path
+                        d="M15 27.5C15 21.15 19.7 16 25.5 16C29.85 16 33.55 18.9 35.1 23"
+                        fill="none"
+                        stroke="white"
+                        stroke-width="3"
+                        stroke-linecap="round"
+                    />
 
-    </header>
+                    <circle
+                        cx="19"
+                        cy="23"
+                        r="1.7"
+                        fill="white"
+                    />
 
-    <main>
+                    <circle
+                        cx="29"
+                        cy="23"
+                        r="1.7"
+                        fill="white"
+                    />
 
-        <section class="hero">
+                    <path
+                        d="M16 14L12 9"
+                        stroke="white"
+                        stroke-width="2.4"
+                        stroke-linecap="round"
+                    />
 
-            <h2>Discover Trusted Android Apps</h2>
+                    <path
+                        d="M34 14L38 9"
+                        stroke="white"
+                        stroke-width="2.4"
+                        stroke-linecap="round"
+                    />
+                </svg>
 
-            <p>
-                Browse secure and open-source Android applications.
-            </p>
+                <span class="brand-name">
+                    OS<span>Guide</span>
+                </span>
+            </a>
 
-        </section>
+            <!-- Header Actions -->
+            <nav class="header-actions" aria-label="Primary navigation">
 
-        <section class="search-box">
-
-            <input
-                type="text"
-                placeholder="Search applications...">
-
-        </section>
-
-        <section class="apps">
-
-            <div class="app-card">
-
-                <h3>Termux</h3>
-
-                <p><strong>Version:</strong> 0.118</p>
-
-                <p><strong>Size:</strong> 15 MB</p>
-
-                <p><strong>Source:</strong> F-Droid</p>
-
-                <button class="download-btn">
-                    Download
+                <button
+                    class="header-button"
+                    id="guide-button"
+                    type="button"
+                >
+                    Guide
                 </button>
 
+                <button
+                    class="icon-button"
+                    id="fdroid-info-button"
+                    type="button"
+                    aria-label="About F-Droid"
+                    title="About F-Droid"
+                >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <circle
+                            cx="12"
+                            cy="12"
+                            r="9"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                        />
+
+                        <path
+                            d="M12 10.5V16"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                            stroke-linecap="round"
+                        />
+
+                        <circle
+                            cx="12"
+                            cy="7.5"
+                            r="1"
+                            fill="currentColor"
+                        />
+                    </svg>
+                </button>
+
+                <button
+                    class="icon-button"
+                    id="theme-button"
+                    type="button"
+                    aria-label="Toggle dark mode"
+                    title="Toggle dark mode"
+                >
+                    <svg
+                        class="theme-icon theme-icon-dark"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                    >
+                        <path
+                            d="M20 15.2A8 8 0 0 1 8.8 4A8.5 8.5 0 1 0 20 15.2Z"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        />
+                    </svg>
+
+                    <svg
+                        class="theme-icon theme-icon-light"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                    >
+                        <circle
+                            cx="12"
+                            cy="12"
+                            r="4"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                        />
+
+                        <path
+                            d="M12 2V4M12 20V22M4.93 4.93L6.34 6.34M17.66 17.66L19.07 19.07M2 12H4M20 12H22M4.93 19.07L6.34 17.66M17.66 6.34L19.07 4.93"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                            stroke-linecap="round"
+                        />
+                    </svg>
+                </button>
+
+            </nav>
+        </div>
+    </header>
+
+    <main class="main-content">
+
+        <!-- Introduction -->
+        <section class="hero-section">
+            <p class="hero-label">Trusted open-source applications</p>
+
+            <h1>Discover better Android apps</h1>
+
+            <p class="hero-description">
+                Explore carefully selected applications, learn how they work,
+                and download them from trusted sources.
+            </p>
+        </section>
+
+        <!-- Search and Sorting -->
+        <section
+            class="discovery-tools"
+            aria-label="Application search and sorting"
+        >
+            <div class="search-container">
+
+                <svg
+                    class="search-icon"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                >
+                    <circle
+                        cx="11"
+                        cy="11"
+                        r="7"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                    />
+
+                    <path
+                        d="M16.5 16.5L21 21"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        stroke-linecap="round"
+                    />
+                </svg>
+
+                <input
+                    id="app-search"
+                    type="search"
+                    placeholder="Search applications..."
+                    aria-label="Search applications"
+                    autocomplete="off"
+                >
+
+                <button
+                    class="clear-search-button"
+                    id="clear-search-button"
+                    type="button"
+                    aria-label="Clear search"
+                    hidden
+                >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path
+                            d="M7 7L17 17M17 7L7 17"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                            stroke-linecap="round"
+                        />
+                    </svg>
+                </button>
             </div>
 
+            <button
+                class="sort-button"
+                id="newest-button"
+                type="button"
+            >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                        d="M8 7H20M8 12H17M8 17H14"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        stroke-linecap="round"
+                    />
+
+                    <path
+                        d="M4 5V19M2 17L4 19L6 17"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    />
+                </svg>
+
+                <span>Newest</span>
+            </button>
+        </section>
+
+        <!-- Search Suggestions -->
+        <section
+            class="search-results"
+            id="search-results"
+            aria-label="Search suggestions"
+            hidden
+        ></section>
+
+        <!-- Applications -->
+        <section class="applications-section">
+
+            <div class="section-heading">
+                <div>
+                    <p class="section-label">Selected applications</p>
+                    <h2>Discover apps</h2>
+                </div>
+
+                <span class="application-count" id="application-count">
+                    1 application
+                </span>
+            </div>
+
+            <div class="applications-grid" id="applications-grid">
+
+                <!-- Termux -->
+                <article
+                    class="application-card"
+                    data-app-name="Termux"
+                    data-added="2026-07-21"
+                >
+                    <button
+                        class="application-main"
+                        type="button"
+                        data-open-app="termux"
+                        aria-label="View Termux information"
+                    >
+                        <div class="application-icon termux-icon">
+                            <svg viewBox="0 0 64 64" aria-hidden="true">
+                                <rect
+                                    width="64"
+                                    height="64"
+                                    rx="15"
+                                    fill="#15171c"
+                                />
+
+                                <path
+                                    d="M17 21L28 32L17 43"
+                                    fill="none"
+                                    stroke="white"
+                                    stroke-width="5"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                />
+
+                                <path
+                                    d="M33 43H47"
+                                    stroke="white"
+                                    stroke-width="5"
+                                    stroke-linecap="round"
+                                />
+                            </svg>
+                        </div>
+
+                        <div class="application-summary">
+                            <h3>Termux</h3>
+
+                            <p>
+                                A powerful terminal environment for Android.
+                            </p>
+
+                            <div class="application-meta">
+                                <span>0.118</span>
+                                <span>15 MB</span>
+                            </div>
+                        </div>
+                    </button>
+
+                    <div class="application-footer">
+                        <span class="source-label">Source: F-Droid</span>
+
+                        <button
+                            class="download-icon-button"
+                            type="button"
+                            data-download-app="termux"
+                            aria-label="Download Termux"
+                            title="Download Termux"
+                        >
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path
+                                    d="M12 4V15M7.5 10.5L12 15L16.5 10.5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.9"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                />
+
+                                <path
+                                    d="M5 19H19"
+                                    stroke="currentColor"
+                                    stroke-width="1.9"
+                                    stroke-linecap="round"
+                                />
+                            </svg>
+                        </button>
+                    </div>
+                </article>
+
+            </div>
+        </section>
+
+        <!-- Empty Search State -->
+        <section class="empty-state" id="empty-state" hidden>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle
+                    cx="11"
+                    cy="11"
+                    r="7"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.6"
+                />
+
+                <path
+                    d="M16.5 16.5L21 21"
+                    stroke="currentColor"
+                    stroke-width="1.6"
+                    stroke-linecap="round"
+                />
+            </svg>
+
+            <h2>No applications found</h2>
+
+            <p>Try searching with a different application name.</p>
         </section>
 
     </main>
 
-    <footer>
+    <!-- Footer -->
+    <footer class="site-footer">
+        <div class="footer-container">
 
-        <p>© 2026 OSGuide</p>
+            <div class="footer-brand">
+                <strong>OSGuide</strong>
 
+                <p>
+                    Trusted open-source Android applications and practical guides.
+                </p>
+            </div>
+
+            <nav class="footer-links" aria-label="Legal pages">
+                <a href="#">Privacy</a>
+                <a href="#">Terms</a>
+                <a href="#">Legal</a>
+            </nav>
+
+            <p class="copyright">
+                © 2026 OSGuide. All rights reserved.
+            </p>
+
+            <span class="project-symbol" title="Transformation">
+                19
+            </span>
+        </div>
     </footer>
 
-    <script src="script.js"></script>
+    <!-- Application Modal -->
+    <div
+        class="modal"
+        id="application-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="application-modal-title"
+        hidden
+    >
+        <div class="modal-backdrop" data-close-modal></div>
 
-</body>
+        <section class="modal-panel">
 
-</html>
+            <button
+                class="modal-close-button"
+                type="button"
+                data-close-modal
+                aria-label="Close application information"
+            >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                        d="M7 7L17 17M17 7L7 17"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        stroke-linecap="round"
+                    />
+                </svg>
+            </button>
+
+            <div class="modal-app-heading">
+
+                <div class="application-icon termux-icon">
+                    <svg viewBox="0 0 64 64" aria-hidden="true">
+                        <rect
+                            width="64"
+                            height="64"
+                            rx="15"
+                            fill="#15171c"
+                        />
+
+                        <path
+                            d="M17 21L28 32L17 43"
+                            fill="none"
+                            stroke="white"
+                            stroke-width="5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        />
+
+                        <path
+                            d="M33 43H47"
+                            stroke="white"
+                            stroke-width="5"
+                            stroke-linecap="round"
+                        />
+                    </svg>
+                </div>
+
+                <div>
+                    <h2 id="application-modal-title">Termux</h2>
+                    <p>Version 0.118 · 15 MB</p>
+                </div>
+            </div>
+
+            <div class="modal-section">
+                <h3>About this application</h3>
+
+                <p>
+                    Termux combines powerful terminal emulation with an
+                    extensive Linux package collection for Android.
+                </p>
+            </div>
+
+            <dl class="application-details">
+                <div>
+                    <dt>Source</dt>
+                    <dd>F-Droid</dd>
+                </div>
+
+                <div>
+                    <dt>License</dt>
+                    <dd>GPL-3.0</dd>
+                </div>
+
+                <div>
+                    <dt>Platform</dt>
+                    <dd>Android</dd>
+                </div>
+            </dl>
+
+            <a
+                class="primary-download-button"
+                href="https://f-droid.org/packages/com.termux/"
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                Download from F-Droid
+            </a>
+        </section>
+    </div>
+
+    <!-- F-Droid Information Modal -->
+    <div
+        class="modal"
+        id="fdroid-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="fdroid-modal-title"
+        hidden
+    >
+        <div class="modal-backdrop" data-close-modal></div>
+
+        <section class="modal-panel">
+
+            <button
+                class="modal-close-button"
+                type="button"
+                data-close-modal
+                aria-label="Close F-Droid information"
+            >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                        d="M7 7L17 17M17 7L7 17"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        stroke-linecap="round"
+                    />
+                </svg>
+            </button>
+
+            <p class="modal-eyebrow">Application source</p>
+
+            <h2 id="fdroid-modal-title">About F-Droid</h2>
+
+            <p>
+                F-Droid is an independent repository for free and open-source
+                Android applications. OSGuide links users to trusted official
+                sources and does not modify application packages.
+            </p>
+        </section>
+    </div>
+
+    <!-- Guide Login Modal -->
+    <div
+        class="modal"
+        id="guide-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="guide-modal-title"
+        hidden
+    >
+        <div class="modal-backdrop" data-close-modal></div>
+
+        <section class="modal-panel login-panel">
+
+            <button
+                class="modal-close-button"
+                type="button"
+                data-close-modal
+                aria-label="Close guide login"
+            >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                        d="M7 7L17 17M17 7L7 17"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        stroke-linecap="round"
+                    />
+                </svg>
+            </button>
+
+            <p class="modal-eyebrow">OSGuide learning section</p>
+
+            <h2 id="guide-modal-title">Continue to Guide</h2>
+
+            <p>
+                Sign in to access practical tutorials and application guides.
+            </p>
+
+     
