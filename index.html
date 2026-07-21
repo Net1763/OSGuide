@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,54 +11,72 @@
 
 <body>
 
-<header class="navbar">
-    <h1>OSGuide</h1>
+    <header class="navbar">
 
-    <div class="nav-buttons">
-        <button>Guide</button>
-        <button>F-Droid</button>
-        <button>🌙</button>
-    </div>
-</header>
+        <div class="logo">
+            <h1>OSGuide</h1>
+        </div>
 
-<main>
+        <nav class="menu">
+            <a href="#">Apps</a>
+            <a href="#">Guide</a>
+            <a href="#">About</a>
 
-<section class="hero">
-    <h2>Discover Trusted Android Apps</h2>
-    <p>Browse secure and open-source Android applications.</p>
-</section>
+            <button id="theme-btn" class="theme-btn"></button>
+        </nav>
 
-<section class="search-box">
-    <input type="text" placeholder="Search apps...">
-</section>
+    </header>
 
-<section class="apps">
+    <main>
 
-<div class="app-card">
+        <section class="hero">
 
-<h3>Termux</h3>
+            <h2>Discover Trusted Android Apps</h2>
 
-<p>Version: 0.118</p>
+            <p>
+                Browse secure and open-source Android applications.
+            </p>
 
-<p>Size: 15 MB</p>
+        </section>
 
-<p>Source: F-Droid</p>
+        <section class="search-box">
 
-<button>Download</button>
+            <input
+                type="text"
+                placeholder="Search applications...">
 
-</div>
+        </section>
 
-</section>
+        <section class="apps">
 
-</main>
+            <div class="app-card">
 
-<footer>
+                <h3>Termux</h3>
 
-<p>© 2026 OSGuide</p>
+                <p><strong>Version:</strong> 0.118</p>
 
-</footer>
+                <p><strong>Size:</strong> 15 MB</p>
 
-<script src="script.js"></script>
+                <p><strong>Source:</strong> F-Droid</p>
+
+                <button class="download-btn">
+                    Download
+                </button>
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <footer>
+
+        <p>© 2026 OSGuide</p>
+
+    </footer>
+
+    <script src="script.js"></script>
 
 </body>
+
 </html>
