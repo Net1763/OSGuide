@@ -8,9 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /* ==================================================
        Application Database
-
-       لإضافة تطبيق جديد مستقبلًا:
-       انسخ كائن التطبيق، ثم غيّر بياناته فقط.
+       لإضافة تطبيق مستقبلًا نضيف بياناته هنا فقط
     ================================================== */
 
     const applications = [
@@ -29,6 +27,23 @@ document.addEventListener('DOMContentLoaded', () => {
             added: '2026-07-21',
             downloadUrl: 'https://f-droid.org/packages/com.termux/',
             iconType: 'terminal'
+        },
+        {
+            id: 'newpipe',
+            name: 'NewPipe',
+            description: 'A lightweight and privacy-friendly video player.',
+            longDescription:
+                'NewPipe is a free and open-source Android video application that works without requiring proprietary Google services.',
+            version: '0.28.1',
+            size: '12 MB',
+            source: 'F-Droid',
+            license: 'GPL-3.0',
+            platform: 'Android',
+            category: 'Media',
+            added: '2026-07-22',
+            downloadUrl:
+                'https://f-droid.org/packages/org.schabi.newpipe/',
+            iconType: 'video'
         }
     ];
 
@@ -83,14 +98,15 @@ document.addEventListener('DOMContentLoaded', () => {
         guideModal
     ].filter(Boolean);
 
-    let visibleApplications = [...applications];
+    let displayedApplications = [...applications];
     let newestFirst = true;
 
     /* ==================================================
-       Icons
+       Application Icons
     ================================================== */
 
     function getApplicationIcon(application) {
+
         if (application.iconType === 'terminal') {
             return `
                 <svg viewBox="0 0 64 64" aria-hidden="true">
@@ -121,6 +137,24 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
         }
 
+        if (application.iconType === 'video') {
+            return `
+                <svg viewBox="0 0 64 64" aria-hidden="true">
+                    <rect
+                        width="64"
+                        height="64"
+                        rx="15"
+                        fill="#e53935"
+                    ></rect>
+
+                    <path
+                        d="M26 20L45 32L26 44Z"
+                        fill="white"
+                    ></path>
+                </svg>
+            `;
+        }
+
         return `
             <svg viewBox="0 0 64 64" aria-hidden="true">
                 <rect
@@ -132,10 +166,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 <text
                     x="32"
-                    y="39"
+                    y="40"
                     text-anchor="middle"
                     fill="white"
-                    font-size="25"
+                    font-size="26"
                     font-weight="700"
                     font-family="Arial, sans-serif"
                 >
@@ -146,7 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /* ==================================================
-       Application Rendering
+       Render Applications
     ================================================== */
 
     function renderApplications(applicationList) {
@@ -157,17 +191,20 @@ document.addEventListener('DOMContentLoaded', () => {
         applicationsGrid.innerHTML = '';
 
         applicationList.forEach(application => {
-            const card = createApplicationCard(application);
-            applicationsGrid.appendChild(card);
+            applicationsGrid.appendChild(
+                createApplicationCard(application)
+            );
         });
 
         updateApplicationCount(applicationList.length);
 
-        if (emptyState) {
-            emptyState.hidden = applicationList.length !== 0;
-        }
+        applicationsGrid.hidden =
+            applicationList.length === 0;
 
-        applicationsGrid.hidden = applicationList.length === 0;
+        if (emptyState) {
+            emptyState.hidden =
+                applicationList.length !== 0;
+        }
     }
 
     function createApplicationCard(application) {
@@ -189,15 +226,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
 
                 <div class="application-summary">
-                    <h3>${escapeHtml(application.name)}</h3>
+                    <h3>
+                        ${escapeHtml(application.name)}
+                    </h3>
 
                     <p>
                         ${escapeHtml(application.description)}
                     </p>
 
                     <div class="application-meta">
-                        <span>${escapeHtml(application.version)}</span>
-                        <span>${escapeHtml(application.size)}</span>
+                        <span>
+                            ${escapeHtml(application.version)}
+                        </span>
+
+                        <span>
+                            ${escapeHtml(application.size)}
+                        </span>
                     </div>
                 </div>
             </button>
@@ -262,27 +306,27 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const modalTitle =
+        const title =
             applicationModal.querySelector(
                 '#application-modal-title'
             );
 
-        const modalMeta =
+        const meta =
             applicationModal.querySelector(
                 '.modal-app-heading p'
             );
 
-        const modalIcon =
+        const icon =
             applicationModal.querySelector(
                 '.modal-app-heading .application-icon'
             );
 
-        const modalDescription =
+        const description =
             applicationModal.querySelector(
                 '.modal-section p'
             );
 
-        const detailValues =
+        const details =
             applicationModal.querySelectorAll(
                 '.application-details dd'
             );
@@ -292,42 +336,44 @@ document.addEventListener('DOMContentLoaded', () => {
                 '.primary-download-button'
             );
 
-        if (modalTitle) {
-            modalTitle.textContent = application.name;
+        if (title) {
+            title.textContent = application.name;
         }
 
-        if (modalMeta) {
-            modalMeta.textContent =
+        if (meta) {
+            meta.textContent =
                 `Version ${application.version} · ${application.size}`;
         }
 
-        if (modalIcon) {
-            modalIcon.innerHTML =
+        if (icon) {
+            icon.innerHTML =
                 getApplicationIcon(application);
         }
 
-        if (modalDescription) {
-            modalDescription.textContent =
+        if (description) {
+            description.textContent =
                 application.longDescription;
         }
 
-        if (detailValues[0]) {
-            detailValues[0].textContent =
+        if (details[0]) {
+            details[0].textContent =
                 application.source;
         }
 
-        if (detailValues[1]) {
-            detailValues[1].textContent =
+        if (details[1]) {
+            details[1].textContent =
                 application.license;
         }
 
-        if (detailValues[2]) {
-            detailValues[2].textContent =
+        if (details[2]) {
+            details[2].textContent =
                 application.platform;
         }
 
         if (downloadLink) {
-            downloadLink.href = application.downloadUrl;
+            downloadLink.href =
+                application.downloadUrl;
+
             downloadLink.textContent =
                 `Download ${application.name} from ${application.source}`;
         }
@@ -336,7 +382,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /* ==================================================
-       Search System
+       Search
     ================================================== */
 
     searchInput?.addEventListener('input', () => {
@@ -348,19 +394,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 query.length === 0;
         }
 
-        visibleApplications =
+        displayedApplications =
             applications.filter(application => {
-                const searchableText = normalizeText(`
-                    ${application.name}
-                    ${application.description}
-                    ${application.category}
-                    ${application.source}
-                `);
+                const searchableContent =
+                    normalizeText(`
+                        ${application.name}
+                        ${application.description}
+                        ${application.longDescription}
+                        ${application.category}
+                        ${application.source}
+                    `);
 
-                return searchableText.includes(query);
+                return searchableContent.includes(query);
             });
 
-        renderApplications(visibleApplications);
+        renderApplications(displayedApplications);
         renderSearchSuggestions(query);
     });
 
@@ -370,16 +418,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         searchInput.value = '';
-        clearSearchButton.hidden = true;
+
+        if (clearSearchButton) {
+            clearSearchButton.hidden = true;
+        }
 
         if (searchResults) {
             searchResults.hidden = true;
             searchResults.innerHTML = '';
         }
 
-        visibleApplications = [...applications];
-        renderApplications(visibleApplications);
+        displayedApplications = [...applications];
 
+        renderApplications(displayedApplications);
         searchInput.focus();
     });
 
@@ -396,62 +447,67 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const suggestions =
-            applications.filter(application => {
-                return normalizeText(
-                    application.name
-                ).includes(query);
-            });
+            applications.filter(application =>
+                normalizeText(application.name)
+                    .includes(query)
+            );
 
         if (suggestions.length === 0) {
             searchResults.hidden = true;
             return;
         }
 
-        suggestions.slice(0, 5).forEach(application => {
-            const button =
-                document.createElement('button');
+        suggestions
+            .slice(0, 5)
+            .forEach(application => {
+                const suggestion =
+                    document.createElement('button');
 
-            button.type = 'button';
-            button.className = 'search-result-item';
+                suggestion.type = 'button';
+                suggestion.className =
+                    'search-result-item';
 
-            button.innerHTML = `
-                <div class="search-result-icon">
-                    ${getApplicationIcon(application)}
-                </div>
+                suggestion.innerHTML = `
+                    <div class="search-result-icon">
+                        ${getApplicationIcon(application)}
+                    </div>
 
-                <div class="search-result-text">
-                    <strong>
-                        ${escapeHtml(application.name)}
-                    </strong>
+                    <div class="search-result-text">
+                        <strong>
+                            ${escapeHtml(application.name)}
+                        </strong>
 
-                    <span>
-                        ${escapeHtml(application.category)}
-                    </span>
-                </div>
-            `;
+                        <span>
+                            ${escapeHtml(application.category)}
+                        </span>
+                    </div>
+                `;
 
-            button.addEventListener('click', () => {
-                if (searchInput) {
-                    searchInput.value =
-                        application.name;
-                }
+                suggestion.addEventListener('click', () => {
+                    if (searchInput) {
+                        searchInput.value =
+                            application.name;
+                    }
 
-                if (clearSearchButton) {
-                    clearSearchButton.hidden = false;
-                }
+                    if (clearSearchButton) {
+                        clearSearchButton.hidden = false;
+                    }
 
-                searchResults.hidden = true;
+                    searchResults.hidden = true;
 
-                visibleApplications = [application];
-                renderApplications(visibleApplications);
+                    displayedApplications = [application];
 
-                window.setTimeout(() => {
-                    openApplicationModal(application);
-                }, 200);
+                    renderApplications(
+                        displayedApplications
+                    );
+
+                    window.setTimeout(() => {
+                        openApplicationModal(application);
+                    }, 150);
+                });
+
+                searchResults.appendChild(suggestion);
             });
-
-            searchResults.appendChild(button);
-        });
 
         searchResults.hidden = false;
     }
@@ -461,13 +517,17 @@ document.addEventListener('DOMContentLoaded', () => {
     ================================================== */
 
     newestButton?.addEventListener('click', () => {
-        visibleApplications.sort(
+        displayedApplications.sort(
             (firstApplication, secondApplication) => {
                 const firstDate =
-                    new Date(firstApplication.added).getTime();
+                    new Date(
+                        firstApplication.added
+                    ).getTime();
 
                 const secondDate =
-                    new Date(secondApplication.added).getTime();
+                    new Date(
+                        secondApplication.added
+                    ).getTime();
 
                 return newestFirst
                     ? secondDate - firstDate
@@ -477,7 +537,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         newestFirst = !newestFirst;
 
-        renderApplications(visibleApplications);
+        renderApplications(displayedApplications);
 
         newestButton.setAttribute(
             'aria-label',
@@ -488,7 +548,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     /* ==================================================
-       Theme System
+       Dark Mode
     ================================================== */
 
     const savedTheme =
@@ -579,7 +639,10 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.hidden = true;
 
         const modalStillOpen =
-            modals.some(item => item.hidden === false);
+            modals.some(
+                currentModal =>
+                    currentModal.hidden === false
+            );
 
         if (!modalStillOpen) {
             body.classList.remove('modal-open');
@@ -619,7 +682,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     /* ==================================================
-       Login Placeholders
+       Guide Login Buttons
     ================================================== */
 
     document
@@ -636,7 +699,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 window.setTimeout(() => {
                     button.disabled = false;
-                    button.textContent = originalText;
+                    button.textContent =
+                        originalText;
                 }, 1800);
             });
         });
@@ -656,24 +720,4 @@ document.addEventListener('DOMContentLoaded', () => {
                 : `${count} applications`;
     }
 
-    function normalizeText(value) {
-        return String(value)
-            .trim()
-            .toLocaleLowerCase();
-    }
-
-    function escapeHtml(value) {
-        return String(value)
-            .replaceAll('&', '&amp;')
-            .replaceAll('<', '&lt;')
-            .replaceAll('>', '&gt;')
-            .replaceAll('"', '&quot;')
-            .replaceAll("'", '&#039;');
-    }
-
-    /* ==================================================
-       Initial Rendering
-    ================================================== */
-
-    renderApplications(visibleApplications);
-});
+    funct
