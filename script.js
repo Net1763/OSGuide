@@ -724,7 +724,6 @@ document.addEventListener('DOMContentLoaded', () => {
     return String(value)
         .trim()
         .toLocaleLowerCase();
-}
 
 function escapeHtml(value) {
     return String(value)
