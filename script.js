@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /* ==================================================
        Application Database
-       لإضافة تطبيق مستقبلًا نضيف بياناته هنا فقط
+       لإضافة تطبيق جديد مستقبلًا نضيف بياناته هنا فقط
     ================================================== */
 
     const applications = [
@@ -41,8 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
             platform: 'Android',
             category: 'Media',
             added: '2026-07-22',
-            downloadUrl:
-                'https://f-droid.org/packages/org.schabi.newpipe/',
+            downloadUrl: 'https://f-droid.org/packages/org.schabi.newpipe/',
             iconType: 'video'
         }
     ];
@@ -106,7 +105,6 @@ document.addEventListener('DOMContentLoaded', () => {
     ================================================== */
 
     function getApplicationIcon(application) {
-
         if (application.iconType === 'terminal') {
             return `
                 <svg viewBox="0 0 64 64" aria-hidden="true">
@@ -191,9 +189,10 @@ document.addEventListener('DOMContentLoaded', () => {
         applicationsGrid.innerHTML = '';
 
         applicationList.forEach(application => {
-            applicationsGrid.appendChild(
-                createApplicationCard(application)
-            );
+            const applicationCard =
+                createApplicationCard(application);
+
+            applicationsGrid.appendChild(applicationCard);
         });
 
         updateApplicationCount(applicationList.length);
@@ -285,14 +284,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const downloadButton =
             card.querySelector('.download-icon-button');
 
-        mainButton?.addEventListener('click', () => {
-            openApplicationModal(application);
-        });
+        if (mainButton) {
+            mainButton.addEventListener('click', () => {
+                openApplicationModal(application);
+            });
+        }
 
-        downloadButton?.addEventListener('click', event => {
-            event.stopPropagation();
-            openApplicationModal(application);
-        });
+        if (downloadButton) {
+            downloadButton.addEventListener('click', event => {
+                event.stopPropagation();
+                openApplicationModal(application);
+            });
+        }
 
         return card;
     }
@@ -374,6 +377,9 @@ document.addEventListener('DOMContentLoaded', () => {
             downloadLink.href =
                 application.downloadUrl;
 
+            downloadLink.target = '_blank';
+            downloadLink.rel = 'noopener noreferrer';
+
             downloadLink.textContent =
                 `Download ${application.name} from ${application.source}`;
         }
@@ -385,54 +391,55 @@ document.addEventListener('DOMContentLoaded', () => {
        Search
     ================================================== */
 
-    searchInput?.addEventListener('input', () => {
-        const query =
-            normalizeText(searchInput.value);
+    if (searchInput) {
+        searchInput.addEventListener('input', () => {
+            const query =
+                normalizeText(searchInput.value);
 
-        if (clearSearchButton) {
-            clearSearchButton.hidden =
-                query.length === 0;
-        }
+            if (clearSearchButton) {
+                clearSearchButton.hidden =
+                    query.length === 0;
+            }
 
-        displayedApplications =
-            applications.filter(application => {
-                const searchableContent =
-                    normalizeText(`
-                        ${application.name}
-                        ${application.description}
-                        ${application.longDescription}
-                        ${application.category}
-                        ${application.source}
-                    `);
+            displayedApplications =
+                applications.filter(application => {
+                    const searchableContent =
+                        normalizeText(`
+                            ${application.name}
+                            ${application.description}
+                            ${application.longDescription}
+                            ${application.category}
+                            ${application.source}
+                        `);
 
-                return searchableContent.includes(query);
-            });
+                    return searchableContent.includes(query);
+                });
 
-        renderApplications(displayedApplications);
-        renderSearchSuggestions(query);
-    });
+            renderApplications(displayedApplications);
+            renderSearchSuggestions(query);
+        });
+    }
 
-    clearSearchButton?.addEventListener('click', () => {
-        if (!searchInput) {
-            return;
-        }
+    if (clearSearchButton) {
+        clearSearchButton.addEventListener('click', () => {
+            if (!searchInput) {
+                return;
+            }
 
-        searchInput.value = '';
-
-        if (clearSearchButton) {
+            searchInput.value = '';
             clearSearchButton.hidden = true;
-        }
 
-        if (searchResults) {
-            searchResults.hidden = true;
-            searchResults.innerHTML = '';
-        }
+            if (searchResults) {
+                searchResults.hidden = true;
+                searchResults.innerHTML = '';
+            }
 
-        displayedApplications = [...applications];
+            displayedApplications = [...applications];
 
-        renderApplications(displayedApplications);
-        searchInput.focus();
-    });
+            renderApplications(displayedApplications);
+            searchInput.focus();
+        });
+    }
 
     function renderSearchSuggestions(query) {
         if (!searchResults) {
@@ -447,10 +454,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const suggestions =
-            applications.filter(application =>
-                normalizeText(application.name)
-                    .includes(query)
-            );
+            applications.filter(application => {
+                return normalizeText(application.name)
+                    .includes(query);
+            });
 
         if (suggestions.length === 0) {
             searchResults.hidden = true;
@@ -497,9 +504,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     displayedApplications = [application];
 
-                    renderApplications(
-                        displayedApplications
-                    );
+                    renderApplications(displayedApplications);
 
                     window.setTimeout(() => {
                         openApplicationModal(application);
@@ -512,40 +517,60 @@ document.addEventListener('DOMContentLoaded', () => {
         searchResults.hidden = false;
     }
 
+    document.addEventListener('click', event => {
+        if (
+            searchResults &&
+            searchInput &&
+            !searchResults.contains(event.target) &&
+            event.target !== searchInput
+        ) {
+            searchResults.hidden = true;
+        }
+    });
+
     /* ==================================================
        Newest Sorting
     ================================================== */
 
-    newestButton?.addEventListener('click', () => {
-        displayedApplications.sort(
-            (firstApplication, secondApplication) => {
-                const firstDate =
-                    new Date(
-                        firstApplication.added
-                    ).getTime();
+    if (newestButton) {
+        newestButton.addEventListener('click', () => {
+            displayedApplications.sort(
+                (firstApplication, secondApplication) => {
+                    const firstDate =
+                        new Date(
+                            firstApplication.added
+                        ).getTime();
 
-                const secondDate =
-                    new Date(
-                        secondApplication.added
-                    ).getTime();
+                    const secondDate =
+                        new Date(
+                            secondApplication.added
+                        ).getTime();
 
-                return newestFirst
-                    ? secondDate - firstDate
-                    : firstDate - secondDate;
-            }
-        );
+                    return newestFirst
+                        ? secondDate - firstDate
+                        : firstDate - secondDate;
+                }
+            );
 
-        newestFirst = !newestFirst;
+            newestFirst = !newestFirst;
 
-        renderApplications(displayedApplications);
+            renderApplications(displayedApplications);
 
-        newestButton.setAttribute(
-            'aria-label',
-            newestFirst
-                ? 'Sort newest first'
-                : 'Sort oldest first'
-        );
-    });
+            newestButton.setAttribute(
+                'aria-label',
+                newestFirst
+                    ? 'Sort newest first'
+                    : 'Sort oldest first'
+            );
+
+            newestButton.setAttribute(
+                'title',
+                newestFirst
+                    ? 'Sort newest first'
+                    : 'Sort oldest first'
+            );
+        });
+    }
 
     /* ==================================================
        Dark Mode
@@ -568,21 +593,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     updateThemeButton();
 
-    themeButton?.addEventListener('click', () => {
-        body.classList.toggle('dark-mode');
+    if (themeButton) {
+        themeButton.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
 
-        const selectedTheme =
-            body.classList.contains('dark-mode')
-                ? 'dark'
-                : 'light';
+            const selectedTheme =
+                body.classList.contains('dark-mode')
+                    ? 'dark'
+                    : 'light';
 
-        localStorage.setItem(
-            'osguide-theme',
-            selectedTheme
-        );
+            localStorage.setItem(
+                'osguide-theme',
+                selectedTheme
+            );
 
-        updateThemeButton();
-    });
+            updateThemeButton();
+        });
+    }
 
     function updateThemeButton() {
         if (!themeButton) {
@@ -627,7 +654,9 @@ document.addEventListener('DOMContentLoaded', () => {
             );
 
         window.setTimeout(() => {
-            focusableElement?.focus();
+            if (focusableElement) {
+                focusableElement.focus();
+            }
         }, 50);
     }
 
@@ -639,10 +668,9 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.hidden = true;
 
         const modalStillOpen =
-            modals.some(
-                currentModal =>
-                    currentModal.hidden === false
-            );
+            modals.some(currentModal => {
+                return currentModal.hidden === false;
+            });
 
         if (!modalStillOpen) {
             body.classList.remove('modal-open');
@@ -661,11 +689,20 @@ document.addEventListener('DOMContentLoaded', () => {
         .querySelectorAll('[data-close-modal]')
         .forEach(button => {
             button.addEventListener('click', () => {
-                closeModal(
-                    button.closest('.modal')
-                );
+                const modal =
+                    button.closest('.modal');
+
+                closeModal(modal);
             });
         });
+
+    modals.forEach(modal => {
+        modal.addEventListener('click', event => {
+            if (event.target === modal) {
+                closeModal(modal);
+            }
+        });
+    });
 
     document.addEventListener('keydown', event => {
         if (event.key === 'Escape') {
@@ -673,70 +710,4 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    guideButton?.addEventListener('click', () => {
-        openModal(guideModal);
-    });
-
-    fdroidInfoButton?.addEventListener('click', () => {
-        openModal(fdroidModal);
-    });
-
-    /* ==================================================
-       Guide Login Buttons
-    ================================================== */
-
-    document
-        .querySelectorAll('.login-option')
-        .forEach(button => {
-            button.addEventListener('click', () => {
-                const originalText =
-                    button.textContent.trim();
-
-                button.disabled = true;
-
-                button.textContent =
-                    'Coming in the authentication stage';
-
-                window.setTimeout(() => {
-                    button.disabled = false;
-                    button.textContent =
-                        originalText;
-                }, 1800);
-            });
-        });
-
-    /* ==================================================
-       Utilities
-    ================================================== */
-
-    function updateApplicationCount(count) {
-        if (!applicationCount) {
-            return;
-        }
-
-        applicationCount.textContent =
-            count === 1
-                ? '1 application'
-                : `${count} applications`;
-    }
-
-    function normalizeText(value) {
-    return String(value)
-        .trim()
-        .toLocaleLowerCase();
-
-function escapeHtml(value) {
-    return String(value)
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#039;');
-}
-
-/* ==========================================
-   Initial Rendering
-========================================== */
-
-renderApplications(displayedApplications);
-});
+    if (guideButton) {
