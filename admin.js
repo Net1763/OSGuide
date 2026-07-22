@@ -1268,4 +1268,478 @@ function closeDeleteModal() {
             'modal-open'
         );
     }
+}async function handleApplicationSubmit(event) {
+    event.preventDefault();
+
+    hideApplicationFormError();
+
+    const applicationData =
+        getApplicationFormData();
+
+    const validationError =
+        validateApplicationData(
+            applicationData
+        );
+
+    if (validationError) {
+        showApplicationFormError(
+            validationError
+        );
+        return;
+    }
+
+    setButtonLoading(
+        elements.saveApplicationButton,
+        true
+    );
+
+    try {
+        let query;
+
+        if (state.editingApplicationId) {
+            query = supabaseClient
+                .from('applications')
+                .update(applicationData)
+                .eq(
+                    'id',
+                    state.editingApplicationId
+                );
+        } else {
+            query = supabaseClient
+                .from('applications')
+                .insert(applicationData);
+        }
+
+        const {
+            error
+        } = await query;
+
+        if (error) {
+            throw error;
+        }
+
+        const successMessage =
+            state.editingApplicationId
+                ? 'Application updated successfully.'
+                : 'Application added successfully.';
+
+        closeApplicationModal();
+
+        showToast(
+            successMessage,
+            'success'
+        );
+
+        await loadApplications();
+    } catch (error) {
+        console.error(
+            'Unable to save application:',
+            error
+        );
+
+        showApplicationFormError(
+            getDatabaseErrorMessage(error)
+        );
+    } finally {
+        setButtonLoading(
+            elements.saveApplicationButton,
+            false
+        );
+    }
+}
+
+function getApplicationFormData() {
+    return {
+        name:
+            elements.applicationName.value.trim(),
+
+        description:
+            elements.applicationDescription.value.trim(),
+
+        long_description:
+            elements.applicationLongDescription.value.trim() ||
+            null,
+
+        version:
+            elements.applicationVersion.value.trim(),
+
+        size:
+            elements.applicationSize.value.trim(),
+
+        source:
+            elements.applicationSource.value.trim(),
+
+        license:
+            elements.applicationLicense.value.trim() ||
+            null,
+
+        platform:
+            elements.applicationPlatform.value.trim() ||
+            'Android',
+
+        category:
+            elements.applicationCategory.value.trim(),
+
+        added:
+            elements.applicationAdded.value,
+
+        download_url:
+            elements.applicationDownloadUrl.value.trim(),
+
+        icon_type:
+            elements.applicationIconType.value,
+
+        is_published:
+            elements.applicationPublished.checked
+    };
+}
+
+function validateApplicationData(applicationData) {
+    if (!applicationData.name) {
+        return 'Application name is required.';
+    }
+
+    if (!applicationData.version) {
+        return 'Application version is required.';
+    }
+
+    if (!applicationData.size) {
+        return 'Application size is required.';
+    }
+
+    if (!applicationData.category) {
+        return 'Application category is required.';
+    }
+
+    if (!applicationData.source) {
+        return 'Application source is required.';
+    }
+
+    if (!applicationData.added) {
+        return 'Added date is required.';
+    }
+
+    if (!applicationData.description) {
+        return 'Short description is required.';
+    }
+
+    if (
+        applicationData.description.length >
+        300
+    ) {
+        return 'Short description must not exceed 300 characters.';
+    }
+
+    if (
+        applicationData.long_description &&
+        applicationData.long_description.length >
+            3000
+    ) {
+        return 'Full description must not exceed 3000 characters.';
+    }
+
+    if (!applicationData.download_url) {
+        return 'Download URL is required.';
+    }
+
+    if (
+        !isValidHttpUrl(
+            applicationData.download_url
+        )
+    ) {
+        return 'Enter a valid HTTP or HTTPS download URL.';
+    }
+
+    return '';
+}
+
+function isValidHttpUrl(value) {
+    try {
+        const url =
+            new URL(value);
+
+        return (
+            url.protocol === 'http:' ||
+            url.protocol === 'https:'
+        );
+    } catch {
+        return false;
+    }
+}
+
+function showApplicationFormError(message) {
+    elements.applicationFormError.textContent =
+        message;
+
+    elements.applicationFormError.hidden =
+        false;
+}
+
+function hideApplicationFormError() {
+    elements.applicationFormError.textContent =
+        '';
+
+    elements.applicationFormError.hidden =
+        true;
+}
+
+async function handleDeleteApplication() {
+    if (!state.deletingApplicationId) {
+        return;
+    }
+
+    setButtonLoading(
+        elements.confirmDeleteButton,
+        true
+    );
+
+    try {
+        const {
+            error
+        } = await supabaseClient
+            .from('applications')
+            .delete()
+            .eq(
+                'id',
+                state.deletingApplicationId
+            );
+
+        if (error) {
+            throw error;
+        }
+
+        closeDeleteModal();
+
+        showToast(
+            'Application deleted successfully.',
+            'success'
+        );
+
+        await loadApplications();
+    } catch (error) {
+        console.error(
+            'Unable to delete application:',
+            error
+        );
+
+        showToast(
+            getDatabaseErrorMessage(error),
+            'error'
+        );
+    } finally {
+        setButtonLoading(
+            elements.confirmDeleteButton,
+            false
+        );
+    }
+}
+
+function setButtonLoading(
+    button,
+    isLoading
+) {
+    if (!button) {
+        return;
+    }
+
+    const textElement =
+        button.querySelector('.button-text');
+
+    const loaderElement =
+        button.querySelector('.button-loader');
+
+    button.disabled = isLoading;
+
+    if (textElement) {
+        textElement.hidden = isLoading;
+    }
+
+    if (loaderElement) {
+        loaderElement.hidden = !isLoading;
+    }
+}
+
+function showToast(
+    message,
+    type = 'success'
+) {
+    const toast =
+        document.createElement('div');
+
+    toast.className =
+        `toast ${type}`;
+
+    toast.setAttribute(
+        'role',
+        type === 'error'
+            ? 'alert'
+            : 'status'
+    );
+
+    const messageElement =
+        document.createElement('span');
+
+    messageElement.textContent =
+        message;
+
+    toast.appendChild(
+        messageElement
+    );
+
+    elements.toastContainer.appendChild(
+        toast
+    );
+
+    window.setTimeout(
+        () => {
+            toast.style.opacity = '0';
+            toast.style.transform =
+                'translateY(10px)';
+
+            window.setTimeout(
+                () => {
+                    toast.remove();
+                },
+                220
+            );
+        },
+        4000
+    );
+}
+
+function formatApplicationDate(value) {
+    if (!value) {
+        return '—';
+    }
+
+    const date =
+        new Date(value);
+
+    if (
+        Number.isNaN(
+            date.getTime()
+        )
+    ) {
+        return String(value);
+    }
+
+    return new Intl.DateTimeFormat(
+        'en',
+        {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        }
+    ).format(date);
+}
+
+function normalizeDateInputValue(value) {
+    if (!value) {
+        return getTodayDateInputValue();
+    }
+
+    const valueString =
+        String(value);
+
+    const directDateMatch =
+        valueString.match(
+            /^\d{4}-\d{2}-\d{2}/
+        );
+
+    if (directDateMatch) {
+        return directDateMatch[0];
+    }
+
+    const date =
+        new Date(value);
+
+    if (
+        Number.isNaN(
+            date.getTime()
+        )
+    ) {
+        return getTodayDateInputValue();
+    }
+
+    return formatDateForInput(date);
+}
+
+function getTodayDateInputValue() {
+    return formatDateForInput(
+        new Date()
+    );
+}
+
+function formatDateForInput(date) {
+    const year =
+        date.getFullYear();
+
+    const month =
+        String(
+            date.getMonth() + 1
+        ).padStart(
+            2,
+            '0'
+        );
+
+    const day =
+        String(
+            date.getDate()
+        ).padStart(
+            2,
+            '0'
+        );
+
+    return `${year}-${month}-${day}`;
+}
+
+function getDatabaseErrorMessage(error) {
+    const message =
+        String(
+            error?.message || ''
+        ).toLowerCase();
+
+    if (
+        message.includes(
+            'row-level security'
+        ) ||
+        message.includes(
+            'permission denied'
+        )
+    ) {
+        return 'You do not have permission to perform this action.';
+    }
+
+    if (
+        message.includes(
+            'duplicate'
+        ) ||
+        error?.code === '23505'
+    ) {
+        return 'An application with the same unique value already exists.';
+    }
+
+    if (
+        message.includes(
+            'network'
+        ) ||
+        message.includes(
+            'failed to fetch'
+        )
+    ) {
+        return 'Network error. Check your connection and try again.';
+    }
+
+    if (
+        message.includes(
+            'not authenticated'
+        ) ||
+        message.includes(
+            'jwt'
+        )
+    ) {
+        return 'Your session has expired. Please sign in again.';
+    }
+
+    return 'An unexpected database error occurred. Please try again.';
 }
