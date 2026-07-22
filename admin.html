@@ -2,45 +2,856 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="robots"
+        content="noindex, nofollow"
+    >
+
     <title>OSGuide Admin Panel</title>
 
-    <link rel="stylesheet" href="admin.css">
+    <link
+        rel="stylesheet"
+        href="admin.css"
+    >
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script
+        src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+    ></script>
 </head>
+
 <body>
 
-<div class="login-container">
+    <div
+        id="page-loader"
+        class="page-loader"
+        aria-live="polite"
+    >
+        <div class="loader-spinner"></div>
 
-    <h1>OSGuide</h1>
-    <p>Administrator Panel</p>
+        <p>Loading OSGuide Admin...</p>
+    </div>
 
-    <form id="login-form">
 
-        <input
-            type="email"
-            id="email"
-            placeholder="Email"
-            required
+    <main
+        id="login-view"
+        class="login-view"
+        hidden
+    >
+        <section class="login-card">
+
+            <div class="login-brand">
+                <div class="brand-icon">
+                    OS
+                </div>
+
+                <div>
+                    <h1>OSGuide</h1>
+                    <p>Administrator Panel</p>
+                </div>
+            </div>
+
+            <div class="login-heading">
+                <h2>Welcome back</h2>
+
+                <p>
+                    Sign in with your administrator
+                    account to manage applications.
+                </p>
+            </div>
+
+            <form
+                id="login-form"
+                class="login-form"
+                novalidate
+            >
+                <div class="form-group">
+                    <label for="email">
+                        Email address
+                    </label>
+
+                    <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        placeholder="admin@example.com"
+                        autocomplete="email"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="password">
+                        Password
+                    </label>
+
+                    <div class="password-field">
+                        <input
+                            type="password"
+                            id="password"
+                            name="password"
+                            placeholder="Enter your password"
+                            autocomplete="current-password"
+                            required
+                        >
+
+                        <button
+                            type="button"
+                            id="toggle-password"
+                            class="password-toggle"
+                            aria-label="Show password"
+                        >
+                            Show
+                        </button>
+                    </div>
+                </div>
+
+                <p
+                    id="login-error"
+                    class="form-message error-message"
+                    role="alert"
+                    hidden
+                ></p>
+
+                <button
+                    type="submit"
+                    id="login-button"
+                    class="primary-button login-button"
+                >
+                    <span class="button-text">
+                        Login
+                    </span>
+
+                    <span
+                        class="button-loader"
+                        hidden
+                    ></span>
+                </button>
+            </form>
+
+            <p class="login-security">
+                Authorized administrators only.
+            </p>
+
+        </section>
+    </main>
+
+
+    <div
+        id="dashboard-view"
+        class="dashboard-view"
+        hidden
+    >
+        <aside
+            id="sidebar"
+            class="sidebar"
         >
+            <div class="sidebar-header">
+                <div class="sidebar-brand">
+                    <div class="brand-icon">
+                        OS
+                    </div>
 
-        <input
-            type="password"
-            id="password"
-            placeholder="Password"
-            required
-        >
+                    <div>
+                        <strong>OSGuide</strong>
+                        <span>Admin Panel</span>
+                    </div>
+                </div>
 
-        <button type="submit">
-            Login
-        </button>
+                <button
+                    type="button"
+                    id="close-sidebar"
+                    class="icon-button mobile-only"
+                    aria-label="Close menu"
+                >
+                    ×
+                </button>
+            </div>
 
-    </form>
+            <nav
+                class="sidebar-navigation"
+                aria-label="Admin navigation"
+            >
+                <button
+                    type="button"
+                    class="navigation-item active"
+                    data-section="applications"
+                >
+                    <span class="navigation-icon">
+                        ▦
+                    </span>
 
-</div>
+                    <span>Applications</span>
+                </button>
+            </nav>
 
-<script src="admin.js"></script>
+            <div class="sidebar-footer">
+                <div class="admin-account">
+                    <div class="account-avatar">
+                        A
+                    </div>
+
+                    <div class="account-details">
+                        <strong>Administrator</strong>
+
+                        <span
+                            id="admin-email"
+                            title=""
+                        >
+                            Loading...
+                        </span>
+                    </div>
+                </div>
+
+                <button
+                    type="button"
+                    id="logout-button"
+                    class="logout-button"
+                >
+                    Logout
+                </button>
+            </div>
+        </aside>
+
+
+        <div
+            id="sidebar-overlay"
+            class="sidebar-overlay"
+            hidden
+        ></div>
+
+
+        <div class="dashboard-content">
+
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button
+                        type="button"
+                        id="open-sidebar"
+                        class="icon-button mobile-only"
+                        aria-label="Open menu"
+                    >
+                        ☰
+                    </button>
+
+                    <div>
+                        <h1>Applications</h1>
+
+                        <p>
+                            Manage applications displayed
+                            on the OSGuide website.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="topbar-actions">
+                    <a
+                        href="index.html"
+                        class="secondary-button"
+                        target="_blank"
+                        rel="noopener"
+                    >
+                        View website
+                    </a>
+
+                    <button
+                        type="button"
+                        id="add-application-button"
+                        class="primary-button"
+                    >
+                        + Add application
+                    </button>
+                </div>
+            </header>
+
+
+            <main class="dashboard-main">
+
+                <section
+                    class="statistics-grid"
+                    aria-label="Application statistics"
+                >
+                    <article class="statistic-card">
+                        <span class="statistic-label">
+                            Total applications
+                        </span>
+
+                        <strong
+                            id="total-applications"
+                            class="statistic-value"
+                        >
+                            0
+                        </strong>
+                    </article>
+
+                    <article class="statistic-card">
+                        <span class="statistic-label">
+                            Published
+                        </span>
+
+                        <strong
+                            id="published-applications"
+                            class="statistic-value"
+                        >
+                            0
+                        </strong>
+                    </article>
+
+                    <article class="statistic-card">
+                        <span class="statistic-label">
+                            Unpublished
+                        </span>
+
+                        <strong
+                            id="unpublished-applications"
+                            class="statistic-value"
+                        >
+                            0
+                        </strong>
+                    </article>
+
+                    <article class="statistic-card">
+                        <span class="statistic-label">
+                            Categories
+                        </span>
+
+                        <strong
+                            id="total-categories"
+                            class="statistic-value"
+                        >
+                            0
+                        </strong>
+                    </article>
+                </section>
+
+
+                <section class="applications-panel">
+
+                    <div class="panel-toolbar">
+                        <div class="search-field">
+                            <label
+                                for="application-search"
+                                class="visually-hidden"
+                            >
+                                Search applications
+                            </label>
+
+                            <input
+                                type="search"
+                                id="application-search"
+                                placeholder="Search by application name..."
+                                autocomplete="off"
+                            >
+                        </div>
+
+                        <div class="filter-controls">
+                            <label
+                                for="publication-filter"
+                                class="visually-hidden"
+                            >
+                                Filter by publication status
+                            </label>
+
+                            <select id="publication-filter">
+                                <option value="all">
+                                    All applications
+                                </option>
+
+                                <option value="published">
+                                    Published
+                                </option>
+
+                                <option value="unpublished">
+                                    Unpublished
+                                </option>
+                            </select>
+
+                            <label
+                                for="category-filter"
+                                class="visually-hidden"
+                            >
+                                Filter by category
+                            </label>
+
+                            <select id="category-filter">
+                                <option value="all">
+                                    All categories
+                                </option>
+                            </select>
+
+                            <button
+                                type="button"
+                                id="refresh-applications"
+                                class="secondary-button"
+                            >
+                                Refresh
+                            </button>
+                        </div>
+                    </div>
+
+
+                    <div
+                        id="applications-loading"
+                        class="content-state"
+                        hidden
+                    >
+                        <div class="loader-spinner"></div>
+
+                        <p>Loading applications...</p>
+                    </div>
+
+
+                    <div
+                        id="applications-error"
+                        class="content-state error-state"
+                        hidden
+                    >
+                        <h2>Unable to load applications</h2>
+
+                        <p id="applications-error-message">
+                            An unexpected error occurred.
+                        </p>
+
+                        <button
+                            type="button"
+                            id="retry-applications"
+                            class="primary-button"
+                        >
+                            Try again
+                        </button>
+                    </div>
+
+
+                    <div
+                        id="applications-empty"
+                        class="content-state"
+                        hidden
+                    >
+                        <h2>No applications found</h2>
+
+                        <p>
+                            Add your first application or
+                            change the current filters.
+                        </p>
+
+                        <button
+                            type="button"
+                            id="empty-add-application"
+                            class="primary-button"
+                        >
+                            Add application
+                        </button>
+                    </div>
+
+
+                    <div
+                        id="applications-table-wrapper"
+                        class="table-wrapper"
+                        hidden
+                    >
+                        <table class="applications-table">
+                            <thead>
+                                <tr>
+                                    <th>Application</th>
+                                    <th>Version</th>
+                                    <th>Category</th>
+                                    <th>Size</th>
+                                    <th>Status</th>
+                                    <th>Added</th>
+                                    <th>
+                                        <span class="visually-hidden">
+                                            Actions
+                                        </span>
+                                    </th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="applications-table-body">
+                            </tbody>
+                        </table>
+                    </div>
+
+
+                    <div
+                        id="applications-mobile-list"
+                        class="applications-mobile-list"
+                        hidden
+                    ></div>
+
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+
+    <div
+        id="application-modal"
+        class="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="application-modal-title"
+        hidden
+    >
+        <div
+            class="modal-backdrop"
+            data-close-application-modal
+        ></div>
+
+        <section class="modal-card application-modal-card">
+
+            <header class="modal-header">
+                <div>
+                    <h2 id="application-modal-title">
+                        Add application
+                    </h2>
+
+                    <p id="application-modal-description">
+                        Enter the application information below.
+                    </p>
+                </div>
+
+                <button
+                    type="button"
+                    id="close-application-modal"
+                    class="icon-button"
+                    aria-label="Close"
+                >
+                    ×
+                </button>
+            </header>
+
+
+            <form
+                id="application-form"
+                class="application-form"
+                novalidate
+            >
+                <input
+                    type="hidden"
+                    id="application-id"
+                >
+
+                <div class="form-grid">
+
+                    <div class="form-group">
+                        <label for="application-name">
+                            Application name *
+                        </label>
+
+                        <input
+                            type="text"
+                            id="application-name"
+                            maxlength="100"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="application-version">
+                            Version *
+                        </label>
+
+                        <input
+                            type="text"
+                            id="application-version"
+                            maxlength="50"
+                            placeholder="Example: 1.0.0"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="application-size">
+                            APK size *
+                        </label>
+
+                        <input
+                            type="text"
+                            id="application-size"
+                            maxlength="50"
+                            placeholder="Example: 120 MB"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="application-category">
+                            Category *
+                        </label>
+
+                        <input
+                            type="text"
+                            id="application-category"
+                            maxlength="100"
+                            placeholder="Example: Development"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="application-source">
+                            Source *
+                        </label>
+
+                        <input
+                            type="text"
+                            id="application-source"
+                            maxlength="100"
+                            value="F-Droid"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="application-license">
+                            License
+                        </label>
+
+                        <input
+                            type="text"
+                            id="application-license"
+                            maxlength="100"
+                            placeholder="Example: GPL-3.0"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="application-platform">
+                            Platform
+                        </label>
+
+                        <input
+                            type="text"
+                            id="application-platform"
+                            maxlength="100"
+                            value="Android"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="application-added">
+                            Added date *
+                        </label>
+
+                        <input
+                            type="date"
+                            id="application-added"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group form-group-full">
+                        <label for="application-description">
+                            Short description *
+                        </label>
+
+                        <textarea
+                            id="application-description"
+                            rows="3"
+                            maxlength="300"
+                            required
+                        ></textarea>
+
+                        <small>
+                            Maximum 300 characters.
+                        </small>
+                    </div>
+
+                    <div class="form-group form-group-full">
+                        <label for="application-long-description">
+                            Full description
+                        </label>
+
+                        <textarea
+                            id="application-long-description"
+                            rows="6"
+                            maxlength="3000"
+                        ></textarea>
+                    </div>
+
+                    <div class="form-group form-group-full">
+                        <label for="application-download-url">
+                            Download URL *
+                        </label>
+
+                        <input
+                            type="url"
+                            id="application-download-url"
+                            placeholder="https://..."
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="application-icon-type">
+                            Icon type
+                        </label>
+
+                        <select id="application-icon-type">
+                            <option value="text">
+                                Text icon
+                            </option>
+
+                            <option value="image">
+                                Image URL
+                            </option>
+
+                            <option value="emoji">
+                                Emoji
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="form-group checkbox-group">
+                        <label class="checkbox-label">
+                            <input
+                                type="checkbox"
+                                id="application-published"
+                                checked
+                            >
+
+                            <span>
+                                Publish this application
+                            </span>
+                        </label>
+                    </div>
+
+                </div>
+
+                <p
+                    id="application-form-error"
+                    class="form-message error-message"
+                    role="alert"
+                    hidden
+                ></p>
+
+                <footer class="modal-footer">
+                    <button
+                        type="button"
+                        id="cancel-application"
+                        class="secondary-button"
+                    >
+                        Cancel
+                    </button>
+
+                    <button
+                        type="submit"
+                        id="save-application"
+                        class="primary-button"
+                    >
+                        <span class="button-text">
+                            Save application
+                        </span>
+
+                        <span
+                            class="button-loader"
+                            hidden
+                        ></span>
+                    </button>
+                </footer>
+            </form>
+
+        </section>
+    </div>
+
+
+    <div
+        id="delete-modal"
+        class="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="delete-modal-title"
+        hidden
+    >
+        <div
+            class="modal-backdrop"
+            data-close-delete-modal
+        ></div>
+
+        <section class="modal-card confirmation-modal-card">
+
+            <header class="modal-header">
+                <div>
+                    <h2 id="delete-modal-title">
+                        Delete application
+                    </h2>
+
+                    <p>
+                        This action cannot be undone.
+                    </p>
+                </div>
+
+                <button
+                    type="button"
+                    id="close-delete-modal"
+                    class="icon-button"
+                    aria-label="Close"
+                >
+                    ×
+                </button>
+            </header>
+
+            <div class="confirmation-content">
+                <p>
+                    Are you sure you want to delete
+                    <strong id="delete-application-name">
+                        this application
+                    </strong>?
+                </p>
+            </div>
+
+            <footer class="modal-footer">
+                <button
+                    type="button"
+                    id="cancel-delete"
+                    class="secondary-button"
+                >
+                    Cancel
+                </button>
+
+                <button
+                    type="button"
+                    id="confirm-delete"
+                    class="danger-button"
+                >
+                    <span class="button-text">
+                        Delete
+                    </span>
+
+                    <span
+                        class="button-loader"
+                        hidden
+                    ></span>
+                </button>
+            </footer>
+
+        </section>
+    </div>
+
+
+    <div
+        id="toast-container"
+        class="toast-container"
+        aria-live="polite"
+        aria-atomic="true"
+    ></div>
+
+
+    <noscript>
+        <div class="noscript-message">
+            JavaScript must be enabled to use the
+            OSGuide administration panel.
+        </div>
+    </noscript>
+
+
+    <script src="admin.js"></script>
 
 </body>
 </html>
