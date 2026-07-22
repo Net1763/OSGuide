@@ -5,7 +5,7 @@
    Part 1/8
 ========================================================= */
 
-document.addEventListener('DOMContentLoaded', () =>{
+document.addEventListener('DOMContentLoaded', async () => {
     const SUPABASE_URL = 'https://rqvicenfdzlleureteis.supabase.co';
     const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_U64um_oKyNG0zXHQu6PuTg_lR9rSIwA';
 
@@ -2409,7 +2409,44 @@ document.addEventListener('DOMContentLoaded', () =>{
     /* =====================================================
        47. Prepared Applications
     ===================================================== */
+try {
+    const { data, error } = await supabaseClient
+        .from('applications')
+        .select('*')
+        .eq('is_published', true)
+        .order('added', { ascending: false });
 
+    if (error) {
+        throw error;
+    }
+
+    if (Array.isArray(data) && data.length > 0) {
+        applications.splice(
+            0,
+            applications.length,
+            ...data.map((app) => ({
+                id: String(app.id),
+                name: app.name || '',
+                description: app.description || '',
+                longDescription: app.long_description || '',
+                version: app.version || '',
+                size: app.size || '',
+                source: app.source || 'F-Droid',
+                license: app.license || '',
+                platform: app.platform || 'Android',
+                category: app.category || '',
+                added: app.added || '',
+                downloadUrl: app.download_url || '',
+                iconType: app.icon_type || 'default'
+            }))
+        );
+    }
+} catch (error) {
+    console.warn(
+        'Could not load applications from Supabase. Using local applications.',
+        error
+    );
+}
     const preparedApplications =
         prepareApplications();
 
