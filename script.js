@@ -5,7 +5,17 @@
    Part 1/8
 ========================================================= */
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', () =>{
+    const SUPABASE_URL = 'https://rqvicenfdzlleureteis.supabase.co';
+    const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_U64um_oKyNG0zXHQu6PuTg_lR9rSIwA';
+
+    const supabaseClient = window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_PUBLISHABLE_KEY
+    );
+
+    /* =============================
+       1. Applications Database
 
     /* =====================================================
        1. Applications Database
