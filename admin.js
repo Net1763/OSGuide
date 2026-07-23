@@ -4,7 +4,7 @@ const SUPABASE_URL =
     'https://rqvicenfdzlleureteis.supabase.co';
 
 const SUPABASE_PUBLISHABLE_KEY =
-    'sb_publishable_U64um_oKyNGOzXHQu6PuTg_1R9rSIwA';
+    'sb_publishable_U64um_oKyNG0zXHQu6PuTg_lR9rSIwA';
 
 const supabaseClient = window.supabase.createClient(
     SUPABASE_URL,
