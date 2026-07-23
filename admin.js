@@ -381,7 +381,7 @@ async function handleLogin(event) {
         );
 
         showLoginError(
-            getAuthenticationErrorMessage(error)
+            `DEBUG: ${error.message} (status: ${error.status})`
         );
     } finally {
         setButtonLoading(
