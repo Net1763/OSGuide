@@ -1287,3 +1287,27 @@ img {
         grid-template-columns: 1fr;
     }
 }
+/* Desktop application card spacing fix */
+@media (min-width: 769px) {
+    .application-card {
+        padding: 24px;
+    }
+
+    .application-card-header {
+        gap: 18px;
+        align-items: flex-start;
+    }
+
+    .application-card-title {
+        margin-bottom: 6px;
+    }
+
+    .application-card-meta {
+        margin-top: 14px;
+    }
+
+    .application-card-actions {
+        margin-top: 18px;
+        justify-content: flex-end;
+    }
+}
