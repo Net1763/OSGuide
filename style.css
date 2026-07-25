@@ -256,12 +256,13 @@ body.dark-mode .theme-icon-light {
    Main
 ======================================== */
 
+
 .main-content {
+    flex: 1;
     width: min(100% - 28px, var(--content-width));
     margin: 0 auto;
     padding: 22px 0 54px;
 }
-
 /* ========================================
    Hero
 ======================================== */
