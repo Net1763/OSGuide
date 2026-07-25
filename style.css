@@ -1276,24 +1276,48 @@ body.dark-mode .theme-icon-light {
 =================================== */
 
 .support-bar {
-    position: sticky;
-    bottom: 0;
     width: 100%;
-    background: var(--surface);
-    border-top: 1px solid var(--border);
-    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.08);
     margin-top: 56px;
-    z-index: 20;
+    background: linear-gradient(180deg, var(--surface) 0%, var(--surface-soft) 100%);
+    border-top: 1px solid var(--border);
 }
 
 .support-bar-content {
     max-width: var(--content-width);
     margin: 0 auto;
-    padding: 18px 20px;
+    padding: 28px 20px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 18px;
+}
+
+.support-bar-info {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.support-bar-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-md);
+    background: var(--primary-soft);
+    color: var(--primary);
+    flex-shrink: 0;
+}
+
+.support-bar-icon svg {
+    width: 22px;
+    height: 22px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }
 
 .support-bar-text strong {
