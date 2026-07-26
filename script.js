@@ -219,6 +219,28 @@ document.addEventListener('DOMContentLoaded', async () => {
         `;
     }
 
+    function createDefaultIcon() {
+        return `
+            <div class="application-icon default-icon">
+                <svg viewBox="0 0 64 64" aria-hidden="true">
+                    <rect
+                        width="64"
+                        height="64"
+                        rx="15"
+                        fill="#e2e8f0"
+                    ></rect>
+
+                    <path
+                        d="M20 32H44M32 20V44"
+                        stroke="#64748b"
+                        stroke-width="5"
+                        stroke-linecap="round"
+                    ></path>
+                </svg>
+            </div>
+        `;
+    }
+
     function createVideoIcon() {
         return `
             <div class="application-icon newpipe-icon">
@@ -277,8 +299,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return createVideoIcon();
 
             case 'terminal':
-            default:
                 return createTerminalIcon();
+
+            default:
+                return createDefaultIcon();
         }
     }
 
