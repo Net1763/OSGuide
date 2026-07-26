@@ -38,7 +38,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             added: '2026-07-21',
             downloadUrl:
                 'https://f-droid.org/packages/com.termux/',
-            iconType: 'terminal'
+            iconType: 'terminal',
+            imageUrl: ''
         },
 
         {
@@ -57,7 +58,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             added: '2026-07-22',
             downloadUrl:
                 'https://f-droid.org/packages/org.schabi.newpipe/',
-            iconType: 'video'
+            iconType: 'video',
+            imageUrl: ''
         }
     ];
 
@@ -237,7 +239,39 @@ document.addEventListener('DOMContentLoaded', async () => {
         `;
     }
 
-    function createApplicationIcon(iconType) {
+    function createImageIcon(imageUrl, applicationName) {
+        const safeImageUrl =
+            escapeHTML(imageUrl);
+
+        const safeApplicationName =
+            escapeHTML(applicationName || 'Application');
+
+        return `
+            <div class="application-icon image-icon">
+                <img
+                    src="${safeImageUrl}"
+                    alt="${safeApplicationName} logo"
+                    loading="lazy"
+                    decoding="async"
+                    referrerpolicy="no-referrer"
+                    style="width:100%;height:100%;object-fit:cover;border-radius:inherit;display:block;"
+                >
+            </div>
+        `;
+    }
+
+    function createApplicationIcon(
+        iconType,
+        imageUrl = '',
+        applicationName = ''
+    ) {
+        if (String(imageUrl || '').trim()) {
+            return createImageIcon(
+                imageUrl,
+                applicationName
+            );
+        }
+
         switch (iconType) {
             case 'video':
                 return createVideoIcon();
@@ -286,7 +320,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     data-open-app="${safeId}"
                     aria-label="View ${safeName} information"
                 >
-                    ${createApplicationIcon(application.iconType)}
+                    ${createApplicationIcon(application.iconType, application.imageUrl, application.name)}
 
                     <div class="application-summary">
                         <h3>${safeName}</h3>
@@ -500,7 +534,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 type="button"
                 data-search-app="${safeId}"
             >
-                ${createApplicationIcon(application.iconType)}
+                ${createApplicationIcon(application.iconType, application.imageUrl, application.name)}
 
                 <span class="search-result-content">
                     <strong>${safeName}</strong>
@@ -966,7 +1000,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function createApplicationModalIcon(application) {
         return createApplicationIcon(
-            application.iconType
+            application.iconType,
+            application.imageUrl,
+            application.name
         );
     }
 
@@ -2437,7 +2473,8 @@ try {
                 category: app.category || '',
                 added: app.added || '',
                 downloadUrl: app.download_url || '',
-                iconType: app.icon_type || 'default'
+                iconType: app.icon_type || 'default',
+                imageUrl: app.image_url || ''
             }))
         );
     }
