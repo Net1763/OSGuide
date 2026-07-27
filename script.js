@@ -14,54 +14,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         SUPABASE_PUBLISHABLE_KEY
     );
 
-    /* =============================
-       1. Applications Database
-
     /* =====================================================
        1. Applications Database
+       Supabase is the only source of application data.
     ===================================================== */
 
-    const applications = [
-        {
-            id: 'termux',
-            name: 'Termux',
-            description:
-                'A powerful terminal environment for Android.',
-            longDescription:
-                'Termux combines powerful terminal emulation with an extensive Linux package collection for Android.',
-            version: '0.118',
-            size: '15 MB',
-            source: 'F-Droid',
-            license: 'GPL-3.0',
-            platform: 'Android',
-            category: 'Development',
-            added: '2026-07-21',
-            downloadUrl:
-                'https://f-droid.org/packages/com.termux/',
-            iconType: 'terminal',
-            imageUrl: ''
-        },
-
-        {
-            id: 'newpipe',
-            name: 'NewPipe',
-            description:
-                'A lightweight and privacy-friendly video player.',
-            longDescription:
-                'NewPipe is a free and open-source Android video application that works without requiring proprietary Google services.',
-            version: '0.28.1',
-            size: '12 MB',
-            source: 'F-Droid',
-            license: 'GPL-3.0',
-            platform: 'Android',
-            category: 'Media',
-            added: '2026-07-22',
-            downloadUrl:
-                'https://f-droid.org/packages/org.schabi.newpipe/',
-            iconType: 'video',
-            imageUrl: ''
-        }
-    ];
+    const applications = [];
 
     /* =====================================================
        2. Page Elements
@@ -2480,31 +2438,35 @@ try {
         throw error;
     }
 
-    if (Array.isArray(data) && data.length > 0) {
-        applications.splice(
-            0,
-            applications.length,
-            ...data.map((app) => ({
-                id: String(app.id),
-                name: app.name || '',
-                description: app.description || '',
-                longDescription: app.long_description || '',
-                version: app.version || '',
-                size: app.size || '',
-                source: app.source || 'F-Droid',
-                license: app.license || '',
-                platform: app.platform || 'Android',
-                category: app.category || '',
-                added: app.added || '',
-                downloadUrl: app.download_url || '',
-                iconType: app.icon_type || 'default',
-                imageUrl: app.image_url || ''
-            }))
-        );
-    }
+    const supabaseApplications = Array.isArray(data)
+        ? data.map((app) => ({
+            id: String(app.id),
+            name: app.name || '',
+            description: app.description || '',
+            longDescription: app.long_description || app.description || '',
+            version: app.version || '',
+            size: app.size || '',
+            source: app.source || 'F-Droid',
+            license: app.license || '',
+            platform: app.platform || 'Android',
+            category: app.category || '',
+            added: app.added || '',
+            downloadUrl: app.download_url || '',
+            iconType: app.icon_type || 'default',
+            imageUrl: app.image_url || ''
+        }))
+        : [];
+
+    applications.splice(
+        0,
+        applications.length,
+        ...supabaseApplications
+    );
 } catch (error) {
-    console.warn(
-        'Could not load applications from Supabase. Using local applications.',
+    applications.splice(0, applications.length);
+
+    console.error(
+        'Could not load applications from Supabase.',
         error
     );
 }
