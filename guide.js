@@ -7,10 +7,33 @@ document.addEventListener('DOMContentLoaded', async () => {
     const SUPABASE_PUBLISHABLE_KEY =
         'sb_publishable_U64um_oKyNG0zXHQu6PuTg_lR9rSIwA';
 
-    const supabaseClient = window.supabase.createClient(
-        SUPABASE_URL,
-        SUPABASE_PUBLISHABLE_KEY
-    );
+    const SUPABASE_REST_URL =
+        `${SUPABASE_URL}/rest/v1`;
+
+    async function fetchFromSupabase(path) {
+        const response = await fetch(
+            `${SUPABASE_REST_URL}${path}`,
+            {
+                method: 'GET',
+                headers: {
+                    apikey: SUPABASE_PUBLISHABLE_KEY,
+                    Authorization:
+                        `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+                    Accept: 'application/json'
+                }
+            }
+        );
+
+        if (!response.ok) {
+            const message = await response.text();
+
+            throw new Error(
+                `Supabase request failed (${response.status}): ${message}`
+            );
+        }
+
+        return response.json();
+    }
 
     const backButton =
         document.getElementById('guide-back-button');
@@ -575,19 +598,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         setLoadingState();
 
-        const {
-            data: applicationRow,
-            error: applicationError
-        } = await supabaseClient
-            .from('applications')
-            .select('*')
-            .eq('id', appId)
-            .eq('is_published', true)
-            .maybeSingle();
+        const applicationRows =
+            await fetchFromSupabase(
+                `/applications` +
+                `?select=*` +
+                `&id=eq.${encodeURIComponent(appId)}` +
+                `&is_published=eq.true` +
+                `&limit=1`
+            );
 
-        if (applicationError) {
-            throw applicationError;
-        }
+        const applicationRow =
+            Array.isArray(applicationRows)
+                ? applicationRows[0]
+                : null;
 
         if (!applicationRow) {
             showError(
@@ -596,18 +619,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
-        const {
-            data: relatedRows,
-            error: relatedError
-        } = await supabaseClient
-            .from('applications')
-            .select('*')
-            .eq('is_published', true)
-            .order('added', {
-                ascending: false
-            });
+        let relatedRows = [];
 
-        if (relatedError) {
+        try {
+            relatedRows =
+                await fetchFromSupabase(
+                    '/applications' +
+                    '?select=*' +
+                    '&is_published=eq.true' +
+                    '&order=added.desc'
+                );
+        } catch (relatedError) {
             console.warn(
                 'Related applications could not be loaded.',
                 relatedError
