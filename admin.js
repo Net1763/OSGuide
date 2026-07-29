@@ -103,6 +103,8 @@ const elements = {
         document.getElementById('application-id'),
     applicationName:
         document.getElementById('application-name'),
+    applicationSlug:
+        document.getElementById('application-slug'),
     applicationVersion:
         document.getElementById('application-version'),
     applicationSize:
@@ -281,6 +283,16 @@ function bindEventListeners() {
     elements.applicationIconType.addEventListener(
         'change',
         updateImageUrlFieldVisibility
+    );
+
+    elements.applicationName.addEventListener(
+        'input',
+        handleApplicationNameInput
+    );
+
+    elements.applicationSlug.addEventListener(
+        'input',
+        handleApplicationSlugInput
     );
 
     elements.closeApplicationModalButton.addEventListener(
@@ -1153,6 +1165,15 @@ function openApplicationModal(
         elements.applicationName.value =
             application.name || '';
 
+        elements.applicationSlug.value =
+            application.slug ||
+            createSlug(application.name || '');
+
+        elements.applicationSlug.dataset.manual =
+            application.slug
+                ? 'true'
+                : 'false';
+
         elements.applicationVersion.value =
             application.version || '';
 
@@ -1201,6 +1222,9 @@ function openApplicationModal(
         elements.applicationModalDescription.textContent =
             'Enter the application information below.';
 
+        elements.applicationSlug.value = '';
+        elements.applicationSlug.dataset.manual = 'false';
+
         elements.applicationSource.value =
             'F-Droid';
 
@@ -1243,6 +1267,7 @@ function closeApplicationModal() {
 
     elements.applicationForm.reset();
     elements.applicationId.value = '';
+    elements.applicationSlug.dataset.manual = 'false';
 
     hideApplicationFormError();
 
@@ -1384,6 +1409,11 @@ function getApplicationFormData() {
         name:
             elements.applicationName.value.trim(),
 
+        slug:
+            normalizeSlug(
+                elements.applicationSlug.value
+            ),
+
         description:
             elements.applicationDescription.value.trim(),
 
@@ -1433,6 +1463,14 @@ function getApplicationFormData() {
 function validateApplicationData(applicationData) {
     if (!applicationData.name) {
         return 'Application name is required.';
+    }
+
+    if (!applicationData.slug) {
+        return 'Slug is required.';
+    }
+
+    if (!isValidSlug(applicationData.slug)) {
+        return 'Slug may contain only lowercase letters, numbers and hyphens.';
     }
 
     if (!applicationData.version) {
@@ -1501,6 +1539,53 @@ function validateApplicationData(applicationData) {
     }
 
     return '';
+}
+
+function createSlug(value) {
+    return normalizeSlug(value);
+}
+
+function normalizeSlug(value) {
+    return String(value || '')
+        .trim()
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .replace(/-{2,}/g, '-');
+}
+
+function isValidSlug(value) {
+    return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value);
+}
+
+function handleApplicationNameInput() {
+    if (
+        elements.applicationSlug.dataset.manual === 'true'
+    ) {
+        return;
+    }
+
+    elements.applicationSlug.value =
+        createSlug(
+            elements.applicationName.value
+        );
+}
+
+function handleApplicationSlugInput() {
+    const normalizedValue =
+        normalizeSlug(
+            elements.applicationSlug.value
+        );
+
+    elements.applicationSlug.value =
+        normalizedValue;
+
+    elements.applicationSlug.dataset.manual =
+        normalizedValue
+            ? 'true'
+            : 'false';
 }
 
 function isValidHttpUrl(value) {
@@ -1766,7 +1851,7 @@ function getDatabaseErrorMessage(error) {
         ) ||
         error?.code === '23505'
     ) {
-        return 'An application with the same unique value already exists.';
+        return 'This slug is already used by another application.';
     }
 
     if (
