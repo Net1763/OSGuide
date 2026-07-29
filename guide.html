@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="description"
+        content="Practical application guides and tutorials from OSGuide."
+    >
+
+    <title>App Guide | OSGuide</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="guide-page">
+
+    <header class="guide-header">
+        <button
+            type="button"
+            id="guide-back-button"
+            class="guide-back-button"
+            aria-label="Go back"
+        >
+            <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                aria-hidden="true"
+            >
+                <path
+                    d="M15 18L9 12L15 6"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                />
+            </svg>
+        </button>
+
+        <a href="index.html" class="guide-brand">
+            OSGuide
+        </a>
+    </header>
+
+    <main id="guide-main" class="guide-main">
+
+        <section class="guide-app-summary">
+            <div class="guide-app-icon-wrapper">
+                <img
+                    id="guide-app-icon"
+                    class="guide-app-icon"
+                    src=""
+                    alt=""
+                >
+            </div>
+
+            <div class="guide-app-information">
+                <p id="guide-app-category" class="guide-app-category">
+                    Application Guide
+                </p>
+
+                <h1 id="guide-app-name" class="guide-app-name">
+                    App Guide
+                </h1>
+
+                <p id="guide-app-version" class="guide-app-version">
+                    Version information
+                </p>
+            </div>
+
+            <a
+                id="guide-download-button"
+                class="guide-download-button"
+                href="#"
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                Download APK
+            </a>
+        </section>
+
+        <section class="guide-progress-section">
+            <div class="guide-progress-header">
+                <span>Guide progress</span>
+
+                <span id="guide-progress-value">
+                    0%
+                </span>
+            </div>
+
+            <div
+                class="guide-progress-track"
+                role="progressbar"
+                aria-label="Guide progress"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                aria-valuenow="0"
+            >
+                <div
+                    id="guide-progress-bar"
+                    class="guide-progress-bar"
+                ></div>
+            </div>
+        </section>
+
+        <section
+            id="guide-sections"
+            class="guide-sections"
+        >
+
+            <article class="guide-accordion">
+                <button
+                    type="button"
+                    class="guide-accordion-button"
+                    aria-expanded="false"
+                >
+                    <span>What is this app?</span>
+
+                    <span class="guide-accordion-arrow"></span>
+                </button>
+
+                <div class="guide-accordion-content" hidden>
+                    <div id="guide-about-content">
+                        Guide content will be added here.
+                    </div>
+                </div>
+            </article>
+
+            <article class="guide-accordion">
+                <button
+                    type="button"
+                    class="guide-accordion-button"
+                    aria-expanded="false"
+                >
+                    <span>Installation</span>
+
+                    <span class="guide-accordion-arrow"></span>
+                </button>
+
+                <div class="guide-accordion-content" hidden>
+                    <div id="guide-installation-content">
+                        Installation instructions will be added here.
+                    </div>
+                </div>
+            </article>
+
+            <article class="guide-accordion">
+                <button
+                    type="button"
+                    class="guide-accordion-button"
+                    aria-expanded="false"
+                >
+                    <span>First Steps</span>
+
+                    <span class="guide-accordion-arrow"></span>
+                </button>
+
+                <div class="guide-accordion-content" hidden>
+                    <div id="guide-first-steps-content">
+                        First steps will be added here.
+                    </div>
+                </div>
+            </article>
+
+            <article class="guide-accordion">
+                <button
+                    type="button"
+                    class="guide-accordion-button"
+                    aria-expanded="false"
+                >
+                    <span>Tutorials</span>
+
+                    <span class="guide-accordion-arrow"></span>
+                </button>
+
+                <div class="guide-accordion-content" hidden>
+                    <div
+                        id="guide-tutorials-content"
+                        class="guide-tutorials-grid"
+                    >
+                        Tutorials will be added here.
+                    </div>
+                </div>
+            </article>
+
+            <article class="guide-accordion">
+                <button
+                    type="button"
+                    class="guide-accordion-button"
+                    aria-expanded="false"
+                >
+                    <span>Tips &amp; Tricks</span>
+
+                    <span class="guide-accordion-arrow"></span>
+                </button>
+
+                <div class="guide-accordion-content" hidden>
+                    <div id="guide-tips-content">
+                        Tips will be added here.
+                    </div>
+                </div>
+            </article>
+
+            <article class="guide-accordion">
+                <button
+                    type="button"
+                    class="guide-accordion-button"
+                    aria-expanded="false"
+                >
+                    <span>FAQ</span>
+
+                    <span class="guide-accordion-arrow"></span>
+                </button>
+
+                <div class="guide-accordion-content" hidden>
+                    <div id="guide-faq-content">
+                        Frequently asked questions will be added here.
+                    </div>
+                </div>
+            </article>
+
+            <article class="guide-accordion">
+                <button
+                    type="button"
+                    class="guide-accordion-button"
+                    aria-expanded="false"
+                >
+                    <span>Related Apps</span>
+
+                    <span class="guide-accordion-arrow"></span>
+                </button>
+
+                <div class="guide-accordion-content" hidden>
+                    <div
+                        id="guide-related-apps"
+                        class="guide-related-apps"
+                    >
+                        Related applications will appear here.
+                    </div>
+                </div>
+            </article>
+
+        </section>
+
+    </main>
+
+    <script src="guide.js"></script>
+</body>
+</html>
