@@ -89,8 +89,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     const params =
         new URLSearchParams(window.location.search);
 
-    const appId =
-        String(params.get('id') || '').trim();
+    const appSlug =
+        String(
+            params.get('slug') ||
+            params.get('id') ||
+            ''
+        )
+            .trim()
+            .toLowerCase();
 
     const completedSections =
         new Set();
@@ -175,6 +181,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     function normalizeApplication(row) {
         return {
             id: String(row.id || ''),
+            slug: String(row.slug || '').trim().toLowerCase(),
             name: row.name || 'Application',
             description: row.description || '',
             longDescription:
@@ -189,6 +196,50 @@ document.addEventListener('DOMContentLoaded', async () => {
             category: row.category || 'Application',
             downloadUrl: row.download_url || '#',
             imageUrl: row.image_url || ''
+        };
+    }
+
+    function getGuideUrl(application) {
+        const slug =
+            application?.slug ||
+            application?.id ||
+            '';
+
+        return (
+            `guide.html?id=${encodeURIComponent(slug)}`
+        );
+    }
+
+    function normalizeGuide(row) {
+        if (!row) {
+            return null;
+        }
+
+        return {
+            about:
+                row.about ||
+                row.about_content ||
+                '',
+            installation:
+                row.installation ||
+                row.installation_content ||
+                '',
+            firstSteps:
+                row.first_steps ||
+                row.first_steps_content ||
+                '',
+            tutorials:
+                row.tutorials ||
+                row.tutorials_content ||
+                '',
+            tips:
+                row.tips ||
+                row.tips_content ||
+                '',
+            faq:
+                row.faq ||
+                row.faq_content ||
+                ''
         };
     }
 
@@ -231,6 +282,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         document.body.dataset.appId =
             application.id;
+
+        document.body.dataset.appSlug =
+            application.slug;
 
         if (appName) {
             appName.textContent =
@@ -278,10 +332,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    function updateGuideContent(application) {
+    function updateGuideContent(
+        application,
+        guide = null
+    ) {
         if (aboutContent) {
+            const aboutText =
+                guide?.about ||
+                application.longDescription;
+
             aboutContent.innerHTML = `
-                <p>${escapeHTML(application.longDescription)}</p>
+                <p>${escapeHTML(aboutText)}</p>
 
                 <div class="guide-note">
                     <strong>Source:</strong>
@@ -297,7 +358,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         if (installationContent) {
-            installationContent.innerHTML = `
+            if (guide?.installation) {
+                installationContent.innerHTML = `
+                    <p>${escapeHTML(guide.installation)}</p>
+                `;
+            } else {
+                installationContent.innerHTML = `
                 <ol>
                     <li>
                         Press <strong>Download APK</strong> above.
@@ -319,10 +385,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                     shown by OSGuide.
                 </div>
             `;
+            }
         }
 
         if (firstStepsContent) {
-            firstStepsContent.innerHTML = `
+            if (guide?.firstSteps) {
+                firstStepsContent.innerHTML = `
+                    <p>${escapeHTML(guide.firstSteps)}</p>
+                `;
+            } else {
+                firstStepsContent.innerHTML = `
                 <ol>
                     <li>
                         Open ${escapeHTML(application.name)}.
@@ -344,10 +416,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                     will be added from the OSGuide admin system.
                 </div>
             `;
+            }
         }
 
         if (tutorialsContent) {
-            tutorialsContent.innerHTML = `
+            if (guide?.tutorials) {
+                tutorialsContent.innerHTML = `
+                    <p>${escapeHTML(guide.tutorials)}</p>
+                `;
+            } else {
+                tutorialsContent.innerHTML = `
                 <button class="guide-tutorial-card" type="button">
                     <span>
                         <strong>Getting Started</strong>
@@ -369,10 +447,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                     </span>
                 </button>
             `;
+            }
         }
 
         if (tipsContent) {
-            tipsContent.innerHTML = `
+            if (guide?.tips) {
+                tipsContent.innerHTML = `
+                    <p>${escapeHTML(guide.tips)}</p>
+                `;
+            } else {
+                tipsContent.innerHTML = `
                 <ul>
                     <li>
                         Keep ${escapeHTML(application.name)} updated.
@@ -388,10 +472,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                     </li>
                 </ul>
             `;
+            }
         }
 
         if (faqContent) {
-            faqContent.innerHTML = `
+            if (guide?.faq) {
+                faqContent.innerHTML = `
+                    <p>${escapeHTML(guide.faq)}</p>
+                `;
+            } else {
+                faqContent.innerHTML = `
                 <h3>Is this application open source?</h3>
                 <p>
                     OSGuide lists applications from F-Droid and displays
@@ -410,6 +500,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     the OSGuide administration system.
                 </p>
             `;
+            }
         }
     }
 
@@ -457,7 +548,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     return `
                         <a
                             class="guide-related-app"
-                            href="guide.html?id=${encodeURIComponent(application.id)}"
+                            href="${getGuideUrl(application)}"
                         >
                             <img
                                 src="${escapeHTML(iconUrl)}"
@@ -515,7 +606,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         try {
             localStorage.setItem(
-                `osguide-guide-progress-${appId}`,
+                `osguide-guide-progress-${appSlug}`,
                 JSON.stringify(
                     Array.from(completedSections)
                 )
@@ -533,7 +624,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const savedProgress =
                 JSON.parse(
                     localStorage.getItem(
-                        `osguide-guide-progress-${appId}`
+                        `osguide-guide-progress-${appSlug}`
                     ) || '[]'
                 );
 
@@ -589,7 +680,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     async function loadGuide() {
-        if (!appId) {
+        if (!appSlug) {
             window.location.replace(
                 'index.html'
             );
@@ -598,14 +689,29 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         setLoadingState();
 
-        const applicationRows =
+        let applicationRows =
             await fetchFromSupabase(
                 `/applications` +
                 `?select=*` +
-                `&id=eq.${encodeURIComponent(appId)}` +
+                `&slug=eq.${encodeURIComponent(appSlug)}` +
                 `&is_published=eq.true` +
                 `&limit=1`
             );
+
+        if (
+            (!Array.isArray(applicationRows) ||
+            applicationRows.length === 0) &&
+            /^\d+$/.test(appSlug)
+        ) {
+            applicationRows =
+                await fetchFromSupabase(
+                    `/applications` +
+                    `?select=*` +
+                    `&id=eq.${encodeURIComponent(appSlug)}` +
+                    `&is_published=eq.true` +
+                    `&limit=1`
+                );
+        }
 
         const applicationRow =
             Array.isArray(applicationRows)
@@ -613,6 +719,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 : null;
 
         if (!applicationRow) {
+            clearLoadingState();
+
             showError(
                 'This application does not exist or is not published.'
             );
@@ -639,13 +747,41 @@ document.addEventListener('DOMContentLoaded', async () => {
         const application =
             normalizeApplication(applicationRow);
 
+        let guide = null;
+
+        try {
+            const guideRows =
+                await fetchFromSupabase(
+                    `/app_guides` +
+                    `?select=*` +
+                    `&app_slug=eq.${encodeURIComponent(application.slug)}` +
+                    `&is_published=eq.true` +
+                    `&limit=1`
+                );
+
+            guide =
+                normalizeGuide(
+                    Array.isArray(guideRows)
+                        ? guideRows[0]
+                        : null
+                );
+        } catch (guideError) {
+            console.info(
+                'OSGuide app_guides table is not ready yet.',
+                guideError
+            );
+        }
+
         const applications =
             Array.isArray(relatedRows)
                 ? relatedRows.map(normalizeApplication)
                 : [];
 
         updateApplicationHeader(application);
-        updateGuideContent(application);
+        updateGuideContent(
+            application,
+            guide
+        );
         renderRelatedApps(
             applications,
             application
@@ -660,13 +796,22 @@ document.addEventListener('DOMContentLoaded', async () => {
         backButton.addEventListener(
             'click',
             () => {
-                if (window.history.length > 1) {
+                const sameSiteReferrer =
+                    document.referrer &&
+                    new URL(document.referrer).origin ===
+                        window.location.origin;
+
+                if (
+                    sameSiteReferrer &&
+                    window.history.length > 1
+                ) {
                     window.history.back();
                     return;
                 }
 
-                window.location.href =
-                    'index.html';
+                window.location.assign(
+                    'index.html'
+                );
             }
         );
     }
@@ -682,8 +827,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             error
         );
 
+        clearLoadingState();
+
         showError(
-            'The guide could not be loaded. Please try again later.'
+            'The guide could not be loaded. Check the application slug and Supabase read policy.'
         );
     }
 });
