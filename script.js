@@ -2521,7 +2521,7 @@ try {
     ===================================================== */
 
     let sideNavigationLastFocus = null;
-    let featuredApplicationId = null;
+    let featuredApplicationId = '9';
 
     function openSideNavigation() {
         if (!sideNavigationShell || !sideNavigation) {
@@ -2662,6 +2662,15 @@ try {
             return null;
         }
 
+        const termux = applications.find(application =>
+            normalizeText(application.name) === 'termux' ||
+            normalizeText(application.slug) === 'termux'
+        );
+
+        if (termux) {
+            return termux;
+        }
+
         return [...applications].sort((first, second) => {
             return new Date(second.added).getTime() - new Date(first.added).getTime();
         })[0];
@@ -2679,9 +2688,7 @@ try {
             !featuredApplicationDescription ||
             !featuredApplicationMeta
         ) {
-            if (featuredSection) {
-                featuredSection.hidden = true;
-            }
+            console.warn('Featured application data could not be loaded; keeping the built-in fallback card visible.');
             return;
         }
 
