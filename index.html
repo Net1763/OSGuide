@@ -15,7 +15,7 @@
 
     <title>OSGuide — Trusted Open-Source Android Apps</title>
 
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=20260804-1431">
 </head>
 
 <body>
@@ -618,7 +618,7 @@
 </section>
 
 <!-- Featured Application -->
-<section class="featured-section" id="featured-section" aria-labelledby="featured-title" hidden>
+<section class="featured-section" id="featured-section" aria-labelledby="featured-title">
     <div class="section-heading featured-heading">
         <div>
             <p class="section-label">Featured application</p>
@@ -632,12 +632,20 @@
         type="button"
         aria-label="View featured application information"
     >
-        <span class="featured-application-visual" id="featured-application-visual"></span>
+        <span class="featured-application-visual" id="featured-application-visual">
+            <div class="application-icon termux-icon">
+                <svg viewBox="0 0 64 64" aria-hidden="true">
+                    <rect width="64" height="64" rx="15" fill="#15171c"></rect>
+                    <path d="M17 21L28 32L17 43" fill="none" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path>
+                    <path d="M33 43H47" stroke="white" stroke-width="5" stroke-linecap="round"></path>
+                </svg>
+            </div>
+        </span>
         <span class="featured-application-content">
             <span class="featured-application-label">OSGuide selection</span>
-            <strong id="featured-application-name">Featured application</strong>
-            <span id="featured-application-description">Application information</span>
-            <span class="featured-application-meta" id="featured-application-meta"></span>
+            <strong id="featured-application-name">Termux</strong>
+            <span id="featured-application-description">Powerful terminal emulator and Linux environment for Android.</span>
+            <span class="featured-application-meta" id="featured-application-meta"><span>0.119.0</span><span>18 MB</span><span>Development</span><span>Source: F-Droid</span></span>
         </span>
         <span class="featured-application-open" aria-hidden="true">
             <svg viewBox="0 0 24 24">
@@ -991,6 +999,6 @@
 </section>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="script.js"></script>
+<script src="script.js?v=20260804-1431"></script>
 </body>
 </html>
