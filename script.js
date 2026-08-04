@@ -67,6 +67,42 @@ document.addEventListener('DOMContentLoaded', async () => {
     const guideModal =
         document.getElementById('guide-modal');
 
+    const menuButton =
+        document.getElementById('menu-button');
+
+    const sideNavigationShell =
+        document.getElementById('side-navigation-shell');
+
+    const sideNavigation =
+        document.getElementById('side-navigation');
+
+    const sideNavigationBackdrop =
+        document.getElementById('side-navigation-backdrop');
+
+    const sideNavigationClose =
+        document.getElementById('side-navigation-close');
+
+    const accountCard =
+        document.getElementById('account-card');
+
+    const featuredSection =
+        document.getElementById('featured-section');
+
+    const featuredApplicationCard =
+        document.getElementById('featured-application-card');
+
+    const featuredApplicationVisual =
+        document.getElementById('featured-application-visual');
+
+    const featuredApplicationName =
+        document.getElementById('featured-application-name');
+
+    const featuredApplicationDescription =
+        document.getElementById('featured-application-description');
+
+    const featuredApplicationMeta =
+        document.getElementById('featured-application-meta');
+
     const modals = [
         applicationModal,
         fdroidModal,
@@ -2481,6 +2517,208 @@ try {
             'Some invalid or duplicate applications were removed.'
         );
     }    /* =====================================================
+       48. Side Navigation and Featured Application
+    ===================================================== */
+
+    let sideNavigationLastFocus = null;
+    let featuredApplicationId = null;
+
+    function openSideNavigation() {
+        if (!sideNavigationShell || !sideNavigation) {
+            return;
+        }
+
+        sideNavigationLastFocus = document.activeElement;
+        sideNavigationShell.hidden = false;
+        sideNavigation.setAttribute('aria-hidden', 'false');
+        body.classList.add('side-navigation-open');
+
+        if (menuButton) {
+            menuButton.setAttribute('aria-expanded', 'true');
+        }
+
+        requestAnimationFrame(() => {
+            sideNavigationShell.classList.add('is-open');
+        });
+
+        if (sideNavigationClose) {
+            sideNavigationClose.focus();
+        }
+    }
+
+    function closeSideNavigation() {
+        if (!sideNavigationShell || !sideNavigation) {
+            return;
+        }
+
+        sideNavigationShell.classList.remove('is-open');
+        sideNavigation.setAttribute('aria-hidden', 'true');
+        body.classList.remove('side-navigation-open');
+
+        if (menuButton) {
+            menuButton.setAttribute('aria-expanded', 'false');
+        }
+
+        window.setTimeout(() => {
+            if (!sideNavigationShell.classList.contains('is-open')) {
+                sideNavigationShell.hidden = true;
+            }
+        }, 240);
+
+        if (
+            sideNavigationLastFocus &&
+            typeof sideNavigationLastFocus.focus === 'function'
+        ) {
+            sideNavigationLastFocus.focus();
+        }
+
+        sideNavigationLastFocus = null;
+    }
+
+    function scrollToSection(selector) {
+        const section = document.querySelector(selector);
+
+        if (!section) {
+            return;
+        }
+
+        section.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+        });
+    }
+
+    function handleSideNavigationAction(action) {
+        closeSideNavigation();
+
+        window.setTimeout(() => {
+            switch (action) {
+                case 'home':
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    break;
+
+                case 'applications':
+                    scrollToSection('.applications-section');
+                    break;
+
+                case 'categories':
+                    scrollToSection('.categories-section');
+                    break;
+
+                case 'guide':
+                    openModal(guideModal);
+                    break;
+
+                case 'fdroid':
+                    openModal(fdroidModal);
+                    break;
+
+                default:
+                    break;
+            }
+        }, 120);
+    }
+
+    function attachSideNavigationEvents() {
+        if (menuButton) {
+            menuButton.addEventListener('click', openSideNavigation);
+        }
+
+        if (sideNavigationClose) {
+            sideNavigationClose.addEventListener('click', closeSideNavigation);
+        }
+
+        if (sideNavigationBackdrop) {
+            sideNavigationBackdrop.addEventListener('click', closeSideNavigation);
+        }
+
+        if (accountCard) {
+            accountCard.addEventListener('click', () => {
+                closeSideNavigation();
+                window.setTimeout(() => openModal(guideModal), 120);
+            });
+        }
+
+        document.querySelectorAll('[data-side-action]').forEach(button => {
+            button.addEventListener('click', () => {
+                handleSideNavigationAction(button.dataset.sideAction);
+            });
+        });
+
+        document.addEventListener('keydown', event => {
+            if (
+                event.key === 'Escape' &&
+                sideNavigationShell &&
+                !sideNavigationShell.hidden
+            ) {
+                event.preventDefault();
+                closeSideNavigation();
+            }
+        });
+    }
+
+    function chooseFeaturedApplication() {
+        if (applications.length === 0) {
+            return null;
+        }
+
+        return [...applications].sort((first, second) => {
+            return new Date(second.added).getTime() - new Date(first.added).getTime();
+        })[0];
+    }
+
+    function renderFeaturedApplication() {
+        const application = chooseFeaturedApplication();
+
+        if (
+            !application ||
+            !featuredSection ||
+            !featuredApplicationCard ||
+            !featuredApplicationVisual ||
+            !featuredApplicationName ||
+            !featuredApplicationDescription ||
+            !featuredApplicationMeta
+        ) {
+            if (featuredSection) {
+                featuredSection.hidden = true;
+            }
+            return;
+        }
+
+        featuredApplicationId = application.id;
+        featuredApplicationVisual.innerHTML = createApplicationIcon(
+            application.iconType,
+            application.imageUrl,
+            application.name
+        );
+        featuredApplicationName.textContent = application.name;
+        featuredApplicationDescription.textContent = application.description;
+        featuredApplicationMeta.innerHTML = `
+            <span>${escapeHTML(application.version)}</span>
+            <span>${escapeHTML(application.size)}</span>
+            <span>${escapeHTML(application.category)}</span>
+            <span>Source: ${escapeHTML(application.source)}</span>
+        `;
+        featuredApplicationCard.setAttribute(
+            'aria-label',
+            `View ${application.name} information`
+        );
+        featuredSection.hidden = false;
+    }
+
+    function attachFeaturedApplicationEvent() {
+        if (!featuredApplicationCard) {
+            return;
+        }
+
+        featuredApplicationCard.addEventListener('click', () => {
+            if (featuredApplicationId) {
+                openApplicationModal(featuredApplicationId);
+            }
+        });
+    }
+
+    /* =====================================================
        48. Final Initialization
     ===================================================== */
 
@@ -2509,6 +2747,8 @@ try {
             attachBrandHomeEvent();
             attachGuideLoginEvents();
             attachFooterLinkEvents();
+            attachSideNavigationEvents();
+            attachFeaturedApplicationEvent();
 
             displayedApplications =
                 sortApplications(
@@ -2522,6 +2762,7 @@ try {
             renderApplications(
                 displayedApplications
             );
+            renderFeaturedApplication();
 
             secureExternalLinks();
             preventAccidentalDragging();
