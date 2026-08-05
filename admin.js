@@ -1,3 +1,4 @@
+// OSGuide Admin Auto F-Droid v2: Package ID enabled
 'use strict';
 
 const SUPABASE_URL =
@@ -17,7 +18,9 @@ const state = {
     currentUser: null,
     editingApplicationId: null,
     deletingApplicationId: null,
-    isLoadingApplications: false
+    isLoadingApplications: false,
+    fetchedMetadata: null,
+    fetchedPackageId: null
 };
 
 const elements = {
@@ -105,6 +108,12 @@ const elements = {
         document.getElementById('application-name'),
     applicationSlug:
         document.getElementById('application-slug'),
+    applicationPackageId:
+        document.getElementById('application-package-id'),
+    fetchFdroidMetadataButton:
+        document.getElementById('fetch-fdroid-metadata'),
+    fdroidMetadataStatus:
+        document.getElementById('fdroid-metadata-status'),
     applicationVersion:
         document.getElementById('application-version'),
     applicationSize:
@@ -280,9 +289,14 @@ function bindEventListeners() {
         handleApplicationSubmit
     );
 
-    elements.applicationIconType.addEventListener(
-        'change',
-        updateImageUrlFieldVisibility
+    elements.fetchFdroidMetadataButton.addEventListener(
+        'click',
+        fetchAndApplyFdroidMetadata
+    );
+
+    elements.applicationPackageId.addEventListener(
+        'input',
+        handlePackageIdInput
     );
 
     elements.applicationName.addEventListener(
@@ -1127,18 +1141,134 @@ function hideAllApplicationStates() {
         true;
 }
 
-function updateImageUrlFieldVisibility() {
-    const useImageUrl =
-        elements.applicationIconType.value === 'image';
+function normalizePackageId(value) {
+    return String(value || '')
+        .trim()
+        .toLowerCase();
+}
 
-    elements.applicationImageUrlGroup.hidden =
-        !useImageUrl;
+function isValidPackageId(value) {
+    return /^[a-z0-9_]+(?:\.[a-z0-9_]+)+$/.test(value);
+}
 
-    elements.applicationImageUrl.required =
-        useImageUrl;
+function handlePackageIdInput() {
+    const packageId = normalizePackageId(
+        elements.applicationPackageId.value
+    );
 
-    if (!useImageUrl) {
+    elements.applicationPackageId.value = packageId;
+
+    if (state.fetchedPackageId !== packageId) {
+        state.fetchedMetadata = null;
+        state.fetchedPackageId = null;
+        elements.applicationVersion.value = '';
+        elements.applicationSize.value = '';
+        elements.applicationDownloadUrl.value = '';
         elements.applicationImageUrl.value = '';
+        setMetadataStatus('', '');
+    }
+}
+
+function setMetadataStatus(message, type = 'info') {
+    if (!message) {
+        elements.fdroidMetadataStatus.textContent = '';
+        elements.fdroidMetadataStatus.className = 'metadata-status';
+        elements.fdroidMetadataStatus.hidden = true;
+        return;
+    }
+
+    elements.fdroidMetadataStatus.textContent = message;
+    elements.fdroidMetadataStatus.className =
+        `metadata-status ${type}`;
+    elements.fdroidMetadataStatus.hidden = false;
+}
+
+async function fetchAndApplyFdroidMetadata() {
+    hideApplicationFormError();
+
+    const packageId = normalizePackageId(
+        elements.applicationPackageId.value
+    );
+
+    if (!isValidPackageId(packageId)) {
+        showApplicationFormError(
+            'Enter a valid F-Droid Package ID, for example dev.debene.gopher.'
+        );
+        elements.applicationPackageId.focus();
+        return null;
+    }
+
+    setButtonLoading(
+        elements.fetchFdroidMetadataButton,
+        true
+    );
+    setMetadataStatus('Contacting F-Droid…', 'loading');
+
+    try {
+        const {
+            data,
+            error
+        } = await supabaseClient.functions.invoke(
+            'fetch-fdroid-metadata',
+            {
+                body: {
+                    packageId
+                }
+            }
+        );
+
+        if (error) {
+            throw error;
+        }
+
+        if (!data?.ok || !data?.metadata) {
+            throw new Error(
+                data?.error ||
+                'F-Droid did not return usable metadata.'
+            );
+        }
+
+        const metadata = data.metadata;
+
+        state.fetchedMetadata = metadata;
+        state.fetchedPackageId = packageId;
+
+        elements.applicationPackageId.value = packageId;
+        elements.applicationVersion.value = metadata.version || '';
+        elements.applicationSize.value = metadata.size || '';
+        elements.applicationDownloadUrl.value = metadata.downloadUrl || '';
+        elements.applicationImageUrl.value = metadata.imageUrl || '';
+        elements.applicationIconType.value = 'image';
+
+        if (!elements.applicationName.value.trim() && metadata.name) {
+            elements.applicationName.value = metadata.name;
+            handleApplicationNameInput();
+        }
+
+        setMetadataStatus(
+            `Ready: version ${metadata.version}, ${metadata.size}. Direct APK and icon verified.`,
+            'success'
+        );
+
+        return metadata;
+    } catch (error) {
+        console.error('Unable to fetch F-Droid metadata:', error);
+
+        const message =
+            error?.context?.body?.error ||
+            error?.message ||
+            'Unable to fetch F-Droid metadata.';
+
+        state.fetchedMetadata = null;
+        state.fetchedPackageId = null;
+        setMetadataStatus(message, 'error');
+        showApplicationFormError(message);
+        return null;
+    } finally {
+        setButtonLoading(
+            elements.fetchFdroidMetadataButton,
+            false
+        );
     }
 }
 
@@ -1174,6 +1304,9 @@ function openApplicationModal(
                 ? 'true'
                 : 'false';
 
+        elements.applicationPackageId.value =
+            application.package_id || '';
+
         elements.applicationVersion.value =
             application.version || '';
 
@@ -1208,7 +1341,7 @@ function openApplicationModal(
             application.download_url || '';
 
         elements.applicationIconType.value =
-            application.icon_type || 'text';
+            application.icon_type || 'image';
 
         elements.applicationImageUrl.value =
             application.image_url || '';
@@ -1224,6 +1357,7 @@ function openApplicationModal(
 
         elements.applicationSlug.value = '';
         elements.applicationSlug.dataset.manual = 'false';
+        elements.applicationPackageId.value = '';
 
         elements.applicationSource.value =
             'F-Droid';
@@ -1235,7 +1369,7 @@ function openApplicationModal(
             getTodayDateInputValue();
 
         elements.applicationIconType.value =
-            'text';
+            'image';
 
         elements.applicationImageUrl.value = '';
 
@@ -1243,7 +1377,22 @@ function openApplicationModal(
             true;
     }
 
-    updateImageUrlFieldVisibility();
+    state.fetchedMetadata = application ? {
+        version: application.version || '',
+        size: application.size || '',
+        downloadUrl: application.download_url || '',
+        imageUrl: application.image_url || ''
+    } : null;
+    state.fetchedPackageId = application?.package_id || null;
+
+    if (application?.package_id) {
+        setMetadataStatus(
+            'Stored F-Droid metadata is loaded. Use “Fetch F-Droid data” to refresh it.',
+            'info'
+        );
+    } else {
+        setMetadataStatus('', '');
+    }
 
     elements.applicationModal.hidden = false;
     document.body.classList.add('modal-open');
@@ -1264,6 +1413,8 @@ function closeApplicationModal() {
     elements.applicationModal.hidden = true;
 
     state.editingApplicationId = null;
+    state.fetchedMetadata = null;
+    state.fetchedPackageId = null;
 
     elements.applicationForm.reset();
     elements.applicationId.value = '';
@@ -1328,6 +1479,25 @@ function closeDeleteModal() {
     event.preventDefault();
 
     hideApplicationFormError();
+
+    const packageId = normalizePackageId(
+        elements.applicationPackageId.value
+    );
+
+    if (!isValidPackageId(packageId)) {
+        showApplicationFormError(
+            'Enter a valid F-Droid Package ID.'
+        );
+        return;
+    }
+
+    if (state.fetchedPackageId !== packageId) {
+        const metadata = await fetchAndApplyFdroidMetadata();
+
+        if (!metadata) {
+            return;
+        }
+    }
 
     const applicationData =
         getApplicationFormData();
@@ -1414,6 +1584,11 @@ function getApplicationFormData() {
                 elements.applicationSlug.value
             ),
 
+        package_id:
+            normalizePackageId(
+                elements.applicationPackageId.value
+            ),
+
         description:
             elements.applicationDescription.value.trim(),
 
@@ -1456,7 +1631,13 @@ function getApplicationFormData() {
                 : null,
 
         is_published:
-            elements.applicationPublished.checked
+            elements.applicationPublished.checked,
+
+        metadata_status:
+            'ready',
+
+        metadata_updated_at:
+            new Date().toISOString()
     };
 }
 
@@ -1473,12 +1654,20 @@ function validateApplicationData(applicationData) {
         return 'Slug may contain only lowercase letters, numbers and hyphens.';
     }
 
+    if (!applicationData.package_id) {
+        return 'F-Droid Package ID is required.';
+    }
+
+    if (!isValidPackageId(applicationData.package_id)) {
+        return 'Enter a valid F-Droid Package ID.';
+    }
+
     if (!applicationData.version) {
-        return 'Application version is required.';
+        return 'Fetch F-Droid data before saving.';
     }
 
     if (!applicationData.size) {
-        return 'Application size is required.';
+        return 'APK size could not be fetched from F-Droid.';
     }
 
     if (!applicationData.category) {
@@ -1513,7 +1702,7 @@ function validateApplicationData(applicationData) {
     }
 
     if (!applicationData.download_url) {
-        return 'Download URL is required.';
+        return 'Direct APK URL could not be fetched from F-Droid.';
     }
 
     if (
@@ -1851,7 +2040,7 @@ function getDatabaseErrorMessage(error) {
         ) ||
         error?.code === '23505'
     ) {
-        return 'This slug is already used by another application.';
+        return 'This slug or Package ID is already used by another application.';
     }
 
     if (
