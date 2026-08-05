@@ -1,3 +1,4 @@
+<!-- OSGuide Admin Auto F-Droid v2: Package ID enabled -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -17,7 +18,7 @@
 
     <link
         rel="stylesheet"
-        href="admin.css"
+        href="admin.css?v=20260805-fdroid-auto"
     >
 
     <script
@@ -572,30 +573,70 @@
                         </small>
                     </div>
 
+                    <div class="form-group form-group-full fdroid-package-group">
+                        <label for="application-package-id">
+                            F-Droid Package ID *
+                        </label>
+
+                        <div class="metadata-fetch-row">
+                            <input
+                                type="text"
+                                id="application-package-id"
+                                maxlength="200"
+                                placeholder="Example: dev.debene.gopher"
+                                autocomplete="off"
+                                spellcheck="false"
+                                required
+                            >
+
+                            <button
+                                type="button"
+                                id="fetch-fdroid-metadata"
+                                class="secondary-button metadata-fetch-button"
+                            >
+                                <span class="button-text">Fetch F-Droid data</span>
+                                <span class="button-loader" hidden></span>
+                            </button>
+                        </div>
+
+                        <small>
+                            OSGuide will fetch the latest APK URL, icon, version and file size automatically.
+                        </small>
+
+                        <div
+                            id="fdroid-metadata-status"
+                            class="metadata-status"
+                            aria-live="polite"
+                            hidden
+                        ></div>
+                    </div>
+
                     <div class="form-group">
                         <label for="application-version">
-                            Version *
+                            Version (automatic)
                         </label>
 
                         <input
                             type="text"
                             id="application-version"
                             maxlength="50"
-                            placeholder="Example: 1.0.0"
+                            placeholder="Fetched from F-Droid"
+                            readonly
                             required
                         >
                     </div>
 
                     <div class="form-group">
                         <label for="application-size">
-                            APK size *
+                            APK size (automatic)
                         </label>
 
                         <input
                             type="text"
                             id="application-size"
                             maxlength="50"
-                            placeholder="Example: 120 MB"
+                            placeholder="Fetched from F-Droid"
+                            readonly
                             required
                         >
                     </div>
@@ -695,57 +736,17 @@
                         ></textarea>
                     </div>
 
-                    <div class="form-group form-group-full">
-                        <label for="application-download-url">
-                            Download URL *
-                        </label>
+                    <input type="hidden" id="application-download-url">
+                    <input type="hidden" id="application-icon-type" value="image">
+                    <input type="hidden" id="application-image-url">
 
-                        <input
-                            type="url"
-                            id="application-download-url"
-                            placeholder="https://..."
-                            required
-                        >
+                    <div class="form-group form-group-full auto-metadata-summary">
+                        <strong>Automatic F-Droid metadata</strong>
+                        <p>
+                            Download URL and Image URL are generated automatically and stored with the application.
+                        </p>
                     </div>
 
-                    <div class="form-group">
-                        <label for="application-icon-type">
-                            Icon type
-                        </label>
-
-                        <select id="application-icon-type">
-                            <option value="text">
-                                Text icon
-                            </option>
-
-                            <option value="image">
-                                Image URL
-                            </option>
-
-                            <option value="emoji">
-                                Emoji
-                            </option>
-                        </select>
-                    </div>
-<div
-    id="application-image-url-group"
-    class="form-group form-group-full"
-    hidden
->
-    <label for="application-image-url">
-        Image URL
-    </label>
-
-    <input
-        type="url"
-        id="application-image-url"
-        placeholder="https://example.com/icon.png"
-    >
-
-    <small>
-        Paste the direct HTTPS link to the application icon.
-    </small>
-</div>
                     <div class="form-group checkbox-group">
                         <label class="checkbox-label">
                             <input
@@ -889,7 +890,7 @@
     </noscript>
 
 
-    <script src="admin.js"></script>
+    <script src="admin.js?v=20260805-fdroid-auto"></script>
 
 </body>
 </html>
