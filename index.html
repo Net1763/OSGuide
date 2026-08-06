@@ -15,7 +15,7 @@
 
     <title>OSGuide — Trusted Open-Source Android Apps</title>
 
-    <link rel="stylesheet" href="style.css?v=20260804-1431">
+    <link rel="stylesheet" href="style.css?v=20260806-sidebar-categories">
 <!-- Google Analytics -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-DG2FPXS2P5"></script>
 <script>
@@ -252,21 +252,99 @@ gtag('config', 'G-DG2FPXS2P5');
             </button>
 
             <nav class="side-navigation-links" aria-label="Menu links">
-                <button type="button" data-side-action="home">
-                    <span>Home</span><small>Return to the top</small>
-                </button>
-                <button type="button" data-side-action="applications">
-                    <span>Applications</span><small>Browse selected apps</small>
-                </button>
-                <button type="button" data-side-action="categories">
-                    <span>Categories</span><small>Explore by category</small>
-                </button>
-                <button type="button" data-side-action="guide">
-                    <span>Guides</span><small>Practical application lessons</small>
-                </button>
-                <button type="button" data-side-action="fdroid">
-                    <span>About F-Droid</span><small>Learn about the trusted source</small>
-                </button>
+                <div class="side-navigation-group">
+                    <p class="side-navigation-label">Browse</p>
+
+                    <button class="side-navigation-item is-active" type="button" data-side-action="home">
+                        <span class="side-navigation-item-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M3 11L12 3L21 11"></path><path d="M5 10V21H19V10"></path><path d="M9 21V14H15V21"></path></svg>
+                        </span>
+                        <span class="side-navigation-item-copy"><strong>Home</strong><small>Show all applications</small></span>
+                    </button>
+
+                    <button class="side-navigation-item" type="button" data-side-action="featured">
+                        <span class="side-navigation-item-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M12 3L14.7 8.5L21 9.4L16.5 13.8L17.6 20L12 17L6.4 20L7.5 13.8L3 9.4L9.3 8.5L12 3Z"></path></svg>
+                        </span>
+                        <span class="side-navigation-item-copy"><strong>Featured</strong><small>OSGuide recommendation</small></span>
+                    </button>
+
+                    <button class="side-navigation-item" type="button" data-side-action="new">
+                        <span class="side-navigation-item-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M12 3V12L18 15"></path><circle cx="12" cy="12" r="9"></circle></svg>
+                        </span>
+                        <span class="side-navigation-item-copy"><strong>New Apps</strong><small>Recently added applications</small></span>
+                    </button>
+                </div>
+
+                <div class="side-navigation-group">
+                    <p class="side-navigation-label">Categories</p>
+
+                    <button class="side-navigation-item" type="button" data-side-category="Development">
+                        <span class="side-navigation-item-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M8 9L4 12L8 15"></path><path d="M16 9L20 12L16 15"></path><path d="M14 5L10 19"></path></svg>
+                        </span>
+                        <span class="side-navigation-item-copy"><strong>Development</strong><small>Coding and building tools</small></span>
+                    </button>
+
+                    <button class="side-navigation-item" type="button" data-side-category="Security">
+                        <span class="side-navigation-item-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M12 3L20 7V12C20 17 16.5 20.5 12 22C7.5 20.5 4 17 4 12V7L12 3Z"></path><path d="M9 12L11 14L15 10"></path></svg>
+                        </span>
+                        <span class="side-navigation-item-copy"><strong>Security</strong><small>Privacy and protection</small></span>
+                    </button>
+
+                    <button class="side-navigation-item" type="button" data-side-category="Internet">
+                        <span class="side-navigation-item-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M3 12H21"></path><path d="M12 3C15 6 16.5 9 16.5 12C16.5 15 15 18 12 21"></path><path d="M12 3C9 6 7.5 9 7.5 12C7.5 15 9 18 12 21"></path></svg>
+                        </span>
+                        <span class="side-navigation-item-copy"><strong>Internet</strong><small>Browsers and networking</small></span>
+                    </button>
+
+                    <button class="side-navigation-item" type="button" data-side-category="Media">
+                        <span class="side-navigation-item-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"></rect><path d="M10 9L16 12L10 15V9Z"></path></svg>
+                        </span>
+                        <span class="side-navigation-item-copy"><strong>Media</strong><small>Audio and video apps</small></span>
+                    </button>
+
+                    <button class="side-navigation-item" type="button" data-side-category="Productivity">
+                        <span class="side-navigation-item-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"></rect><path d="M9 4V3H15V4"></path><path d="M9 9H15"></path><path d="M9 13H15"></path><path d="M9 17H13"></path></svg>
+                        </span>
+                        <span class="side-navigation-item-copy"><strong>Productivity</strong><small>Work and daily tasks</small></span>
+                    </button>
+
+                    <button class="side-navigation-item" type="button" data-side-category="System">
+                        <span class="side-navigation-item-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2"></rect><path d="M9 1V4M15 1V4M9 20V23M15 20V23M1 9H4M1 15H4M20 9H23M20 15H23"></path></svg>
+                        </span>
+                        <span class="side-navigation-item-copy"><strong>System</strong><small>Manage and customize Android</small></span>
+                    </button>
+
+                    <button class="side-navigation-item" type="button" data-side-category="Games">
+                        <span class="side-navigation-item-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M7 8H17C19.8 8 22 10.2 22 13V16C22 18.2 20.2 20 18 20L15 17H9L6 20C3.8 20 2 18.2 2 16V13C2 10.2 4.2 8 7 8Z"></path><path d="M7 12V16M5 14H9"></path><circle cx="16" cy="13" r="1"></circle><circle cx="19" cy="16" r="1"></circle></svg>
+                        </span>
+                        <span class="side-navigation-item-copy"><strong>Games</strong><small>Open-source Android games</small></span>
+                    </button>
+                </div>
+
+                <div class="side-navigation-group side-navigation-group-secondary">
+                    <button class="side-navigation-item" type="button" data-side-action="guide">
+                        <span class="side-navigation-item-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M5 4H16L19 7V20H5Z"></path><path d="M16 4V7H19"></path><path d="M9 11H15M9 15H15"></path></svg>
+                        </span>
+                        <span class="side-navigation-item-copy"><strong>Guide</strong><small>Practical application lessons</small></span>
+                    </button>
+
+                    <button class="side-navigation-item" type="button" data-side-action="fdroid">
+                        <span class="side-navigation-item-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M12 10.5V16"></path><circle cx="12" cy="7.5" r="1"></circle></svg>
+                        </span>
+                        <span class="side-navigation-item-copy"><strong>About F-Droid</strong><small>Learn about the trusted source</small></span>
+                    </button>
+                </div>
             </nav>
 
             <div class="side-navigation-footer">
@@ -620,6 +698,27 @@ gtag('config', 'G-DG2FPXS2P5');
             <span class="category-content">
                 <strong>System</strong>
                 <small>Manage and customize Android</small>
+            </span>
+        </button>
+
+        <button
+            class="category-card"
+            type="button"
+            data-category="Games"
+            aria-label="Browse Games"
+        >
+            <span class="category-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                    <path d="M7 8H17C19.8 8 22 10.2 22 13V16C22 18.2 20.2 20 18 20L15 17H9L6 20C3.8 20 2 18.2 2 16V13C2 10.2 4.2 8 7 8Z"></path>
+                    <path d="M7 12V16M5 14H9"></path>
+                    <circle cx="16" cy="13" r="1"></circle>
+                    <circle cx="19" cy="16" r="1"></circle>
+                </svg>
+            </span>
+
+            <span class="category-content">
+                <strong>Games</strong>
+                <small>Open-source Android games</small>
             </span>
         </button>
 
@@ -1008,6 +1107,6 @@ gtag('config', 'G-DG2FPXS2P5');
 </section>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="script.js?v=20260804-1431"></script>
+<script src="script.js?v=20260806-sidebar-categories"></script>
 </body>
 </html>
