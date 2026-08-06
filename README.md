@@ -13,3 +13,4 @@ Application information is based on trusted open-source sources, primarily F-Dro
 
 ## License
 The license will be defined before the first public release.
+
