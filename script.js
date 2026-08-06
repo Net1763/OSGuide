@@ -119,6 +119,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     let newestFirst =
         true;
 
+    let activeCategory = '';
+    let browseMode = 'home';
+
     let lastFocusedElement =
         null;    /* =====================================================
        4. Utility Functions
@@ -488,15 +491,34 @@ document.addEventListener('DOMContentLoaded', async () => {
         );
     }
 
+    function filterApplicationsByCategory(applicationList) {
+        if (!activeCategory) {
+            return [...applicationList];
+        }
+
+        const normalizedCategory =
+            normalizeText(activeCategory);
+
+        return applicationList.filter(application =>
+            normalizeText(application.category) ===
+            normalizedCategory
+        );
+    }
+
     function updateDisplayedApplications() {
         const searchValue =
             searchInput ? searchInput.value : '';
 
-        const filteredApplications =
+        const searchFilteredApplications =
             filterApplications(searchValue);
 
+        const categoryFilteredApplications =
+            filterApplicationsByCategory(
+                searchFilteredApplications
+            );
+
         displayedApplications =
-            sortApplications(filteredApplications);
+            sortApplications(categoryFilteredApplications);
 
         renderApplications(displayedApplications);
 
@@ -2588,21 +2610,87 @@ try {
         });
     }
 
-    function handleSideNavigationAction(action) {
+    function setActiveSideNavigationItem(activeButton) {
+        document
+            .querySelectorAll(
+                '.side-navigation-item, .category-card'
+            )
+            .forEach(button => {
+                button.classList.remove('is-active');
+                button.setAttribute('aria-pressed', 'false');
+            });
+
+        if (activeButton) {
+            activeButton.classList.add('is-active');
+            activeButton.setAttribute('aria-pressed', 'true');
+        }
+    }
+
+    function clearApplicationSearchForBrowse() {
+        if (!searchInput) {
+            return;
+        }
+
+        searchInput.value = '';
+        updateClearSearchButton();
+        hideSearchSuggestions();
+    }
+
+    function showAllApplications(activeButton = null) {
+        activeCategory = '';
+        browseMode = 'home';
+        newestFirst = true;
+
+        clearApplicationSearchForBrowse();
+        updateSortButtonState();
+        updateDisplayedApplications();
+        setActiveSideNavigationItem(activeButton);
+    }
+
+    function showCategoryApplications(category, activeButton = null) {
+        activeCategory = String(category || '').trim();
+        browseMode = 'category';
+        newestFirst = true;
+
+        clearApplicationSearchForBrowse();
+        updateSortButtonState();
+        updateDisplayedApplications();
+        setActiveSideNavigationItem(activeButton);
+        scrollToSection('.applications-section');
+    }
+
+    function showNewestApplications(activeButton = null) {
+        activeCategory = '';
+        browseMode = 'new';
+        newestFirst = true;
+
+        clearApplicationSearchForBrowse();
+        updateSortButtonState();
+        updateDisplayedApplications();
+        setActiveSideNavigationItem(activeButton);
+        scrollToSection('.applications-section');
+    }
+
+    function handleSideNavigationAction(action, activeButton = null) {
         closeSideNavigation();
 
         window.setTimeout(() => {
             switch (action) {
                 case 'home':
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    showAllApplications(activeButton);
+                    window.scrollTo({
+                        top: 0,
+                        behavior: 'smooth'
+                    });
                     break;
 
-                case 'applications':
-                    scrollToSection('.applications-section');
+                case 'featured':
+                    setActiveSideNavigationItem(activeButton);
+                    scrollToSection('#featured-section');
                     break;
 
-                case 'categories':
-                    scrollToSection('.categories-section');
+                case 'new':
+                    showNewestApplications(activeButton);
                     break;
 
                 case 'guide':
@@ -2641,7 +2729,32 @@ try {
 
         document.querySelectorAll('[data-side-action]').forEach(button => {
             button.addEventListener('click', () => {
-                handleSideNavigationAction(button.dataset.sideAction);
+                handleSideNavigationAction(
+                    button.dataset.sideAction,
+                    button
+                );
+            });
+        });
+
+        document.querySelectorAll('[data-side-category]').forEach(button => {
+            button.addEventListener('click', () => {
+                closeSideNavigation();
+
+                window.setTimeout(() => {
+                    showCategoryApplications(
+                        button.dataset.sideCategory,
+                        button
+                    );
+                }, 120);
+            });
+        });
+
+        document.querySelectorAll('.category-card[data-category]').forEach(button => {
+            button.addEventListener('click', () => {
+                showCategoryApplications(
+                    button.dataset.category,
+                    button
+                );
             });
         });
 
@@ -2756,6 +2869,12 @@ try {
             attachFooterLinkEvents();
             attachSideNavigationEvents();
             attachFeaturedApplicationEvent();
+
+            setActiveSideNavigationItem(
+                document.querySelector(
+                    '[data-side-action="home"]'
+                )
+            );
 
             displayedApplications =
                 sortApplications(
