@@ -2142,7 +2142,7 @@ body.side-navigation-open { overflow: hidden; }
     stroke-width: 1.8;
     stroke-linecap: round;
     stroke-linejoin: round;
-    transform: translateX(3px);
+    transform: translateX(6px);
 }
 
 .side-navigation-item-copy {
