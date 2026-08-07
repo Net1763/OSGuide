@@ -2137,12 +2137,24 @@ body.side-navigation-open { overflow: hidden; }
 .side-navigation-item-icon svg {
     width: 20px;
     height: 20px;
-    transform: translateY(1px);
     fill: none;
     stroke: currentColor;
     stroke-width: 1.8;
     stroke-linecap: round;
     stroke-linejoin: round;
+}
+
+/* Optical centering for sidebar SVGs with asymmetric drawing bounds */
+.side-navigation-item[data-side-action="featured"] .side-navigation-item-icon svg {
+    transform: translateY(0.5px);
+}
+
+.side-navigation-item[data-side-category="Security"] .side-navigation-item-icon svg {
+    transform: translateY(-0.5px);
+}
+
+.side-navigation-item[data-side-category="Games"] .side-navigation-item-icon svg {
+    transform: translateY(-2px);
 }
 
 .side-navigation-item-copy {
