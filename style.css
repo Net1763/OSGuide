@@ -2122,6 +2122,7 @@ body.side-navigation-open { overflow: hidden; }
     height: 38px;
     display: grid;
     place-items: center;
+    line-height: 0;
     color: #79b2fb;
     background: #172235;
     border: 1px solid #263b58;
@@ -2135,9 +2136,11 @@ body.side-navigation-open { overflow: hidden; }
 }
 
 .side-navigation-item-icon svg {
+    display: block;
     width: 20px;
     height: 20px;
-    transform: translateY(1.5px);
+    margin: 0;
+    transform: none;
     fill: none;
     stroke: currentColor;
     stroke-width: 1.8;
