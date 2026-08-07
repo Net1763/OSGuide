@@ -2135,8 +2135,8 @@ body.side-navigation-open { overflow: hidden; }
 }
 
 .side-navigation-item-icon svg {
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     transform: translateY(1px);
     fill: none;
     stroke: currentColor;
