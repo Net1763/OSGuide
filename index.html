@@ -2,34 +2,44 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-
     <meta
         name="viewport"
         content="width=device-width, initial-scale=1.0"
     >
-
     <meta
         name="description"
         content="Discover, learn about, and download trusted open-source Android applications."
     >
+    <meta
+        name="theme-color"
+        content="#0b0f15"
+    >
 
     <title>OSGuide — Trusted Open-Source Android Apps</title>
 
-    <link rel="stylesheet" href="style.css?v=20260808-option2-clean">
-<!-- Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-DG2FPXS2P5"></script>
-<script>
-window.dataLayer = window.dataLayer || [];
-function gtag(){dataLayer.push(arguments);}
-gtag('js', new Date());
-gtag('config', 'G-DG2FPXS2P5');
-</script>
+    <link
+        rel="stylesheet"
+        href="style.css?v=20260808-option2-clean"
+    >
 
+    <!-- Google Analytics -->
+    <script
+        async
+        src="https://www.googletagmanager.com/gtag/js?id=G-DG2FPXS2P5"
+    ></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-DG2FPXS2P5');
+    </script>
 </head>
 
 <body class="dark-theme">
 
-    <!-- Header -->
+    <!-- =====================================================
+         Header
+    ====================================================== -->
     <header class="site-header">
         <div class="header-container">
 
@@ -42,74 +52,52 @@ gtag('config', 'G-DG2FPXS2P5');
                     aria-controls="side-navigation"
                     aria-expanded="false"
                 >
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M4 7H20M4 12H20M4 17H20"></path>
+                    <svg
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                    >
+                        <path d="M4 7H20"></path>
+                        <path d="M4 12H20"></path>
+                        <path d="M4 17H20"></path>
                     </svg>
                 </button>
 
-            <!-- OSGuide Logo -->
-            <a class="brand" href="#" aria-label="OSGuide home">
-
-                <svg
-                    class="brand-mark"
-                    viewBox="0 0 48 48"
-                    aria-hidden="true"
+                <a
+                    class="brand"
+                    href="#"
+                    aria-label="OSGuide home"
                 >
-                    <rect
-                        x="4"
-                        y="4"
-                        width="40"
-                        height="40"
-                        rx="12"
-                        fill="currentColor"
-                    />
+                    <span
+                        class="brand-mark"
+                        aria-hidden="true"
+                    >
+                        <svg viewBox="0 0 48 48">
+                            <rect
+                                x="3"
+                                y="3"
+                                width="42"
+                                height="42"
+                                rx="13"
+                            ></rect>
+                            <path d="M15.5 27.5C15.5 21.4 20 16.5 25.6 16.5C29.8 16.5 33.4 19.2 35 23.1"></path>
+                            <circle cx="19.3" cy="23.2" r="1.6"></circle>
+                            <circle cx="29.1" cy="23.2" r="1.6"></circle>
+                            <path d="M16.4 14.5L12.6 10"></path>
+                            <path d="M33.6 14.5L37.4 10"></path>
+                        </svg>
+                    </span>
 
-                    <path
-                        d="M15 27.5C15 21.15 19.7 16 25.5 16C29.85 16 33.55 18.9 35.1 23"
-                        fill="none"
-                        stroke="white"
-                        stroke-width="3"
-                        stroke-linecap="round"
-                    />
-
-                    <circle
-                        cx="19"
-                        cy="23"
-                        r="1.7"
-                        fill="white"
-                    />
-
-                    <circle
-                        cx="29"
-                        cy="23"
-                        r="1.7"
-                        fill="white"
-                    />
-
-                    <path
-                        d="M16 14L12 9"
-                        stroke="white"
-                        stroke-width="2.4"
-                        stroke-linecap="round"
-                    />
-
-                    <path
-                        d="M34 14L38 9"
-                        stroke="white"
-                        stroke-width="2.4"
-                        stroke-linecap="round"
-                    />
-                </svg>
-
-                <span class="brand-name">
-                    OS<span>Guide</span>
-                </span>
-            </a>
+                    <span class="brand-copy">
+                        <strong>OS<span>Guide</span></strong>
+                        <small>Open-source Android apps</small>
+                    </span>
+                </a>
             </div>
 
-            <!-- Header Actions -->
-            <nav class="header-actions" aria-label="Primary navigation">
-
+            <nav
+                class="header-actions"
+                aria-label="Primary navigation"
+            >
                 <button
                     class="header-button"
                     id="guide-button"
@@ -125,37 +113,29 @@ gtag('config', 'G-DG2FPXS2P5');
                     aria-label="About F-Droid"
                     title="About F-Droid"
                 >
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <circle
-                            cx="12"
-                            cy="12"
-                            r="9"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="1.8"
-                        />
-
-                        <path
-                            d="M12 10.5V16"
-                            stroke="currentColor"
-                            stroke-width="1.8"
-                            stroke-linecap="round"
-                        />
-
-                        <circle
-                            cx="12"
-                            cy="7.5"
-                            r="1"
-                            fill="currentColor"
-                        />
+                    <svg
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                    >
+                        <circle cx="12" cy="12" r="9"></circle>
+                        <path d="M12 10.5V16"></path>
+                        <circle cx="12" cy="7.4" r="1"></circle>
                     </svg>
                 </button>
-</nav>
+            </nav>
+
         </div>
     </header>
 
-    <!-- Side Navigation -->
-    <div class="side-navigation-shell" id="side-navigation-shell" hidden>
+
+    <!-- =====================================================
+         Side Navigation
+    ====================================================== -->
+    <div
+        class="side-navigation-shell"
+        id="side-navigation-shell"
+        hidden
+    >
         <button
             class="side-navigation-backdrop"
             id="side-navigation-backdrop"
@@ -170,12 +150,19 @@ gtag('config', 'G-DG2FPXS2P5');
             aria-hidden="true"
         >
             <div class="side-navigation-header">
+
                 <div class="side-navigation-brand">
-                    <span class="side-navigation-logo">OS</span>
-                    <div>
+                    <span
+                        class="side-navigation-logo"
+                        aria-hidden="true"
+                    >
+                        OS
+                    </span>
+
+                    <span class="side-navigation-brand-copy">
                         <strong>OSGuide</strong>
                         <small>Open-source Android guides</small>
-                    </div>
+                    </span>
                 </div>
 
                 <button
@@ -184,179 +171,393 @@ gtag('config', 'G-DG2FPXS2P5');
                     type="button"
                     aria-label="Close navigation menu"
                 >
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M7 7L17 17M17 7L7 17"></path>
+                    <svg
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                    >
+                        <path d="M7 7L17 17"></path>
+                        <path d="M17 7L7 17"></path>
                     </svg>
                 </button>
+
             </div>
 
-            <button class="account-card" id="account-card" type="button">
-                <span class="account-card-icon" aria-hidden="true">
+            <button
+                class="account-card"
+                id="account-card"
+                type="button"
+            >
+                <span
+                    class="account-card-icon"
+                    aria-hidden="true"
+                >
                     <svg viewBox="0 0 24 24">
                         <circle cx="12" cy="8" r="4"></circle>
                         <path d="M4.5 21C5.3 16.8 8 14.5 12 14.5C16 14.5 18.7 16.8 19.5 21"></path>
                     </svg>
                 </span>
+
                 <span class="account-card-copy">
                     <strong>Sign in or create account</strong>
                     <small>Access guides and future saved features</small>
                 </span>
-                <span class="account-card-arrow" aria-hidden="true">›</span>
+
+                <span
+                    class="account-card-arrow"
+                    aria-hidden="true"
+                >
+                    ›
+                </span>
             </button>
 
-            <nav class="side-navigation-links" aria-label="Menu links">
+            <nav
+                class="side-navigation-links"
+                aria-label="Menu links"
+            >
+
                 <div class="side-navigation-group">
-                    <p class="side-navigation-label">Browse</p>
+                    <p class="side-navigation-label">
+                        Browse
+                    </p>
 
-                    <button class="side-navigation-item is-active" type="button" data-side-action="home">
-                        <span class="side-navigation-item-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><path d="M3 11L12 3L21 11"></path><path d="M5 10V21H19V10"></path><path d="M9 21V14H15V21"></path></svg>
+                    <button
+                        class="side-navigation-item is-active"
+                        type="button"
+                        data-side-action="home"
+                    >
+                        <span
+                            class="side-navigation-item-icon"
+                            aria-hidden="true"
+                        >
+                            <svg viewBox="0 0 24 24">
+                                <path d="M3.5 11L12 3.5L20.5 11"></path>
+                                <path d="M5.5 10.2V20.5H18.5V10.2"></path>
+                                <path d="M9.2 20.5V14H14.8V20.5"></path>
+                            </svg>
                         </span>
-                        <span class="side-navigation-item-copy"><strong>Home</strong><small>Show all applications</small></span>
+
+                        <span class="side-navigation-item-copy">
+                            <strong>Home</strong>
+                            <small>Show all applications</small>
+                        </span>
                     </button>
 
-                    <button class="side-navigation-item" type="button" data-side-action="featured">
-                        <span class="side-navigation-item-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><path d="M12 3L14.7 8.5L21 9.4L16.5 13.8L17.6 20L12 17L6.4 20L7.5 13.8L3 9.4L9.3 8.5L12 3Z"></path></svg>
+                    <button
+                        class="side-navigation-item"
+                        type="button"
+                        data-side-action="featured"
+                    >
+                        <span
+                            class="side-navigation-item-icon"
+                            aria-hidden="true"
+                        >
+                            <svg viewBox="0 0 24 24">
+                                <path d="M12 3.5L14.6 8.7L20.4 9.5L16.2 13.5L17.2 19.2L12 16.5L6.8 19.2L7.8 13.5L3.6 9.5L9.4 8.7L12 3.5Z"></path>
+                            </svg>
                         </span>
-                        <span class="side-navigation-item-copy"><strong>Featured</strong><small>OSGuide recommendation</small></span>
+
+                        <span class="side-navigation-item-copy">
+                            <strong>Featured</strong>
+                            <small>OSGuide recommendation</small>
+                        </span>
                     </button>
 
-                    <button class="side-navigation-item" type="button" data-side-action="new">
-                        <span class="side-navigation-item-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><path d="M12 3V12L18 15"></path><circle cx="12" cy="12" r="9"></circle></svg>
+                    <button
+                        class="side-navigation-item"
+                        type="button"
+                        data-side-action="new"
+                    >
+                        <span
+                            class="side-navigation-item-icon"
+                            aria-hidden="true"
+                        >
+                            <svg viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="8.7"></circle>
+                                <path d="M12 7V12L16 14.3"></path>
+                            </svg>
                         </span>
-                        <span class="side-navigation-item-copy"><strong>New Apps</strong><small>Recently added applications</small></span>
+
+                        <span class="side-navigation-item-copy">
+                            <strong>New Apps</strong>
+                            <small>Recently added applications</small>
+                        </span>
                     </button>
                 </div>
 
+
                 <div class="side-navigation-group">
-                    <p class="side-navigation-label">Categories</p>
+                    <p class="side-navigation-label">
+                        Categories
+                    </p>
 
-                    <button class="side-navigation-item" type="button" data-side-category="Development">
-                        <span class="side-navigation-item-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><path d="M8 9L4 12L8 15"></path><path d="M16 9L20 12L16 15"></path><path d="M14 5L10 19"></path></svg>
+                    <button
+                        class="side-navigation-item"
+                        type="button"
+                        data-side-category="Development"
+                    >
+                        <span
+                            class="side-navigation-item-icon"
+                            aria-hidden="true"
+                        >
+                            <svg viewBox="0 0 24 24">
+                                <path d="M8 8.5L4 12L8 15.5"></path>
+                                <path d="M16 8.5L20 12L16 15.5"></path>
+                                <path d="M14 4.8L10 19.2"></path>
+                            </svg>
                         </span>
-                        <span class="side-navigation-item-copy"><strong>Development</strong><small>Coding and building tools</small></span>
+
+                        <span class="side-navigation-item-copy">
+                            <strong>Development</strong>
+                            <small>Coding and building tools</small>
+                        </span>
                     </button>
 
-                    <button class="side-navigation-item" type="button" data-side-category="Security">
-                        <span class="side-navigation-item-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><path d="M12 3L20 7V12C20 17 16.5 20.5 12 22C7.5 20.5 4 17 4 12V7L12 3Z"></path><path d="M9 12L11 14L15 10"></path></svg>
+                    <button
+                        class="side-navigation-item"
+                        type="button"
+                        data-side-category="Security"
+                    >
+                        <span
+                            class="side-navigation-item-icon"
+                            aria-hidden="true"
+                        >
+                            <svg viewBox="0 0 24 24">
+                                <path d="M12 3.5L19.5 7.2V12C19.5 16.6 16.3 20 12 21.5C7.7 20 4.5 16.6 4.5 12V7.2L12 3.5Z"></path>
+                                <path d="M8.8 12L11 14.1L15.5 9.8"></path>
+                            </svg>
                         </span>
-                        <span class="side-navigation-item-copy"><strong>Security</strong><small>Privacy and protection</small></span>
+
+                        <span class="side-navigation-item-copy">
+                            <strong>Security</strong>
+                            <small>Privacy and protection</small>
+                        </span>
                     </button>
 
-                    <button class="side-navigation-item" type="button" data-side-category="Internet">
-                        <span class="side-navigation-item-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M3 12H21"></path><path d="M12 3C15 6 16.5 9 16.5 12C16.5 15 15 18 12 21"></path><path d="M12 3C9 6 7.5 9 7.5 12C7.5 15 9 18 12 21"></path></svg>
+                    <button
+                        class="side-navigation-item"
+                        type="button"
+                        data-side-category="Internet"
+                    >
+                        <span
+                            class="side-navigation-item-icon"
+                            aria-hidden="true"
+                        >
+                            <svg viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="8.7"></circle>
+                                <path d="M3.4 12H20.6"></path>
+                                <path d="M12 3.3C14.8 6 16.2 9 16.2 12C16.2 15 14.8 18 12 20.7"></path>
+                                <path d="M12 3.3C9.2 6 7.8 9 7.8 12C7.8 15 9.2 18 12 20.7"></path>
+                            </svg>
                         </span>
-                        <span class="side-navigation-item-copy"><strong>Internet</strong><small>Browsers and networking</small></span>
+
+                        <span class="side-navigation-item-copy">
+                            <strong>Internet</strong>
+                            <small>Browsers and networking</small>
+                        </span>
                     </button>
 
-                    <button class="side-navigation-item" type="button" data-side-category="Media">
-                        <span class="side-navigation-item-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"></rect><path d="M10 9L16 12L10 15V9Z"></path></svg>
+                    <button
+                        class="side-navigation-item"
+                        type="button"
+                        data-side-category="Media"
+                    >
+                        <span
+                            class="side-navigation-item-icon"
+                            aria-hidden="true"
+                        >
+                            <svg viewBox="0 0 24 24">
+                                <rect x="3.5" y="5.5" width="17" height="13" rx="2.8"></rect>
+                                <path d="M10 9.3L15.8 12L10 14.7V9.3Z"></path>
+                            </svg>
                         </span>
-                        <span class="side-navigation-item-copy"><strong>Media</strong><small>Audio and video apps</small></span>
+
+                        <span class="side-navigation-item-copy">
+                            <strong>Media</strong>
+                            <small>Audio and video apps</small>
+                        </span>
                     </button>
 
-                    <button class="side-navigation-item" type="button" data-side-category="Productivity">
-                        <span class="side-navigation-item-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"></rect><path d="M9 4V3H15V4"></path><path d="M9 9H15"></path><path d="M9 13H15"></path><path d="M9 17H13"></path></svg>
+                    <button
+                        class="side-navigation-item"
+                        type="button"
+                        data-side-category="Productivity"
+                    >
+                        <span
+                            class="side-navigation-item-icon"
+                            aria-hidden="true"
+                        >
+                            <svg viewBox="0 0 24 24">
+                                <rect x="5.2" y="4" width="13.6" height="16.5" rx="2"></rect>
+                                <path d="M9 4V3H15V4"></path>
+                                <path d="M9 9H15"></path>
+                                <path d="M9 13H15"></path>
+                                <path d="M9 17H13"></path>
+                            </svg>
                         </span>
-                        <span class="side-navigation-item-copy"><strong>Productivity</strong><small>Work and daily tasks</small></span>
+
+                        <span class="side-navigation-item-copy">
+                            <strong>Productivity</strong>
+                            <small>Work and daily tasks</small>
+                        </span>
                     </button>
 
-                    <button class="side-navigation-item" type="button" data-side-category="System">
-                        <span class="side-navigation-item-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2"></rect><path d="M9 1V4M15 1V4M9 20V23M15 20V23M1 9H4M1 15H4M20 9H23M20 15H23"></path></svg>
+                    <button
+                        class="side-navigation-item"
+                        type="button"
+                        data-side-category="System"
+                    >
+                        <span
+                            class="side-navigation-item-icon"
+                            aria-hidden="true"
+                        >
+                            <svg viewBox="0 0 24 24">
+                                <rect x="7" y="7" width="10" height="10" rx="2"></rect>
+                                <path d="M9 2V4.5M15 2V4.5M9 19.5V22M15 19.5V22M2 9H4.5M2 15H4.5M19.5 9H22M19.5 15H22"></path>
+                            </svg>
                         </span>
-                        <span class="side-navigation-item-copy"><strong>System</strong><small>Manage and customize Android</small></span>
+
+                        <span class="side-navigation-item-copy">
+                            <strong>System</strong>
+                            <small>Manage and customize Android</small>
+                        </span>
                     </button>
 
-                    <button class="side-navigation-item" type="button" data-side-category="Games">
-                        <span class="side-navigation-item-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><path d="M7 8H17C19.8 8 22 10.2 22 13V16C22 18.2 20.2 20 18 20L15 17H9L6 20C3.8 20 2 18.2 2 16V13C2 10.2 4.2 8 7 8Z"></path><path d="M7 12V16M5 14H9"></path><circle cx="16" cy="13" r="1"></circle><circle cx="19" cy="16" r="1"></circle></svg>
+                    <button
+                        class="side-navigation-item"
+                        type="button"
+                        data-side-category="Games"
+                    >
+                        <span
+                            class="side-navigation-item-icon"
+                            aria-hidden="true"
+                        >
+                            <svg viewBox="0 0 24 24">
+                                <path d="M7 8.5H17C19.6 8.5 21.5 10.5 21.5 13V16C21.5 18 19.9 19.5 18 19.5L15 16.8H9L6 19.5C4.1 19.5 2.5 18 2.5 16V13C2.5 10.5 4.4 8.5 7 8.5Z"></path>
+                                <path d="M7 11.8V15.8M5 13.8H9"></path>
+                                <circle cx="16.4" cy="12.7" r="0.9"></circle>
+                                <circle cx="18.8" cy="15.2" r="0.9"></circle>
+                            </svg>
                         </span>
-                        <span class="side-navigation-item-copy"><strong>Games</strong><small>Open-source Android games</small></span>
+
+                        <span class="side-navigation-item-copy">
+                            <strong>Games</strong>
+                            <small>Open-source Android games</small>
+                        </span>
                     </button>
                 </div>
+
 
                 <div class="side-navigation-group side-navigation-group-secondary">
-                    <button class="side-navigation-item" type="button" data-side-action="guide">
-                        <span class="side-navigation-item-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><path d="M5 4H16L19 7V20H5Z"></path><path d="M16 4V7H19"></path><path d="M9 11H15M9 15H15"></path></svg>
+                    <button
+                        class="side-navigation-item"
+                        type="button"
+                        data-side-action="guide"
+                    >
+                        <span
+                            class="side-navigation-item-icon"
+                            aria-hidden="true"
+                        >
+                            <svg viewBox="0 0 24 24">
+                                <path d="M5 4.5H15.5L19 8V19.5H5V4.5Z"></path>
+                                <path d="M15.5 4.5V8H19"></path>
+                                <path d="M9 11.5H15"></path>
+                                <path d="M9 15.5H15"></path>
+                            </svg>
                         </span>
-                        <span class="side-navigation-item-copy"><strong>Guide</strong><small>Practical application lessons</small></span>
+
+                        <span class="side-navigation-item-copy">
+                            <strong>Guide</strong>
+                            <small>Practical application lessons</small>
+                        </span>
                     </button>
 
-                    <button class="side-navigation-item" type="button" data-side-action="fdroid">
-                        <span class="side-navigation-item-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M12 10.5V16"></path><circle cx="12" cy="7.5" r="1"></circle></svg>
+                    <button
+                        class="side-navigation-item"
+                        type="button"
+                        data-side-action="fdroid"
+                    >
+                        <span
+                            class="side-navigation-item-icon"
+                            aria-hidden="true"
+                        >
+                            <svg viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="8.7"></circle>
+                                <path d="M12 10.5V16"></path>
+                                <circle cx="12" cy="7.4" r="1"></circle>
+                            </svg>
                         </span>
-                        <span class="side-navigation-item-copy"><strong>About F-Droid</strong><small>Learn about the trusted source</small></span>
+
+                        <span class="side-navigation-item-copy">
+                            <strong>About F-Droid</strong>
+                            <small>Learn about the trusted source</small>
+                        </span>
                     </button>
                 </div>
+
             </nav>
 
-            <div class="side-navigation-footer">
+            <footer class="side-navigation-footer">
                 <span>OSGuide</span>
                 <span>19</span>
-            </div>
+            </footer>
+
         </aside>
     </div>
 
+
+    <!-- =====================================================
+         Main
+    ====================================================== -->
     <main class="main-content">
 
-    <!-- Introduction -->
-<section class="hero-section">
-    <p class="hero-label">Trusted open-source Android applications</p>
+        <!-- Hero -->
+        <section class="hero-section">
+            <div class="hero-copy">
+                <p class="hero-label">
+                    Trusted open-source Android applications
+                </p>
 
-    <h1>Discover. Learn. Download.</h1>
+                <h1>
+                    Discover. Learn. Download.
+                </h1>
 
-    <p class="hero-description">
-        Explore carefully selected open-source Android applications,
-        understand how they work through clear guides, and download
-        them from trusted sources.
-    </p>
-</section>
+                <p class="hero-description">
+                    Explore carefully selected open-source Android applications,
+                    understand how they work through clear guides, and download
+                    them from trusted sources.
+                </p>
+            </div>
 
-        <!-- Search and Sorting -->
+            <span
+                class="hero-number"
+                aria-hidden="true"
+            >
+                19
+            </span>
+        </section>
+
+
+        <!-- Discovery tools -->
         <section
             class="discovery-tools"
             aria-label="Application search and sorting"
         >
             <div class="search-container">
-
                 <svg
                     class="search-icon"
                     viewBox="0 0 24 24"
                     aria-hidden="true"
                 >
-                    <circle
-                        cx="11"
-                        cy="11"
-                        r="7"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.8"
-                    />
-
-                    <path
-                        d="M16.5 16.5L21 21"
-                        stroke="currentColor"
-                        stroke-width="1.8"
-                        stroke-linecap="round"
-                    />
+                    <circle cx="11" cy="11" r="6.7"></circle>
+                    <path d="M16 16L21 21"></path>
                 </svg>
 
                 <input
                     id="app-search"
                     type="search"
                     placeholder="Search applications..."
-                    aria-label="Search applications"
                     autocomplete="off"
+                    aria-label="Search applications"
                 >
 
                 <button
@@ -366,14 +567,12 @@ gtag('config', 'G-DG2FPXS2P5');
                     aria-label="Clear search"
                     hidden
                 >
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path
-                            d="M7 7L17 17M17 7L7 17"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="1.8"
-                            stroke-linecap="round"
-                        />
+                    <svg
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                    >
+                        <path d="M7 7L17 17"></path>
+                        <path d="M17 7L7 17"></path>
                     </svg>
                 </button>
             </div>
@@ -382,426 +581,415 @@ gtag('config', 'G-DG2FPXS2P5');
                 class="sort-button"
                 id="newest-button"
                 type="button"
+                aria-pressed="true"
             >
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path
-                        d="M8 7H20M8 12H17M8 17H14"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.8"
-                        stroke-linecap="round"
-                    />
-
-                    <path
-                        d="M4 5V19M2 17L4 19L6 17"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.8"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                    />
+                <svg
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                >
+                    <path d="M8 6H19"></path>
+                    <path d="M8 12H16"></path>
+                    <path d="M8 18H13"></path>
+                    <path d="M4 5V19"></path>
+                    <path d="M2 17L4 19L6 17"></path>
                 </svg>
 
                 <span>Newest</span>
             </button>
         </section>
 
-        <!-- Search Suggestions -->
-        <section
+        <div
             class="search-results"
             id="search-results"
-            aria-label="Search suggestions"
             hidden
-        ></section>
+        ></div>
 
-        <!-- Applications -->
-        <section class="applications-section">
 
-            <div class="section-heading">
+        <!-- Featured -->
+        <section
+            class="featured-section"
+            id="featured-section"
+            aria-labelledby="featured-title"
+        >
+            <div class="section-heading section-heading-featured">
                 <div>
-                    <p class="section-label">Selected applications</p>
-                    <h2>Discover apps</h2>
+                    <p class="section-label">
+                        Featured application
+                    </p>
+
+                    <h2 id="featured-title">
+                        OSGuide recommendation
+                    </h2>
+                </div>
+            </div>
+
+            <button
+                class="featured-application-card"
+                id="featured-application-card"
+                type="button"
+                aria-label="View featured application"
+            >
+                <div class="featured-application-copy">
+                    <div
+                        class="featured-application-visual"
+                        id="featured-application-visual"
+                    >
+                        <div class="featured-fallback-icon">
+                            &gt;_
+                        </div>
+                    </div>
+
+                    <div class="featured-application-information">
+                        <span class="featured-kicker">
+                            Featured
+                        </span>
+
+                        <h3 id="featured-application-name">
+                            Termux
+                        </h3>
+
+                        <p id="featured-application-description">
+                            A powerful terminal emulator and Linux environment for Android.
+                        </p>
+
+                        <div
+                            class="featured-application-meta"
+                            id="featured-application-meta"
+                        >
+                            <span>Utilities</span>
+                            <span>Android</span>
+                        </div>
+
+                        <span class="featured-cta">
+                            View application
+                        </span>
+                    </div>
                 </div>
 
-                <span class="application-count" id="application-count">
-                    1 application
+                <div
+                    class="featured-decoration"
+                    aria-hidden="true"
+                >
+                    <div class="terminal-preview">
+                        <span>$ pkg update</span>
+                        <span>$ python app.py</span>
+                        <span>$ ssh server</span>
+                        <span class="terminal-cursor">_</span>
+                    </div>
+                </div>
+            </button>
+        </section>
+
+
+        <!-- Applications -->
+        <section
+            class="applications-section"
+            aria-labelledby="applications-title"
+        >
+            <div class="section-heading">
+                <div>
+                    <p class="section-label">
+                        Selected applications
+                    </p>
+
+                    <h2 id="applications-title">
+                        Discover apps
+                    </h2>
+                </div>
+
+                <span
+                    class="application-count"
+                    id="application-count"
+                >
+                    0 applications
                 </span>
             </div>
 
-            <div class="applications-grid" id="applications-grid">
-
-                <!-- Termux -->
-                <article
-                    class="application-card"
-                    data-app-name="Termux"
-                    data-added="2026-07-21"
-                >
-                    <button
-                        class="application-main"
-                        type="button"
-                        data-open-app="termux"
-                        aria-label="View Termux information"
-                    >
-                        <div class="application-icon termux-icon">
-                            <svg viewBox="0 0 64 64" aria-hidden="true">
-                                <rect
-                                    width="64"
-                                    height="64"
-                                    rx="15"
-                                    fill="#15171c"
-                                />
-
-                                <path
-                                    d="M17 21L28 32L17 43"
-                                    fill="none"
-                                    stroke="white"
-                                    stroke-width="5"
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                />
-
-                                <path
-                                    d="M33 43H47"
-                                    stroke="white"
-                                    stroke-width="5"
-                                    stroke-linecap="round"
-                                />
-                            </svg>
-                        </div>
-
-                        <div class="application-summary">
-                            <h3>Termux</h3>
-
-                            <p>
-                                A powerful terminal environment for Android.
-                            </p>
-
-                            <div class="application-meta">
-                                <span>0.118</span>
-                                <span>15 MB</span>
-                            </div>
-                        </div>
-                    </button>
-
-                    <div class="application-footer">
-                        <span class="source-label">Source: F-Droid</span>
-
-                        <button
-                            class="download-icon-button"
-                            type="button"
-                            data-download-app="termux"
-                            aria-label="Download Termux"
-                            title="Download Termux"
-                        >
-                            <svg viewBox="0 0 24 24" aria-hidden="true">
-                                <path
-                                    d="M12 4V15M7.5 10.5L12 15L16.5 10.5"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="1.9"
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                />
-
-                                <path
-                                    d="M5 19H19"
-                                    stroke="currentColor"
-                                    stroke-width="1.9"
-                                    stroke-linecap="round"
-                                />
-                            </svg>
-                        </button>
-                    </div>
-                </article>
-
-            </div>
+            <div
+                class="applications-grid"
+                id="applications-grid"
+                aria-live="polite"
+            ></div>
         </section>
-<!-- Categories -->
-<section class="categories-section" aria-labelledby="categories-title">
-    <div class="section-heading">
-        <div>
-            <p class="section-label">Browse by category</p>
-            <h2 id="categories-title">Explore categories</h2>
-        </div>
-    </div>
 
-    <div class="categories-grid">
 
-        <button
-            class="category-card"
-            type="button"
-            data-category="Development"
-            aria-label="Browse Development applications"
+        <!-- Empty State -->
+        <section
+            class="empty-state"
+            id="empty-state"
+            hidden
         >
-            <span class="category-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24">
-                    <path d="M8 9L4 12L8 15"></path>
-                    <path d="M16 9L20 12L16 15"></path>
-                    <path d="M14 5L10 19"></path>
-                </svg>
-            </span>
-
-            <span class="category-content">
-                <strong>Development</strong>
-                <small>Tools for coding and building</small>
-            </span>
-        </button>
-
-        <button
-            class="category-card"
-            type="button"
-            data-category="Security"
-            aria-label="Browse Security applications"
-        >
-            <span class="category-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24">
-                    <path d="M12 3L20 7V12C20 17 16.5 20.5 12 22C7.5 20.5 4 17 4 12V7L12 3Z"></path>
-                    <path d="M9 12L11 14L15 10"></path>
-                </svg>
-            </span>
-
-            <span class="category-content">
-                <strong>Security</strong>
-                <small>Privacy and protection tools</small>
-            </span>
-        </button>
-
-        <button
-            class="category-card"
-            type="button"
-            data-category="Internet"
-            aria-label="Browse Internet applications"
-        >
-            <span class="category-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="9"></circle>
-                    <path d="M3 12H21"></path>
-                    <path d="M12 3C15 6 16.5 9 16.5 12C16.5 15 15 18 12 21"></path>
-                    <path d="M12 3C9 6 7.5 9 7.5 12C7.5 15 9 18 12 21"></path>
-                </svg>
-            </span>
-
-            <span class="category-content">
-                <strong>Internet</strong>
-                <small>Browsers and network tools</small>
-            </span>
-        </button>
-
-        <button
-            class="category-card"
-            type="button"
-            data-category="Media"
-            aria-label="Browse Media applications"
-        >
-            <span class="category-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24">
-                    <rect x="3" y="5" width="18" height="14" rx="3"></rect>
-                    <path d="M10 9L16 12L10 15V9Z"></path>
-                </svg>
-            </span>
-
-            <span class="category-content">
-                <strong>Media</strong>
-                <small>Audio and video applications</small>
-            </span>
-        </button>
-
-        <button
-            class="category-card"
-            type="button"
-            data-category="Productivity"
-            aria-label="Browse Productivity applications"
-        >
-            <span class="category-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24">
-                    <rect x="5" y="4" width="14" height="17" rx="2"></rect>
-                    <path d="M9 4V3H15V4"></path>
-                    <path d="M9 9H15"></path>
-                    <path d="M9 13H15"></path>
-                    <path d="M9 17H13"></path>
-                </svg>
-            </span>
-
-            <span class="category-content">
-                <strong>Productivity</strong>
-                <small>Organize work and daily tasks</small>
-            </span>
-        </button>
-
-        <button
-            class="category-card"
-            type="button"
-            data-category="System"
-            aria-label="Browse System applications"
-        >
-            <span class="category-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24">
-                    <rect x="7" y="7" width="10" height="10" rx="2"></rect>
-                    <path d="M9 1V4"></path>
-                    <path d="M15 1V4"></path>
-                    <path d="M9 20V23"></path>
-                    <path d="M15 20V23"></path>
-                    <path d="M1 9H4"></path>
-                    <path d="M1 15H4"></path>
-                    <path d="M20 9H23"></path>
-                    <path d="M20 15H23"></path>
-                </svg>
-            </span>
-
-            <span class="category-content">
-                <strong>System</strong>
-                <small>Manage and customize Android</small>
-            </span>
-        </button>
-
-        <button
-            class="category-card"
-            type="button"
-            data-category="Games"
-            aria-label="Browse Games"
-        >
-            <span class="category-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24">
-                    <path d="M7 8H17C19.8 8 22 10.2 22 13V16C22 18.2 20.2 20 18 20L15 17H9L6 20C3.8 20 2 18.2 2 16V13C2 10.2 4.2 8 7 8Z"></path>
-                    <path d="M7 12V16M5 14H9"></path>
-                    <circle cx="16" cy="13" r="1"></circle>
-                    <circle cx="19" cy="16" r="1"></circle>
-                </svg>
-            </span>
-
-            <span class="category-content">
-                <strong>Games</strong>
-                <small>Open-source Android games</small>
-            </span>
-        </button>
-
-    </div>
-</section>
-
-<!-- Featured Application -->
-<section class="featured-section" id="featured-section" aria-labelledby="featured-title">
-    <div class="section-heading featured-heading">
-        <div>
-            <p class="section-label">Featured application</p>
-            <h2 id="featured-title">Recommended by OSGuide</h2>
-        </div>
-    </div>
-
-    <button
-        class="featured-application-card"
-        id="featured-application-card"
-        type="button"
-        aria-label="View featured application information"
-    >
-        <span class="featured-application-visual" id="featured-application-visual">
-            <div class="application-icon termux-icon">
-                <svg viewBox="0 0 64 64" aria-hidden="true">
-                    <rect width="64" height="64" rx="15" fill="#15171c"></rect>
-                    <path d="M17 21L28 32L17 43" fill="none" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path>
-                    <path d="M33 43H47" stroke="white" stroke-width="5" stroke-linecap="round"></path>
-                </svg>
-            </div>
-        </span>
-        <span class="featured-application-content">
-            <span class="featured-application-label">OSGuide selection</span>
-            <strong id="featured-application-name">Termux</strong>
-            <span id="featured-application-description">Powerful terminal emulator and Linux environment for Android.</span>
-            <span class="featured-application-meta" id="featured-application-meta"><span>0.119.0</span><span>18 MB</span><span>Development</span><span>Source: F-Droid</span></span>
-        </span>
-        <span class="featured-application-open" aria-hidden="true">
-            <svg viewBox="0 0 24 24">
-                <path d="M9 5L16 12L9 19"></path>
-            </svg>
-        </span>
-    </button>
-</section>
-
-<!-- Why OSGuide -->
-<section class="why-section" aria-labelledby="why-title">
-    <div class="section-heading">
-        <div>
-            <p class="section-label">WHY OSGUIDE</p>
-            <h2 id="why-title">Why choose OSGuide?</h2>
-        </div>
-    </div>
-
-    <div class="why-grid">
-
-        <article class="why-card">
-            <span class="why-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24">
-                    <path d="M12 3L19 6V11C19 15.5 16.3 19 12 21C7.7 19 5 15.5 5 11V6L12 3Z"></path>
-                    <path d="M9.5 12L11.2 13.7L14.8 10.1"></path>
-                </svg>
-            </span>
-            <h3>Trusted Sources</h3>
-            <p>Applications are linked only to trusted open-source repositories.</p>
-        </article>
-
-        <article class="why-card">
-            <span class="why-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24">
-                    <path d="M6 3H16L19 6V21H6Z"></path>
-                    <path d="M16 3V6H19"></path>
-                    <path d="M9 10H15"></path>
-                    <path d="M9 14H15"></path>
-                </svg>
-            </span>
-            <h3>Practical Guides</h3>
-            <p>Understand every application before downloading it.</p>
-        </article>
-
-        <article class="why-card">
-            <span class="why-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24">
-                    <path d="M13 2L4 14H11L10 22L20 9H13Z"></path>
-                </svg>
-            </span>
-            <h3>Fast Experience</h3>
-            <p>Clean interface designed for speed and simplicity.</p>
-        </article>
-
-        <article class="why-card">
-            <span class="why-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24">
-                    <rect x="5" y="11" width="14" height="10" rx="2"></rect>
-                    <path d="M8 11V8A4 4 0 0 1 16 8V11"></path>
-                </svg>
-            </span>
-            <h3>Privacy First</h3>
-            <p>No modified APKs. Only trusted application sources.</p>
-        </article>
-
-    </div>
-</section>
-        <!-- Empty Search State -->
-        <section class="empty-state" id="empty-state" hidden>
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-                <circle
-                    cx="11"
-                    cy="11"
-                    r="7"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.6"
-                />
-
-                <path
-                    d="M16.5 16.5L21 21"
-                    stroke="currentColor"
-                    stroke-width="1.6"
-                    stroke-linecap="round"
-                />
+            <svg
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+            >
+                <circle cx="11" cy="11" r="6.5"></circle>
+                <path d="M16 16L21 21"></path>
             </svg>
 
             <h2>No applications found</h2>
 
-            <p>Try searching with a different application name.</p>
+            <p>
+                Try a different search term or return to all applications.
+            </p>
+
+            <button
+                class="secondary-action-button"
+                type="button"
+                data-reset-search
+            >
+                Show all applications
+            </button>
+        </section>
+
+
+        <!-- Categories -->
+        <section
+            class="categories-section"
+            aria-labelledby="categories-title"
+        >
+            <div class="section-heading">
+                <div>
+                    <p class="section-label">
+                        Browse by category
+                    </p>
+
+                    <h2 id="categories-title">
+                        Explore OSGuide
+                    </h2>
+                </div>
+            </div>
+
+            <div class="categories-grid">
+
+                <button
+                    class="category-card"
+                    type="button"
+                    data-category="Development"
+                >
+                    <span class="category-icon">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M8 8.5L4 12L8 15.5"></path>
+                            <path d="M16 8.5L20 12L16 15.5"></path>
+                            <path d="M14 4.8L10 19.2"></path>
+                        </svg>
+                    </span>
+
+                    <span class="category-content">
+                        <strong>Development</strong>
+                        <small>Coding and building tools</small>
+                    </span>
+                </button>
+
+                <button
+                    class="category-card"
+                    type="button"
+                    data-category="Security"
+                >
+                    <span class="category-icon">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 3.5L19.5 7.2V12C19.5 16.6 16.3 20 12 21.5C7.7 20 4.5 16.6 4.5 12V7.2L12 3.5Z"></path>
+                            <path d="M8.8 12L11 14.1L15.5 9.8"></path>
+                        </svg>
+                    </span>
+
+                    <span class="category-content">
+                        <strong>Security</strong>
+                        <small>Privacy and protection</small>
+                    </span>
+                </button>
+
+                <button
+                    class="category-card"
+                    type="button"
+                    data-category="Internet"
+                >
+                    <span class="category-icon">
+                        <svg viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="8.7"></circle>
+                            <path d="M3.4 12H20.6"></path>
+                            <path d="M12 3.3C14.8 6 16.2 9 16.2 12C16.2 15 14.8 18 12 20.7"></path>
+                            <path d="M12 3.3C9.2 6 7.8 9 7.8 12C7.8 15 9.2 18 12 20.7"></path>
+                        </svg>
+                    </span>
+
+                    <span class="category-content">
+                        <strong>Internet</strong>
+                        <small>Browsers and networking</small>
+                    </span>
+                </button>
+
+                <button
+                    class="category-card"
+                    type="button"
+                    data-category="Media"
+                >
+                    <span class="category-icon">
+                        <svg viewBox="0 0 24 24">
+                            <rect x="3.5" y="5.5" width="17" height="13" rx="2.8"></rect>
+                            <path d="M10 9.3L15.8 12L10 14.7V9.3Z"></path>
+                        </svg>
+                    </span>
+
+                    <span class="category-content">
+                        <strong>Media</strong>
+                        <small>Audio and video apps</small>
+                    </span>
+                </button>
+
+                <button
+                    class="category-card"
+                    type="button"
+                    data-category="Productivity"
+                >
+                    <span class="category-icon">
+                        <svg viewBox="0 0 24 24">
+                            <rect x="5.2" y="4" width="13.6" height="16.5" rx="2"></rect>
+                            <path d="M9 4V3H15V4"></path>
+                            <path d="M9 9H15"></path>
+                            <path d="M9 13H15"></path>
+                        </svg>
+                    </span>
+
+                    <span class="category-content">
+                        <strong>Productivity</strong>
+                        <small>Work and daily tasks</small>
+                    </span>
+                </button>
+
+                <button
+                    class="category-card"
+                    type="button"
+                    data-category="System"
+                >
+                    <span class="category-icon">
+                        <svg viewBox="0 0 24 24">
+                            <rect x="7" y="7" width="10" height="10" rx="2"></rect>
+                            <path d="M9 2V4.5M15 2V4.5M9 19.5V22M15 19.5V22M2 9H4.5M2 15H4.5M19.5 9H22M19.5 15H22"></path>
+                        </svg>
+                    </span>
+
+                    <span class="category-content">
+                        <strong>System</strong>
+                        <small>Manage and customize Android</small>
+                    </span>
+                </button>
+
+                <button
+                    class="category-card"
+                    type="button"
+                    data-category="Games"
+                >
+                    <span class="category-icon">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M7 8.5H17C19.6 8.5 21.5 10.5 21.5 13V16C21.5 18 19.9 19.5 18 19.5L15 16.8H9L6 19.5C4.1 19.5 2.5 18 2.5 16V13C2.5 10.5 4.4 8.5 7 8.5Z"></path>
+                            <path d="M7 11.8V15.8M5 13.8H9"></path>
+                        </svg>
+                    </span>
+
+                    <span class="category-content">
+                        <strong>Games</strong>
+                        <small>Open-source Android games</small>
+                    </span>
+                </button>
+
+            </div>
+        </section>
+
+
+        <!-- Why OSGuide -->
+        <section
+            class="why-section"
+            aria-labelledby="why-title"
+        >
+            <div class="section-heading">
+                <div>
+                    <p class="section-label">
+                        Why OSGuide
+                    </p>
+
+                    <h2 id="why-title">
+                        Built for useful discovery
+                    </h2>
+                </div>
+            </div>
+
+            <div class="why-grid">
+
+                <article class="why-card">
+                    <span class="why-icon">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 3L20 7V12C20 17 16.5 20.5 12 22C7.5 20.5 4 17 4 12V7L12 3Z"></path>
+                            <path d="M9 12L11 14L15 10"></path>
+                        </svg>
+                    </span>
+
+                    <h3>Trusted sources</h3>
+
+                    <p>
+                        Application information focuses on open-source sources
+                        such as F-Droid.
+                    </p>
+                </article>
+
+                <article class="why-card">
+                    <span class="why-icon">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M4 5H20V19H4Z"></path>
+                            <path d="M8 9H16M8 13H16M8 17H13"></path>
+                        </svg>
+                    </span>
+
+                    <h3>Practical guides</h3>
+
+                    <p>
+                        Learn what an application does before deciding whether
+                        it is right for you.
+                    </p>
+                </article>
+
+                <article class="why-card">
+                    <span class="why-icon">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 3V15"></path>
+                            <path d="M7 10L12 15L17 10"></path>
+                            <path d="M5 20H19"></path>
+                        </svg>
+                    </span>
+
+                    <h3>Simple downloads</h3>
+
+                    <p>
+                        Clear download actions keep the experience direct and
+                        easy to understand.
+                    </p>
+                </article>
+
+                <article class="why-card">
+                    <span class="why-icon">
+                        <svg viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="9"></circle>
+                            <path d="M12 7V12L15 14"></path>
+                        </svg>
+                    </span>
+
+                    <h3>Continuously updated</h3>
+
+                    <p>
+                        New applications and updated metadata can be published
+                        through the OSGuide admin system.
+                    </p>
+                </article>
+
+            </div>
         </section>
 
     </main>
 
-        <!-- Footer -->
+
+    <!-- =====================================================
+         Footer
+    ====================================================== -->
     <footer class="site-footer">
         <div class="footer-container">
 
@@ -809,59 +997,50 @@ gtag('config', 'G-DG2FPXS2P5');
                 <strong>OSGuide</strong>
 
                 <p>
-                    Trusted open-source Android applications and practical guides.
+                    Discover and learn about trusted open-source Android applications.
                 </p>
             </div>
 
-            <nav class="footer-links" aria-label="Legal pages">
-                <a href="#">Privacy</a>
-                <a href="#">Terms</a>
-                <a href="#">Legal</a>
+            <nav
+                class="footer-links"
+                aria-label="Footer navigation"
+            >
+                <a href="#" data-footer-action="guide">
+                    Guide
+                </a>
+
+                <a href="#" data-footer-action="fdroid">
+                    F-Droid
+                </a>
+
+                <a href="#" data-footer-action="privacy">
+                    Privacy
+                </a>
+
+                <a href="#" data-footer-action="legal">
+                    Legal
+                </a>
             </nav>
 
             <p class="copyright">
-                © 2026 OSGuide. All rights reserved.
+                © <span data-current-year></span> OSGuide.
+                Open-source Android discovery.
             </p>
 
-            <span class="project-symbol" title="Transformation">
+            <span
+                class="project-symbol"
+                aria-hidden="true"
+            >
                 19
             </span>
-        </div>
 
-        <!-- Support Bar -->
-        <div class="support-bar" role="group" aria-label="OSGuide support">
-            <div class="support-bar-content">
-                <div class="support-bar-info">
-                    <span class="support-bar-icon" aria-hidden="true">
-                        <svg
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="1.8"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                        >
-                            <path d="M4 4H20C21.1 4 22 4.9 22 6V18C22 19.1 21.1 20 20 20H4C2.9 20 2 19.1 2 18V6C2 4.9 2.9 4 4 4Z"></path>
-                            <path d="M22 6L12 13L2 6"></path>
-                        </svg>
-                    </span>
-
-                    <div class="support-bar-text">
-                        <strong>Need help or want to request an app?</strong>
-                        <span>Contact OSGuide support and share your feedback.</span>
-                    </div>
-                </div>
-
-                <a
-                    class="support-bar-button"
-                    href="mailto:makibarebita3@gmail.com"
-                >
-                    Contact Support
-                </a>
-            </div>
         </div>
     </footer>
-    <!-- Application Modal -->
+
+
+    <!-- =====================================================
+         Application Modal
+    ====================================================== -->
     <div
         class="modal"
         id="application-modal"
@@ -870,100 +1049,38 @@ gtag('config', 'G-DG2FPXS2P5');
         aria-labelledby="application-modal-title"
         hidden
     >
-        <div class="modal-backdrop" data-close-modal></div>
+        <div
+            class="modal-backdrop"
+            data-close-modal
+        ></div>
 
         <section class="modal-panel">
-
             <button
                 class="modal-close-button"
                 type="button"
                 data-close-modal
                 aria-label="Close application information"
             >
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path
-                        d="M7 7L17 17M17 7L7 17"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.8"
-                        stroke-linecap="round"
-                    />
+                <svg viewBox="0 0 24 24">
+                    <path d="M7 7L17 17"></path>
+                    <path d="M17 7L7 17"></path>
                 </svg>
             </button>
 
-            <div class="modal-app-heading">
+            <h2 id="application-modal-title">
+                Application
+            </h2>
 
-                <div class="application-icon termux-icon">
-                    <svg viewBox="0 0 64 64" aria-hidden="true">
-                        <rect
-                            width="64"
-                            height="64"
-                            rx="15"
-                            fill="#15171c"
-                        />
-
-                        <path
-                            d="M17 21L28 32L17 43"
-                            fill="none"
-                            stroke="white"
-                            stroke-width="5"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                        />
-
-                        <path
-                            d="M33 43H47"
-                            stroke="white"
-                            stroke-width="5"
-                            stroke-linecap="round"
-                        />
-                    </svg>
-                </div>
-
-                <div>
-                    <h2 id="application-modal-title">Termux</h2>
-                    <p>Version 0.118 · 15 MB</p>
-                </div>
-            </div>
-
-            <div class="modal-section">
-                <h3>About this application</h3>
-
-                <p>
-                    Termux combines powerful terminal emulation with an
-                    extensive Linux package collection for Android.
-                </p>
-            </div>
-
-            <dl class="application-details">
-                <div>
-                    <dt>Source</dt>
-                    <dd>F-Droid</dd>
-                </div>
-
-                <div>
-                    <dt>License</dt>
-                    <dd>GPL-3.0</dd>
-                </div>
-
-                <div>
-                    <dt>Platform</dt>
-                    <dd>Android</dd>
-                </div>
-            </dl>
-
-            <a
-                class="primary-download-button"
-                href="https://f-droid.org/packages/com.termux/"
-                target="_blank"
-                rel="noopener noreferrer"
-            >
-                Download from F-Droid
-            </a>
+            <p>
+                Loading application information...
+            </p>
         </section>
     </div>
 
-    <!-- F-Droid Information Modal -->
+
+    <!-- =====================================================
+         F-Droid Modal
+    ====================================================== -->
     <div
         class="modal"
         id="fdroid-modal"
@@ -972,40 +1089,45 @@ gtag('config', 'G-DG2FPXS2P5');
         aria-labelledby="fdroid-modal-title"
         hidden
     >
-        <div class="modal-backdrop" data-close-modal></div>
+        <div
+            class="modal-backdrop"
+            data-close-modal
+        ></div>
 
-        <section class="modal-panel">
-
+        <section class="modal-panel information-panel">
             <button
                 class="modal-close-button"
                 type="button"
                 data-close-modal
                 aria-label="Close F-Droid information"
             >
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path
-                        d="M7 7L17 17M17 7L7 17"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.8"
-                        stroke-linecap="round"
-                    />
+                <svg viewBox="0 0 24 24">
+                    <path d="M7 7L17 17"></path>
+                    <path d="M17 7L7 17"></path>
                 </svg>
             </button>
 
-            <p class="modal-eyebrow">Application source</p>
+            <p class="modal-eyebrow">
+                Trusted open-source source
+            </p>
 
-            <h2 id="fdroid-modal-title">About F-Droid</h2>
+            <h2 id="fdroid-modal-title">
+                About F-Droid
+            </h2>
 
             <p>
-                F-Droid is an independent repository for free and open-source
-                Android applications. OSGuide links users to trusted official
-                sources and does not modify application packages.
+                F-Droid is an ecosystem for free and open-source Android
+                applications. OSGuide uses trusted open-source sources to help
+                visitors discover applications and understand them before
+                downloading.
             </p>
         </section>
     </div>
 
-    <!-- Guide Login Modal -->
+
+    <!-- =====================================================
+         Guide Login Modal
+    ====================================================== -->
     <div
         class="modal"
         id="guide-modal"
@@ -1014,52 +1136,64 @@ gtag('config', 'G-DG2FPXS2P5');
         aria-labelledby="guide-modal-title"
         hidden
     >
-        <div class="modal-backdrop" data-close-modal></div>
+        <div
+            class="modal-backdrop"
+            data-close-modal
+        ></div>
 
         <section class="modal-panel login-panel">
-
             <button
                 class="modal-close-button"
                 type="button"
                 data-close-modal
                 aria-label="Close guide login"
             >
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path
-                        d="M7 7L17 17M17 7L7 17"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.8"
-                        stroke-linecap="round"
-                    />
+                <svg viewBox="0 0 24 24">
+                    <path d="M7 7L17 17"></path>
+                    <path d="M17 7L7 17"></path>
                 </svg>
             </button>
 
-            <p class="modal-eyebrow">OSGuide learning section</p>
+            <p class="modal-eyebrow">
+                OSGuide learning section
+            </p>
 
-            <h2 id="guide-modal-title">Continue to Guide</h2>
+            <h2 id="guide-modal-title">
+                Continue to Guide
+            </h2>
 
             <p>
                 Sign in to access practical tutorials and application guides.
             </p>
 
-     <div class="login-options">
-    <button class="login-option" type="button">
-        Continue with Google
-    </button>
+            <div class="login-options">
+                <button
+                    class="login-option"
+                    type="button"
+                >
+                    Continue with Google
+                </button>
 
-    <button class="login-option" type="button">
-        Continue with Email
-    </button>
-</div>
+                <button
+                    class="login-option"
+                    type="button"
+                >
+                    Continue with Email
+                </button>
+            </div>
 
-<p class="login-notice">
-    Authentication will be connected securely in a later development stage.
-</p>
+            <p class="login-notice">
+                Authentication will be connected securely in a later development stage.
+            </p>
+        </section>
+    </div>
 
-</section>
-</div>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="script.js?v=20260808-option2-clean"></script>
+
+    <!-- =====================================================
+         Scripts
+    ====================================================== -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="script.js?v=20260808-option2-clean"></script>
+
 </body>
 </html>
