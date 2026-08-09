@@ -706,9 +706,47 @@
             </div>
 
             <div
-                class="applications-grid"
-                id="applications-grid"
-                aria-live="polite"
+                class="applications-pager"
+                id="applications-pager"
+            >
+                <button
+                    class="applications-page-arrow applications-page-arrow-left"
+                    id="applications-page-previous"
+                    type="button"
+                    aria-label="Previous applications page"
+                >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M15 5L8 12L15 19"></path>
+                    </svg>
+                </button>
+
+                <div
+                    class="applications-viewport"
+                    id="applications-viewport"
+                >
+                    <div
+                        class="applications-grid"
+                        id="applications-grid"
+                        aria-live="polite"
+                    ></div>
+                </div>
+
+                <button
+                    class="applications-page-arrow applications-page-arrow-right"
+                    id="applications-page-next"
+                    type="button"
+                    aria-label="Next applications page"
+                >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M9 5L16 12L9 19"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <div
+                class="applications-pagination"
+                id="applications-pagination"
+                aria-label="Applications pages"
             ></div>
         </section>
 
