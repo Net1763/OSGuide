@@ -143,6 +143,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     let applicationsTouchStartX = 0;
     let applicationsTouchStartY = 0;
     let applicationsTouchStartTime = 0;
+    let applicationsTouchLastX = 0;
+    let applicationsTouchLastY = 0;
+    let applicationsSwipeConsumed = false;
+    let applicationsIsDragging = false;
 
     let lastFocusedElement =
         null;    /* =====================================================
@@ -421,7 +425,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             0;
 
         if (viewportWidth >= 980) {
-            return 6;
+            return 12;
         }
 
         if (viewportWidth >= 620) {
@@ -634,6 +638,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 displayedApplications
             );
 
+        applicationsGrid.classList.remove(
+            'is-dragging'
+        );
+        applicationsGrid.style.transform = '';
+        applicationsGrid.style.opacity = '';
+
         applicationsGrid.innerHTML =
             pageApplications
                 .map(createApplicationCard)
@@ -720,6 +730,19 @@ document.addEventListener('DOMContentLoaded', async () => {
             );
         }
 
+        function resetApplicationsDragVisual() {
+            if (!applicationsGrid) {
+                return;
+            }
+
+            applicationsGrid.classList.remove(
+                'is-dragging'
+            );
+
+            applicationsGrid.style.transform = '';
+            applicationsGrid.style.opacity = '';
+        }
+
         if (applicationsViewport) {
             applicationsViewport.addEventListener(
                 'touchstart',
@@ -737,8 +760,120 @@ document.addEventListener('DOMContentLoaded', async () => {
                     applicationsTouchStartY =
                         touch.clientY;
 
+                    applicationsTouchLastX =
+                        touch.clientX;
+
+                    applicationsTouchLastY =
+                        touch.clientY;
+
                     applicationsTouchStartTime =
                         Date.now();
+
+                    applicationsSwipeConsumed =
+                        false;
+
+                    applicationsIsDragging =
+                        false;
+
+                    resetApplicationsDragVisual();
+                },
+                {
+                    passive: true
+                }
+            );
+
+            applicationsViewport.addEventListener(
+                'touchmove',
+                event => {
+                    const touch =
+                        event.touches[0];
+
+                    if (
+                        !touch ||
+                        !applicationsGrid
+                    ) {
+                        return;
+                    }
+
+                    applicationsTouchLastX =
+                        touch.clientX;
+
+                    applicationsTouchLastY =
+                        touch.clientY;
+
+                    const deltaX =
+                        applicationsTouchLastX -
+                        applicationsTouchStartX;
+
+                    const deltaY =
+                        applicationsTouchLastY -
+                        applicationsTouchStartY;
+
+                    const isHorizontal =
+                        Math.abs(deltaX) >
+                        Math.abs(deltaY) * 1.05;
+
+                    if (!isHorizontal) {
+                        return;
+                    }
+
+                    if (Math.abs(deltaX) >= 8) {
+                        applicationsIsDragging =
+                            true;
+                    }
+
+                    if (!applicationsIsDragging) {
+                        return;
+                    }
+
+                    const atFirstPage =
+                        applicationsPageIndex <= 0;
+
+                    const atLastPage =
+                        applicationsPageIndex >=
+                        applicationsPageCount - 1;
+
+                    const pullingPastStart =
+                        atFirstPage &&
+                        deltaX > 0;
+
+                    const pullingPastEnd =
+                        atLastPage &&
+                        deltaX < 0;
+
+                    const resistance =
+                        (
+                            pullingPastStart ||
+                            pullingPastEnd
+                        )
+                            ? 0.28
+                            : 0.92;
+
+                    const translatedX =
+                        deltaX * resistance;
+
+                    const progress =
+                        Math.min(
+                            Math.abs(translatedX) /
+                            Math.max(
+                                applicationsViewport.clientWidth,
+                                1
+                            ),
+                            1
+                        );
+
+                    applicationsGrid.classList.add(
+                        'is-dragging'
+                    );
+
+                    applicationsGrid.style.transform =
+                        `translate3d(${translatedX}px, 0, 0)`;
+
+                    applicationsGrid.style.opacity =
+                        String(
+                            1 -
+                            progress * 0.16
+                        );
                 },
                 {
                     passive: true
@@ -752,6 +887,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         event.changedTouches[0];
 
                     if (!touch) {
+                        resetApplicationsDragVisual();
                         return;
                     }
 
@@ -764,16 +900,44 @@ document.addEventListener('DOMContentLoaded', async () => {
                         applicationsTouchStartY;
 
                     const elapsed =
-                        Date.now() -
-                        applicationsTouchStartTime;
+                        Math.max(
+                            Date.now() -
+                            applicationsTouchStartTime,
+                            1
+                        );
+
+                    const velocityX =
+                        Math.abs(deltaX) /
+                        elapsed;
 
                     const horizontalGesture =
-                        Math.abs(deltaX) >= 56 &&
+                        applicationsIsDragging &&
                         Math.abs(deltaX) >
-                            Math.abs(deltaY) * 1.15 &&
-                        elapsed <= 700;
+                            Math.abs(deltaY) * 1.05;
 
-                    if (!horizontalGesture) {
+                    const shouldChangePage =
+                        horizontalGesture &&
+                        (
+                            Math.abs(deltaX) >= 62 ||
+                            (
+                                Math.abs(deltaX) >= 30 &&
+                                velocityX >= 0.45
+                            )
+                        );
+
+                    applicationsSwipeConsumed =
+                        horizontalGesture;
+
+                    applicationsIsDragging =
+                        false;
+
+                    resetApplicationsDragVisual();
+
+                    if (!shouldChangePage) {
+                        window.setTimeout(() => {
+                            applicationsSwipeConsumed =
+                                false;
+                        }, 220);
                         return;
                     }
 
@@ -781,16 +945,46 @@ document.addEventListener('DOMContentLoaded', async () => {
                         goToApplicationsPage(
                             applicationsPageIndex + 1
                         );
-                        return;
+                    } else {
+                        goToApplicationsPage(
+                            applicationsPageIndex - 1
+                        );
                     }
 
-                    goToApplicationsPage(
-                        applicationsPageIndex - 1
-                    );
+                    window.setTimeout(() => {
+                        applicationsSwipeConsumed =
+                            false;
+                    }, 320);
                 },
                 {
                     passive: true
                 }
+            );
+
+            applicationsViewport.addEventListener(
+                'touchcancel',
+                () => {
+                    applicationsIsDragging =
+                        false;
+
+                    resetApplicationsDragVisual();
+                },
+                {
+                    passive: true
+                }
+            );
+
+            applicationsViewport.addEventListener(
+                'click',
+                event => {
+                    if (!applicationsSwipeConsumed) {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    event.stopPropagation();
+                },
+                true
             );
         }
 
