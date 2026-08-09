@@ -835,11 +835,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                     const pullingPastStart =
                         atFirstPage &&
-                        deltaX > 0;
+                        deltaX < 0;
 
                     const pullingPastEnd =
                         atLastPage &&
-                        deltaX < 0;
+                        deltaX > 0;
 
                     const resistance =
                         (
@@ -941,7 +941,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                         return;
                     }
 
-                    if (deltaX < 0) {
+                    // OSGuide mobile interaction: dragging the applications
+                    // surface to the RIGHT reveals the next applications page.
+                    if (deltaX > 0) {
                         goToApplicationsPage(
                             applicationsPageIndex + 1
                         );
