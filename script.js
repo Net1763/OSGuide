@@ -140,13 +140,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     let applicationsPageIndex = 0;
     let applicationsPageSize = 6;
     let applicationsPageCount = 1;
-    let applicationsTouchStartX = 0;
-    let applicationsTouchStartY = 0;
-    let applicationsTouchStartTime = 0;
-    let applicationsTouchLastX = 0;
-    let applicationsTouchLastY = 0;
-    let applicationsSwipeConsumed = false;
-    let applicationsIsDragging = false;
+
+    let applicationsPointerId = null;
+    let applicationsPointerStartX = 0;
+    let applicationsPointerStartY = 0;
+    let applicationsPointerLastX = 0;
+    let applicationsPointerLastY = 0;
+    let applicationsPointerStartTime = 0;
+    let applicationsPointerDragging = false;
+    let applicationsSuppressClick = false;
 
     let lastFocusedElement =
         null;    /* =====================================================
@@ -458,14 +460,32 @@ document.addEventListener('DOMContentLoaded', async () => {
             );
     }
 
-    function getApplicationsPageItems(applicationList) {
-        const pageStart =
-            applicationsPageIndex *
-            applicationsPageSize;
+    function getApplicationsPages(applicationList) {
+        const pages = [];
 
-        return applicationList.slice(
-            pageStart,
-            pageStart + applicationsPageSize
+        for (
+            let index = 0;
+            index < applicationList.length;
+            index += applicationsPageSize
+        ) {
+            pages.push(
+                applicationList.slice(
+                    index,
+                    index + applicationsPageSize
+                )
+            );
+        }
+
+        return pages;
+    }
+
+    function getApplicationsPageElement(pageIndex) {
+        if (!applicationsGrid) {
+            return null;
+        }
+
+        return applicationsGrid.querySelector(
+            `[data-applications-page-panel="${pageIndex}"]`
         );
     }
 
@@ -544,32 +564,39 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
     }
 
-    function animateApplicationsPage(direction = 1) {
-        if (!applicationsGrid) {
+    function getApplicationsViewportWidth() {
+        if (!applicationsViewport) {
+            return 0;
+        }
+
+        return applicationsViewport.clientWidth || 0;
+    }
+
+    function setApplicationsTrackPosition(
+        dragOffset = 0,
+        animate = true
+    ) {
+        if (
+            !applicationsGrid ||
+            !applicationsViewport
+        ) {
             return;
         }
 
-        const animationClass =
-            direction < 0
-                ? 'is-page-entering-from-left'
-                : 'is-page-entering-from-right';
+        const viewportWidth =
+            getApplicationsViewportWidth();
 
-        applicationsGrid.classList.remove(
-            'is-page-entering-from-left',
-            'is-page-entering-from-right'
+        const baseOffset =
+            applicationsPageIndex *
+            viewportWidth;
+
+        applicationsGrid.classList.toggle(
+            'is-dragging',
+            !animate
         );
 
-        void applicationsGrid.offsetWidth;
-
-        applicationsGrid.classList.add(
-            animationClass
-        );
-
-        window.setTimeout(() => {
-            applicationsGrid.classList.remove(
-                animationClass
-            );
-        }, 260);
+        applicationsGrid.style.transform =
+            `translate3d(${baseOffset + dragOffset}px, 0, 0)`;
     }
 
     function goToApplicationsPage(
@@ -587,33 +614,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                 applicationsPageCount - 1
             );
 
-        if (
-            nextPageIndex ===
-                applicationsPageIndex &&
-            !options.force
-        ) {
-            return;
-        }
-
-        const direction =
-            nextPageIndex <
-            applicationsPageIndex
-                ? -1
-                : 1;
-
         applicationsPageIndex =
             nextPageIndex;
 
-        renderApplications(
-            displayedApplications,
-            {
-                preservePage: true,
-                animateDirection:
-                    options.animate === false
-                        ? 0
-                        : direction
-            }
+        setApplicationsTrackPosition(
+            0,
+            options.instant !== true
         );
+
+        updateApplicationsPaginationControls();
     }
 
     function renderApplications(
@@ -633,20 +642,28 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         clampApplicationsPageIndex();
 
-        const pageApplications =
-            getApplicationsPageItems(
+        const pages =
+            getApplicationsPages(
                 displayedApplications
             );
 
-        applicationsGrid.classList.remove(
-            'is-dragging'
-        );
-        applicationsGrid.style.transform = '';
-        applicationsGrid.style.opacity = '';
-
         applicationsGrid.innerHTML =
-            pageApplications
-                .map(createApplicationCard)
+            pages
+                .map(
+                    (pageApplications, pageIndex) => `
+                        <section
+                            class="applications-page-panel"
+                            data-applications-page-panel="${pageIndex}"
+                            aria-label="Applications page ${pageIndex + 1}"
+                        >
+                            <div class="applications-page-grid">
+                                ${pageApplications
+                                    .map(createApplicationCard)
+                                    .join('')}
+                            </div>
+                        </section>
+                    `
+                )
                 .join('');
 
         updateApplicationCount(
@@ -672,11 +689,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         updateApplicationsPaginationControls();
         attachApplicationCardEvents();
 
-        if (options.animateDirection) {
-            animateApplicationsPage(
-                options.animateDirection
+        requestAnimationFrame(() => {
+            goToApplicationsPage(
+                applicationsPageIndex,
+                {
+                    instant: true
+                }
             );
-        }
+        });
     }
 
     function attachApplicationCardEvents() {
@@ -730,347 +750,264 @@ document.addEventListener('DOMContentLoaded', async () => {
             );
         }
 
-        let screenSwipeActive = false;
-        let screenSwipeHorizontal = false;
-        let screenSwipeStartX = 0;
-        let screenSwipeStartY = 0;
-        let screenSwipeLastX = 0;
-        let screenSwipeLastY = 0;
-        let screenSwipeStartTime = 0;
+        if (applicationsViewport) {
+            applicationsViewport.addEventListener(
+                'pointerdown',
+                event => {
+                    if (
+                        applicationsPageCount <= 1 ||
+                        (
+                            event.pointerType === 'mouse' &&
+                            event.button !== 0
+                        )
+                    ) {
+                        return;
+                    }
 
-        function resetApplicationsDragVisual() {
-            if (!applicationsGrid) {
-                return;
-            }
+                    applicationsPointerId =
+                        event.pointerId;
 
-            applicationsGrid.classList.remove(
-                'is-dragging'
+                    applicationsPointerStartX =
+                        event.clientX;
+
+                    applicationsPointerStartY =
+                        event.clientY;
+
+                    applicationsPointerLastX =
+                        event.clientX;
+
+                    applicationsPointerLastY =
+                        event.clientY;
+
+                    applicationsPointerStartTime =
+                        Date.now();
+
+                    applicationsPointerDragging =
+                        false;
+
+                    applicationsSuppressClick =
+                        false;
+
+                    try {
+                        applicationsViewport.setPointerCapture(
+                            event.pointerId
+                        );
+                    } catch (error) {
+                        // Pointer capture is optional.
+                    }
+                }
             );
 
-            applicationsGrid.style.transform = '';
-            applicationsGrid.style.opacity = '';
-        }
+            applicationsViewport.addEventListener(
+                'pointermove',
+                event => {
+                    if (
+                        applicationsPointerId === null ||
+                        event.pointerId !==
+                            applicationsPointerId
+                    ) {
+                        return;
+                    }
 
-        function shouldIgnoreSwipeStart(event) {
-            if (
-                !event ||
-                !event.touches ||
-                !event.touches[0]
-            ) {
-                return true;
-            }
+                    applicationsPointerLastX =
+                        event.clientX;
 
-            if (
-                applicationsPageCount <= 1 ||
-                !applicationsGrid ||
-                !applicationsViewport
-            ) {
-                return true;
-            }
+                    applicationsPointerLastY =
+                        event.clientY;
 
-            if (
-                body.classList.contains('modal-open') ||
-                body.classList.contains('side-navigation-open')
-            ) {
-                return true;
-            }
+                    const deltaX =
+                        applicationsPointerLastX -
+                        applicationsPointerStartX;
 
-            const touch = event.touches[0];
-            const viewportWidth =
-                window.innerWidth ||
-                document.documentElement.clientWidth ||
-                0;
+                    const deltaY =
+                        applicationsPointerLastY -
+                        applicationsPointerStartY;
 
-            /*
-             * Leave the extreme browser edges alone so Chrome/Android
-             * can keep its own back/forward edge gesture.
-             */
-            if (
-                touch.clientX <= 22 ||
-                touch.clientX >= viewportWidth - 22
-            ) {
-                return true;
-            }
+                    if (!applicationsPointerDragging) {
+                        if (
+                            Math.abs(deltaX) < 8 &&
+                            Math.abs(deltaY) < 8
+                        ) {
+                            return;
+                        }
 
-            return false;
-        }
+                        if (
+                            Math.abs(deltaY) >
+                            Math.abs(deltaX)
+                        ) {
+                            return;
+                        }
 
-        function startScreenSwipe(event) {
-            if (shouldIgnoreSwipeStart(event)) {
-                screenSwipeActive = false;
-                return;
-            }
+                        applicationsPointerDragging =
+                            true;
+                    }
 
-            const touch = event.touches[0];
+                    if (!applicationsPointerDragging) {
+                        return;
+                    }
 
-            screenSwipeActive = true;
-            screenSwipeHorizontal = false;
+                    event.preventDefault();
 
-            screenSwipeStartX = touch.clientX;
-            screenSwipeStartY = touch.clientY;
-            screenSwipeLastX = touch.clientX;
-            screenSwipeLastY = touch.clientY;
-            screenSwipeStartTime = Date.now();
+                    const atFirstPage =
+                        applicationsPageIndex <= 0;
 
-            applicationsSwipeConsumed = false;
-            applicationsIsDragging = false;
+                    const atLastPage =
+                        applicationsPageIndex >=
+                        applicationsPageCount - 1;
 
-            resetApplicationsDragVisual();
-        }
-
-        function moveScreenSwipe(event) {
-            if (
-                !screenSwipeActive ||
-                !event.touches ||
-                !event.touches[0] ||
-                !applicationsGrid
-            ) {
-                return;
-            }
-
-            const touch = event.touches[0];
-
-            screenSwipeLastX = touch.clientX;
-            screenSwipeLastY = touch.clientY;
-
-            const deltaX =
-                screenSwipeLastX -
-                screenSwipeStartX;
-
-            const deltaY =
-                screenSwipeLastY -
-                screenSwipeStartY;
-
-            if (!screenSwipeHorizontal) {
-                if (
-                    Math.abs(deltaX) < 8 &&
-                    Math.abs(deltaY) < 8
-                ) {
-                    return;
-                }
-
-                if (
-                    Math.abs(deltaY) >
-                    Math.abs(deltaX)
-                ) {
                     /*
-                     * This is a normal vertical page scroll.
-                     * Stop tracking it and never interfere.
+                     * Required OSGuide direction:
+                     * drag RIGHT -> NEXT page
+                     * drag LEFT  -> PREVIOUS page
                      */
-                    screenSwipeActive = false;
-                    resetApplicationsDragVisual();
-                    return;
+                    const pullingPastFirst =
+                        atFirstPage &&
+                        deltaX < 0;
+
+                    const pullingPastLast =
+                        atLastPage &&
+                        deltaX > 0;
+
+                    const resistance =
+                        (
+                            pullingPastFirst ||
+                            pullingPastLast
+                        )
+                            ? 0.24
+                            : 1;
+
+                    setApplicationsTrackPosition(
+                        deltaX * resistance,
+                        false
+                    );
                 }
-
-                screenSwipeHorizontal = true;
-                applicationsIsDragging = true;
-            }
-
-            if (!screenSwipeHorizontal) {
-                return;
-            }
-
-            /*
-             * Once the gesture is clearly horizontal, own it.
-             * This is the key mobile fix: Chrome is no longer allowed
-             * to turn the gesture into a vertical page movement.
-             */
-            event.preventDefault();
-
-            const atFirstPage =
-                applicationsPageIndex <= 0;
-
-            const atLastPage =
-                applicationsPageIndex >=
-                applicationsPageCount - 1;
-
-            /*
-             * OSGuide direction:
-             * RIGHT = next page
-             * LEFT  = previous page
-             */
-            const pullingPastFirst =
-                atFirstPage &&
-                deltaX < 0;
-
-            const pullingPastLast =
-                atLastPage &&
-                deltaX > 0;
-
-            const resistance =
-                (
-                    pullingPastFirst ||
-                    pullingPastLast
-                )
-                    ? 0.24
-                    : 0.9;
-
-            const translatedX =
-                deltaX * resistance;
-
-            const progress =
-                Math.min(
-                    Math.abs(translatedX) /
-                    Math.max(
-                        applicationsViewport.clientWidth,
-                        1
-                    ),
-                    1
-                );
-
-            applicationsGrid.classList.add(
-                'is-dragging'
             );
 
-            applicationsGrid.style.transform =
-                `translate3d(${translatedX}px, 0, 0)`;
-
-            applicationsGrid.style.opacity =
-                String(
-                    1 -
-                    progress * 0.12
-                );
-        }
-
-        function finishScreenSwipe(event) {
-            if (!screenSwipeActive) {
-                return;
-            }
-
-            let endX = screenSwipeLastX;
-            let endY = screenSwipeLastY;
-
-            if (
-                event &&
-                event.changedTouches &&
-                event.changedTouches[0]
+            function finishApplicationsPointer(
+                event,
+                cancelled = false
             ) {
-                endX =
-                    event.changedTouches[0].clientX;
-
-                endY =
-                    event.changedTouches[0].clientY;
-            }
-
-            const deltaX =
-                endX -
-                screenSwipeStartX;
-
-            const deltaY =
-                endY -
-                screenSwipeStartY;
-
-            const elapsed =
-                Math.max(
-                    Date.now() -
-                    screenSwipeStartTime,
-                    1
-                );
-
-            const velocityX =
-                Math.abs(deltaX) /
-                elapsed;
-
-            const horizontalGesture =
-                screenSwipeHorizontal &&
-                Math.abs(deltaX) >
-                    Math.abs(deltaY);
-
-            const shouldChangePage =
-                horizontalGesture &&
-                (
-                    Math.abs(deltaX) >= 46 ||
+                if (
+                    applicationsPointerId === null ||
                     (
-                        Math.abs(deltaX) >= 24 &&
-                        velocityX >= 0.32
+                        event &&
+                        event.pointerId !==
+                            applicationsPointerId
                     )
-                );
-
-            applicationsSwipeConsumed =
-                horizontalGesture;
-
-            screenSwipeActive = false;
-            screenSwipeHorizontal = false;
-            applicationsIsDragging = false;
-
-            resetApplicationsDragVisual();
-
-            if (shouldChangePage) {
-                if (deltaX > 0) {
-                    goToApplicationsPage(
-                        applicationsPageIndex + 1
-                    );
-                } else {
-                    goToApplicationsPage(
-                        applicationsPageIndex - 1
-                    );
+                ) {
+                    return;
                 }
-            }
 
-            window.setTimeout(() => {
-                applicationsSwipeConsumed =
+                const endX =
+                    event && Number.isFinite(event.clientX)
+                        ? event.clientX
+                        : applicationsPointerLastX;
+
+                const endY =
+                    event && Number.isFinite(event.clientY)
+                        ? event.clientY
+                        : applicationsPointerLastY;
+
+                const deltaX =
+                    endX -
+                    applicationsPointerStartX;
+
+                const deltaY =
+                    endY -
+                    applicationsPointerStartY;
+
+                const elapsed =
+                    Math.max(
+                        Date.now() -
+                        applicationsPointerStartTime,
+                        1
+                    );
+
+                const velocityX =
+                    Math.abs(deltaX) /
+                    elapsed;
+
+                const horizontalSwipe =
+                    !cancelled &&
+                    applicationsPointerDragging &&
+                    Math.abs(deltaX) >
+                        Math.abs(deltaY);
+
+                const shouldChangePage =
+                    horizontalSwipe &&
+                    (
+                        Math.abs(deltaX) >= 52 ||
+                        (
+                            Math.abs(deltaX) >= 26 &&
+                            velocityX >= 0.34
+                        )
+                    );
+
+                applicationsSuppressClick =
+                    horizontalSwipe;
+
+                applicationsPointerId =
+                    null;
+
+                applicationsPointerDragging =
                     false;
-            }, 300);
+
+                if (shouldChangePage) {
+                    if (deltaX > 0) {
+                        goToApplicationsPage(
+                            applicationsPageIndex + 1
+                        );
+                    } else {
+                        goToApplicationsPage(
+                            applicationsPageIndex - 1
+                        );
+                    }
+                } else {
+                    setApplicationsTrackPosition(
+                        0,
+                        true
+                    );
+                }
+
+                window.setTimeout(() => {
+                    applicationsSuppressClick =
+                        false;
+                }, 260);
+            }
+
+            applicationsViewport.addEventListener(
+                'pointerup',
+                event => {
+                    finishApplicationsPointer(
+                        event,
+                        false
+                    );
+                }
+            );
+
+            applicationsViewport.addEventListener(
+                'pointercancel',
+                event => {
+                    finishApplicationsPointer(
+                        event,
+                        true
+                    );
+                }
+            );
+
+            applicationsViewport.addEventListener(
+                'click',
+                event => {
+                    if (!applicationsSuppressClick) {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    event.stopPropagation();
+                },
+                true
+            );
         }
-
-        document.addEventListener(
-            'touchstart',
-            startScreenSwipe,
-            {
-                passive: true,
-                capture: true
-            }
-        );
-
-        document.addEventListener(
-            'touchmove',
-            moveScreenSwipe,
-            {
-                passive: false,
-                capture: true
-            }
-        );
-
-        document.addEventListener(
-            'touchend',
-            finishScreenSwipe,
-            {
-                passive: true,
-                capture: true
-            }
-        );
-
-        document.addEventListener(
-            'touchcancel',
-            event => {
-                if (!screenSwipeActive) {
-                    return;
-                }
-
-                screenSwipeActive = false;
-                screenSwipeHorizontal = false;
-                applicationsIsDragging = false;
-
-                resetApplicationsDragVisual();
-            },
-            {
-                passive: true,
-                capture: true
-            }
-        );
-
-        document.addEventListener(
-            'click',
-            event => {
-                if (!applicationsSwipeConsumed) {
-                    return;
-                }
-
-                event.preventDefault();
-                event.stopPropagation();
-            },
-            true
-        );
 
         window.addEventListener(
             'resize',
@@ -1085,6 +1022,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                     previousPageSize ===
                     nextPageSize
                 ) {
+                    setApplicationsTrackPosition(
+                        0,
+                        false
+                    );
                     return;
                 }
 
