@@ -40,6 +40,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     const applicationsGrid =
         document.getElementById('applications-grid');
 
+    const applicationsPager =
+        document.getElementById('applications-pager');
+
+    const applicationsViewport =
+        document.getElementById('applications-viewport');
+
+    const applicationsPagination =
+        document.getElementById('applications-pagination');
+
+    const applicationsPagePrevious =
+        document.getElementById('applications-page-previous');
+
+    const applicationsPageNext =
+        document.getElementById('applications-page-next');
+
     const applicationCount =
         document.getElementById('application-count');
 
@@ -121,6 +136,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     let activeCategory = '';
     let browseMode = 'home';
+
+    let applicationsPageIndex = 0;
+    let applicationsPageSize = 6;
+    let applicationsPageCount = 1;
+    let applicationsTouchStartX = 0;
+    let applicationsTouchStartY = 0;
+    let applicationsTouchStartTime = 0;
 
     let lastFocusedElement =
         null;    /* =====================================================
@@ -392,27 +414,259 @@ document.addEventListener('DOMContentLoaded', async () => {
        7. Render Applications
     ===================================================== */
 
-    function renderApplications(applicationList) {
+    function getApplicationsPageSize() {
+        const viewportWidth =
+            window.innerWidth ||
+            document.documentElement.clientWidth ||
+            0;
+
+        if (viewportWidth >= 980) {
+            return 6;
+        }
+
+        if (viewportWidth >= 620) {
+            return 4;
+        }
+
+        return 4;
+    }
+
+    function clampApplicationsPageIndex() {
+        applicationsPageSize =
+            getApplicationsPageSize();
+
+        applicationsPageCount =
+            Math.max(
+                1,
+                Math.ceil(
+                    displayedApplications.length /
+                    applicationsPageSize
+                )
+            );
+
+        applicationsPageIndex =
+            Math.min(
+                Math.max(
+                    applicationsPageIndex,
+                    0
+                ),
+                applicationsPageCount - 1
+            );
+    }
+
+    function getApplicationsPageItems(applicationList) {
+        const pageStart =
+            applicationsPageIndex *
+            applicationsPageSize;
+
+        return applicationList.slice(
+            pageStart,
+            pageStart + applicationsPageSize
+        );
+    }
+
+    function updateApplicationsPaginationControls() {
+        if (
+            !applicationsPagination ||
+            !applicationsPager
+        ) {
+            return;
+        }
+
+        const hasMultiplePages =
+            applicationsPageCount > 1;
+
+        applicationsPager.classList.toggle(
+            'has-multiple-pages',
+            hasMultiplePages
+        );
+
+        if (applicationsPagePrevious) {
+            applicationsPagePrevious.disabled =
+                !hasMultiplePages ||
+                applicationsPageIndex <= 0;
+        }
+
+        if (applicationsPageNext) {
+            applicationsPageNext.disabled =
+                !hasMultiplePages ||
+                applicationsPageIndex >=
+                    applicationsPageCount - 1;
+        }
+
+        if (!hasMultiplePages) {
+            applicationsPagination.innerHTML = '';
+            applicationsPagination.hidden = true;
+            return;
+        }
+
+        applicationsPagination.hidden = false;
+
+        applicationsPagination.innerHTML =
+            Array.from(
+                { length: applicationsPageCount },
+                (_, pageIndex) => {
+                    const active =
+                        pageIndex ===
+                        applicationsPageIndex;
+
+                    return `
+                        <button
+                            class="applications-page-dot${active ? ' is-active' : ''}"
+                            type="button"
+                            data-applications-page="${pageIndex}"
+                            aria-label="Go to applications page ${pageIndex + 1}"
+                            aria-current="${active ? 'page' : 'false'}"
+                        ></button>
+                    `;
+                }
+            ).join('');
+
+        applicationsPagination
+            .querySelectorAll(
+                '[data-applications-page]'
+            )
+            .forEach(button => {
+                button.addEventListener(
+                    'click',
+                    () => {
+                        goToApplicationsPage(
+                            Number(
+                                button.dataset.applicationsPage
+                            )
+                        );
+                    }
+                );
+            });
+    }
+
+    function animateApplicationsPage(direction = 1) {
         if (!applicationsGrid) {
             return;
         }
 
+        const animationClass =
+            direction < 0
+                ? 'is-page-entering-from-left'
+                : 'is-page-entering-from-right';
+
+        applicationsGrid.classList.remove(
+            'is-page-entering-from-left',
+            'is-page-entering-from-right'
+        );
+
+        void applicationsGrid.offsetWidth;
+
+        applicationsGrid.classList.add(
+            animationClass
+        );
+
+        window.setTimeout(() => {
+            applicationsGrid.classList.remove(
+                animationClass
+            );
+        }, 260);
+    }
+
+    function goToApplicationsPage(
+        requestedPageIndex,
+        options = {}
+    ) {
+        clampApplicationsPageIndex();
+
+        const nextPageIndex =
+            Math.min(
+                Math.max(
+                    Number(requestedPageIndex) || 0,
+                    0
+                ),
+                applicationsPageCount - 1
+            );
+
+        if (
+            nextPageIndex ===
+                applicationsPageIndex &&
+            !options.force
+        ) {
+            return;
+        }
+
+        const direction =
+            nextPageIndex <
+            applicationsPageIndex
+                ? -1
+                : 1;
+
+        applicationsPageIndex =
+            nextPageIndex;
+
+        renderApplications(
+            displayedApplications,
+            {
+                preservePage: true,
+                animateDirection:
+                    options.animate === false
+                        ? 0
+                        : direction
+            }
+        );
+    }
+
+    function renderApplications(
+        applicationList,
+        options = {}
+    ) {
+        if (!applicationsGrid) {
+            return;
+        }
+
+        if (!options.preservePage) {
+            applicationsPageIndex = 0;
+        }
+
+        displayedApplications =
+            [...applicationList];
+
+        clampApplicationsPageIndex();
+
+        const pageApplications =
+            getApplicationsPageItems(
+                displayedApplications
+            );
+
         applicationsGrid.innerHTML =
-            applicationList
+            pageApplications
                 .map(createApplicationCard)
                 .join('');
 
-        updateApplicationCount(applicationList.length);
+        updateApplicationCount(
+            displayedApplications.length
+        );
 
-        if (applicationList.length === 0) {
-            hideElement(applicationsGrid);
+        if (
+            displayedApplications.length === 0
+        ) {
+            hideElement(
+                applicationsPager ||
+                applicationsGrid
+            );
             showElement(emptyState);
         } else {
-            showElement(applicationsGrid);
+            showElement(
+                applicationsPager ||
+                applicationsGrid
+            );
             hideElement(emptyState);
         }
 
+        updateApplicationsPaginationControls();
         attachApplicationCardEvents();
+
+        if (options.animateDirection) {
+            animateApplicationsPage(
+                options.animateDirection
+            );
+        }
     }
 
     function attachApplicationCardEvents() {
@@ -441,6 +695,132 @@ document.addEventListener('DOMContentLoaded', async () => {
                 openApplicationModal(applicationId);
             });
         });
+    }
+
+    function attachApplicationsPagingEvents() {
+        if (applicationsPagePrevious) {
+            applicationsPagePrevious.addEventListener(
+                'click',
+                () => {
+                    goToApplicationsPage(
+                        applicationsPageIndex - 1
+                    );
+                }
+            );
+        }
+
+        if (applicationsPageNext) {
+            applicationsPageNext.addEventListener(
+                'click',
+                () => {
+                    goToApplicationsPage(
+                        applicationsPageIndex + 1
+                    );
+                }
+            );
+        }
+
+        if (applicationsViewport) {
+            applicationsViewport.addEventListener(
+                'touchstart',
+                event => {
+                    const touch =
+                        event.touches[0];
+
+                    if (!touch) {
+                        return;
+                    }
+
+                    applicationsTouchStartX =
+                        touch.clientX;
+
+                    applicationsTouchStartY =
+                        touch.clientY;
+
+                    applicationsTouchStartTime =
+                        Date.now();
+                },
+                {
+                    passive: true
+                }
+            );
+
+            applicationsViewport.addEventListener(
+                'touchend',
+                event => {
+                    const touch =
+                        event.changedTouches[0];
+
+                    if (!touch) {
+                        return;
+                    }
+
+                    const deltaX =
+                        touch.clientX -
+                        applicationsTouchStartX;
+
+                    const deltaY =
+                        touch.clientY -
+                        applicationsTouchStartY;
+
+                    const elapsed =
+                        Date.now() -
+                        applicationsTouchStartTime;
+
+                    const horizontalGesture =
+                        Math.abs(deltaX) >= 56 &&
+                        Math.abs(deltaX) >
+                            Math.abs(deltaY) * 1.15 &&
+                        elapsed <= 700;
+
+                    if (!horizontalGesture) {
+                        return;
+                    }
+
+                    if (deltaX < 0) {
+                        goToApplicationsPage(
+                            applicationsPageIndex + 1
+                        );
+                        return;
+                    }
+
+                    goToApplicationsPage(
+                        applicationsPageIndex - 1
+                    );
+                },
+                {
+                    passive: true
+                }
+            );
+        }
+
+        window.addEventListener(
+            'resize',
+            () => {
+                const previousPageSize =
+                    applicationsPageSize;
+
+                const nextPageSize =
+                    getApplicationsPageSize();
+
+                if (
+                    previousPageSize ===
+                    nextPageSize
+                ) {
+                    return;
+                }
+
+                applicationsPageSize =
+                    nextPageSize;
+
+                renderApplications(
+                    displayedApplications,
+                    {
+                        preservePage: true
+                    }
+                );
+            }
+        );
     }
 
     /* =====================================================
@@ -2869,6 +3249,7 @@ try {
             attachFooterLinkEvents();
             attachSideNavigationEvents();
             attachFeaturedApplicationEvent();
+            attachApplicationsPagingEvents();
 
             setActiveSideNavigationItem(
                 document.querySelector(
