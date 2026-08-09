@@ -844,10 +844,150 @@ input:focus-visible {
     margin-top: 10px;
 }
 
+.applications-pager {
+    position: relative;
+}
+
+.applications-viewport {
+    overflow: hidden;
+    touch-action: pan-y;
+    border-radius: var(--radius-md);
+}
+
 .applications-grid {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: 14px;
+    will-change: transform, opacity;
+}
+
+.applications-grid.is-page-entering-from-right {
+    animation: applications-page-enter-right 250ms ease both;
+}
+
+.applications-grid.is-page-entering-from-left {
+    animation: applications-page-enter-left 250ms ease both;
+}
+
+@keyframes applications-page-enter-right {
+    from {
+        opacity: 0.35;
+        transform: translateX(28px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes applications-page-enter-left {
+    from {
+        opacity: 0.35;
+        transform: translateX(-28px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.applications-page-arrow {
+    position: absolute;
+    top: 50%;
+    z-index: 8;
+    width: 42px;
+    height: 42px;
+    display: none;
+    place-items: center;
+    transform: translateY(-50%);
+    cursor: pointer;
+    border: 1px solid var(--border-strong);
+    border-radius: 50%;
+    background: rgba(16, 21, 29, 0.94);
+    color: var(--text);
+    box-shadow: var(--shadow-sm);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition:
+        opacity var(--transition),
+        background var(--transition),
+        border-color var(--transition),
+        transform var(--transition);
+}
+
+@media (min-width: 980px) {
+    .applications-pager.has-multiple-pages .applications-page-arrow {
+        display: grid;
+    }
+}
+
+.applications-page-arrow:hover {
+    border-color: #3e5068;
+    background: var(--surface-hover);
+}
+
+.applications-page-arrow:active {
+    transform:
+        translateY(-50%)
+        scale(0.96);
+}
+
+.applications-page-arrow:disabled {
+    opacity: 0.28;
+    cursor: default;
+    pointer-events: none;
+}
+
+.applications-page-arrow svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.9;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.applications-page-arrow-left {
+    left: -18px;
+}
+
+.applications-page-arrow-right {
+    right: -18px;
+}
+
+.applications-pagination {
+    min-height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.applications-page-dot {
+    width: 8px;
+    height: 8px;
+    padding: 0;
+    cursor: pointer;
+    border-radius: 999px;
+    background: #354256;
+    transition:
+        width var(--transition),
+        background var(--transition),
+        transform var(--transition);
+}
+
+.applications-page-dot:hover {
+    background: #556982;
+    transform: scale(1.12);
+}
+
+.applications-page-dot.is-active {
+    width: 24px;
+    background: var(--primary);
 }
 
 
