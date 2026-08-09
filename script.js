@@ -147,6 +147,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     let applicationsTouchLastY = 0;
     let applicationsSwipeConsumed = false;
     let applicationsIsDragging = false;
+    let applicationsPointerId = null;
+    let applicationsPointerStartX = 0;
+    let applicationsPointerStartY = 0;
+    let applicationsPointerLastX = 0;
+    let applicationsPointerStartTime = 0;
 
     let lastFocusedElement =
         null;    /* =====================================================
@@ -743,30 +748,116 @@ document.addEventListener('DOMContentLoaded', async () => {
             applicationsGrid.style.opacity = '';
         }
 
+        function finishApplicationsPointerSwipe(
+            clientX,
+            clientY
+        ) {
+            if (
+                applicationsPointerId === null ||
+                !applicationsViewport
+            ) {
+                resetApplicationsDragVisual();
+                return;
+            }
+
+            const deltaX =
+                clientX -
+                applicationsPointerStartX;
+
+            const deltaY =
+                clientY -
+                applicationsPointerStartY;
+
+            const elapsed =
+                Math.max(
+                    Date.now() -
+                    applicationsPointerStartTime,
+                    1
+                );
+
+            const velocityX =
+                Math.abs(deltaX) /
+                elapsed;
+
+            const horizontalGesture =
+                applicationsIsDragging &&
+                Math.abs(deltaX) >
+                    Math.abs(deltaY) * 1.05;
+
+            const shouldChangePage =
+                horizontalGesture &&
+                (
+                    Math.abs(deltaX) >= 54 ||
+                    (
+                        Math.abs(deltaX) >= 28 &&
+                        velocityX >= 0.38
+                    )
+                );
+
+            applicationsSwipeConsumed =
+                horizontalGesture;
+
+            applicationsIsDragging =
+                false;
+
+            applicationsPointerId =
+                null;
+
+            resetApplicationsDragVisual();
+
+            if (!shouldChangePage) {
+                window.setTimeout(() => {
+                    applicationsSwipeConsumed =
+                        false;
+                }, 180);
+                return;
+            }
+
+            /*
+             * OSGuide interaction:
+             * dragging RIGHT reveals the NEXT applications page.
+             * dragging LEFT returns to the PREVIOUS page.
+             */
+            if (deltaX > 0) {
+                goToApplicationsPage(
+                    applicationsPageIndex + 1
+                );
+            } else {
+                goToApplicationsPage(
+                    applicationsPageIndex - 1
+                );
+            }
+
+            window.setTimeout(() => {
+                applicationsSwipeConsumed =
+                    false;
+            }, 280);
+        }
+
         if (applicationsViewport) {
             applicationsViewport.addEventListener(
-                'touchstart',
+                'pointerdown',
                 event => {
-                    const touch =
-                        event.touches[0];
-
-                    if (!touch) {
+                    if (
+                        event.pointerType === 'mouse' &&
+                        event.button !== 0
+                    ) {
                         return;
                     }
 
-                    applicationsTouchStartX =
-                        touch.clientX;
+                    applicationsPointerId =
+                        event.pointerId;
 
-                    applicationsTouchStartY =
-                        touch.clientY;
+                    applicationsPointerStartX =
+                        event.clientX;
 
-                    applicationsTouchLastX =
-                        touch.clientX;
+                    applicationsPointerStartY =
+                        event.clientY;
 
-                    applicationsTouchLastY =
-                        touch.clientY;
+                    applicationsPointerLastX =
+                        event.clientX;
 
-                    applicationsTouchStartTime =
+                    applicationsPointerStartTime =
                         Date.now();
 
                     applicationsSwipeConsumed =
@@ -776,38 +867,39 @@ document.addEventListener('DOMContentLoaded', async () => {
                         false;
 
                     resetApplicationsDragVisual();
-                },
-                {
-                    passive: true
+
+                    try {
+                        applicationsViewport.setPointerCapture(
+                            event.pointerId
+                        );
+                    } catch (error) {
+                        // Pointer capture is optional.
+                    }
                 }
             );
 
             applicationsViewport.addEventListener(
-                'touchmove',
+                'pointermove',
                 event => {
-                    const touch =
-                        event.touches[0];
-
                     if (
-                        !touch ||
+                        applicationsPointerId === null ||
+                        event.pointerId !==
+                            applicationsPointerId ||
                         !applicationsGrid
                     ) {
                         return;
                     }
 
-                    applicationsTouchLastX =
-                        touch.clientX;
-
-                    applicationsTouchLastY =
-                        touch.clientY;
+                    applicationsPointerLastX =
+                        event.clientX;
 
                     const deltaX =
-                        applicationsTouchLastX -
-                        applicationsTouchStartX;
+                        event.clientX -
+                        applicationsPointerStartX;
 
                     const deltaY =
-                        applicationsTouchLastY -
-                        applicationsTouchStartY;
+                        event.clientY -
+                        applicationsPointerStartY;
 
                     const isHorizontal =
                         Math.abs(deltaX) >
@@ -817,7 +909,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         return;
                     }
 
-                    if (Math.abs(deltaX) >= 8) {
+                    if (Math.abs(deltaX) >= 6) {
                         applicationsIsDragging =
                             true;
                     }
@@ -825,6 +917,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     if (!applicationsIsDragging) {
                         return;
                     }
+
+                    event.preventDefault();
 
                     const atFirstPage =
                         applicationsPageIndex <= 0;
@@ -846,7 +940,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                             pullingPastStart ||
                             pullingPastEnd
                         )
-                            ? 0.28
+                            ? 0.25
                             : 0.92;
 
                     const translatedX =
@@ -872,107 +966,45 @@ document.addEventListener('DOMContentLoaded', async () => {
                     applicationsGrid.style.opacity =
                         String(
                             1 -
-                            progress * 0.16
+                            progress * 0.14
                         );
-                },
-                {
-                    passive: true
                 }
             );
 
             applicationsViewport.addEventListener(
-                'touchend',
+                'pointerup',
                 event => {
-                    const touch =
-                        event.changedTouches[0];
-
-                    if (!touch) {
-                        resetApplicationsDragVisual();
+                    if (
+                        applicationsPointerId === null ||
+                        event.pointerId !==
+                            applicationsPointerId
+                    ) {
                         return;
                     }
 
-                    const deltaX =
-                        touch.clientX -
-                        applicationsTouchStartX;
-
-                    const deltaY =
-                        touch.clientY -
-                        applicationsTouchStartY;
-
-                    const elapsed =
-                        Math.max(
-                            Date.now() -
-                            applicationsTouchStartTime,
-                            1
-                        );
-
-                    const velocityX =
-                        Math.abs(deltaX) /
-                        elapsed;
-
-                    const horizontalGesture =
-                        applicationsIsDragging &&
-                        Math.abs(deltaX) >
-                            Math.abs(deltaY) * 1.05;
-
-                    const shouldChangePage =
-                        horizontalGesture &&
-                        (
-                            Math.abs(deltaX) >= 62 ||
-                            (
-                                Math.abs(deltaX) >= 30 &&
-                                velocityX >= 0.45
-                            )
-                        );
-
-                    applicationsSwipeConsumed =
-                        horizontalGesture;
-
-                    applicationsIsDragging =
-                        false;
-
-                    resetApplicationsDragVisual();
-
-                    if (!shouldChangePage) {
-                        window.setTimeout(() => {
-                            applicationsSwipeConsumed =
-                                false;
-                        }, 220);
-                        return;
-                    }
-
-                    // OSGuide mobile interaction: dragging the applications
-                    // surface to the RIGHT reveals the next applications page.
-                    if (deltaX > 0) {
-                        goToApplicationsPage(
-                            applicationsPageIndex + 1
-                        );
-                    } else {
-                        goToApplicationsPage(
-                            applicationsPageIndex - 1
-                        );
-                    }
-
-                    window.setTimeout(() => {
-                        applicationsSwipeConsumed =
-                            false;
-                    }, 320);
-                },
-                {
-                    passive: true
+                    finishApplicationsPointerSwipe(
+                        event.clientX,
+                        event.clientY
+                    );
                 }
             );
 
             applicationsViewport.addEventListener(
-                'touchcancel',
-                () => {
-                    applicationsIsDragging =
-                        false;
+                'pointercancel',
+                event => {
+                    if (
+                        applicationsPointerId !== null &&
+                        event.pointerId ===
+                            applicationsPointerId
+                    ) {
+                        applicationsPointerId =
+                            null;
 
-                    resetApplicationsDragVisual();
-                },
-                {
-                    passive: true
+                        applicationsIsDragging =
+                            false;
+
+                        resetApplicationsDragVisual();
+                    }
                 }
             );
 
