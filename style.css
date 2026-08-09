@@ -859,6 +859,15 @@ input:focus-visible {
     grid-template-columns: minmax(0, 1fr);
     gap: 14px;
     will-change: transform, opacity;
+    transition:
+        transform 180ms ease,
+        opacity 180ms ease;
+}
+
+.applications-grid.is-dragging {
+    transition: none;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 .applications-grid.is-page-entering-from-right {
