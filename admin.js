@@ -20,7 +20,10 @@ const state = {
     deletingApplicationId: null,
     isLoadingApplications: false,
     fetchedMetadata: null,
-    fetchedPackageId: null
+    fetchedPackageId: null,
+    resolvedSourceMode: 'auto',
+    uploadedApkUrl: '',
+    uploadedIconUrl: ''
 };
 
 const elements = {
@@ -111,9 +114,43 @@ const elements = {
     applicationPackageId:
         document.getElementById('application-package-id'),
     fetchFdroidMetadataButton:
-        document.getElementById('fetch-fdroid-metadata'),
+        document.getElementById('fetch-app-metadata'),
     fdroidMetadataStatus:
-        document.getElementById('fdroid-metadata-status'),
+        document.getElementById('app-metadata-status'),
+    sourceMode:
+        document.getElementById('application-source-mode'),
+    repositoryUrl:
+        document.getElementById('application-repository-url'),
+    repositoryGroup:
+        document.getElementById('github-repository-group'),
+    resolvedPreview:
+        document.getElementById('resolved-app-preview'),
+    resolvedIcon:
+        document.getElementById('resolved-app-icon'),
+    resolvedIconFallback:
+        document.getElementById('resolved-app-icon-fallback'),
+    resolvedName:
+        document.getElementById('resolved-app-name'),
+    resolvedSource:
+        document.getElementById('resolved-app-source'),
+    resolvedTechnical:
+        document.getElementById('resolved-app-technical'),
+    resolvedHealth:
+        document.getElementById('resolved-app-health'),
+    directApkStatus:
+        document.getElementById('direct-apk-status'),
+    iconStatus:
+        document.getElementById('icon-status'),
+    apkFile:
+        document.getElementById('application-apk-file'),
+    iconFile:
+        document.getElementById('application-icon-file'),
+    manualDownloadUrl:
+        document.getElementById('manual-download-url'),
+    manualImageUrl:
+        document.getElementById('manual-image-url'),
+    validationChecklist:
+        document.getElementById('validation-checklist'),
     applicationVersion:
         document.getElementById('application-version'),
     applicationSize:
@@ -139,7 +176,7 @@ const elements = {
     applicationIconType:
         document.getElementById('application-icon-type'),
     applicationImageUrlGroup:
-        document.getElementById('application-image-url-group'),
+        null,
     applicationImageUrl:
         document.getElementById('application-image-url'),
     applicationPublished:
@@ -293,6 +330,41 @@ function bindEventListeners() {
         'click',
         fetchAndApplyFdroidMetadata
     );
+
+    if (elements.sourceMode) {
+        elements.sourceMode.addEventListener(
+            'change',
+            handleSourceModeChange
+        );
+    }
+
+    if (elements.manualDownloadUrl) {
+        elements.manualDownloadUrl.addEventListener(
+            'input',
+            applyManualOverrides
+        );
+    }
+
+    if (elements.manualImageUrl) {
+        elements.manualImageUrl.addEventListener(
+            'input',
+            applyManualOverrides
+        );
+    }
+
+    if (elements.apkFile) {
+        elements.apkFile.addEventListener(
+            'change',
+            updateValidationChecklist
+        );
+    }
+
+    if (elements.iconFile) {
+        elements.iconFile.addEventListener(
+            'change',
+            updateValidationChecklist
+        );
+    }
 
     elements.applicationPackageId.addEventListener(
         'input',
@@ -1165,8 +1237,11 @@ function handlePackageIdInput() {
         elements.applicationSize.value = '';
         elements.applicationDownloadUrl.value = '';
         elements.applicationImageUrl.value = '';
+        elements.applicationSource.value = '';
         setMetadataStatus('', '');
     }
+
+    updateValidationChecklist();
 }
 
 function setMetadataStatus(message, type = 'info') {
@@ -1190,32 +1265,96 @@ async function fetchAndApplyFdroidMetadata() {
         elements.applicationPackageId.value
     );
 
+    const applicationName =
+        elements.applicationName.value.trim();
+
+    if (!applicationName) {
+        showApplicationFormError(
+            'Enter the application name first.'
+        );
+        elements.applicationName.focus();
+        return null;
+    }
+
     if (!isValidPackageId(packageId)) {
         showApplicationFormError(
-            'Enter a valid F-Droid Package ID, for example dev.debene.gopher.'
+            'Enter a valid Android Package ID, for example com.example.app.'
         );
         elements.applicationPackageId.focus();
         return null;
     }
 
+    const sourceMode =
+        elements.sourceMode?.value || 'auto';
+
+    const repositoryUrl =
+        elements.repositoryUrl?.value.trim() || '';
+
     setButtonLoading(
         elements.fetchFdroidMetadataButton,
         true
     );
-    setMetadataStatus('Contacting F-Droid…', 'loading');
+
+    setMetadataStatus(
+        'OSGuide is resolving the best available source…',
+        'loading'
+    );
 
     try {
-        const {
-            data,
-            error
-        } = await supabaseClient.functions.invoke(
-            'fetch-fdroid-metadata',
-            {
-                body: {
-                    packageId
+        let data = null;
+        let error = null;
+
+        const genericResult =
+            await supabaseClient.functions.invoke(
+                'fetch-app-metadata',
+                {
+                    body: {
+                        name: applicationName,
+                        packageId,
+                        sourceMode,
+                        repositoryUrl
+                    }
                 }
+            );
+
+        data = genericResult.data;
+        error = genericResult.error;
+
+        /*
+         * Compatibility fallback:
+         * before fetch-app-metadata is deployed, existing F-Droid
+         * applications keep working with the old Edge Function.
+         */
+        if (
+            error &&
+            (
+                sourceMode === 'auto' ||
+                sourceMode === 'fdroid'
+            )
+        ) {
+            const fallbackResult =
+                await supabaseClient.functions.invoke(
+                    'fetch-fdroid-metadata',
+                    {
+                        body: {
+                            packageId
+                        }
+                    }
+                );
+
+            if (!fallbackResult.error &&
+                fallbackResult.data?.ok &&
+                fallbackResult.data?.metadata
+            ) {
+                data = {
+                    ok: true,
+                    source: 'Auto',
+                    provider: 'fdroid',
+                    metadata: fallbackResult.data.metadata
+                };
+                error = null;
             }
-        );
+        }
 
         if (error) {
             throw error;
@@ -1224,45 +1363,121 @@ async function fetchAndApplyFdroidMetadata() {
         if (!data?.ok || !data?.metadata) {
             throw new Error(
                 data?.error ||
-                'F-Droid did not return usable metadata.'
+                'No usable application metadata was returned.'
             );
         }
 
         const metadata = data.metadata;
+        const resolvedSource =
+            metadata.source ||
+            data.source ||
+            (
+                data.provider === 'google-play'
+                    ? 'Google Play'
+                    : data.provider === 'github'
+                        ? 'GitHub'
+                        : 'F-Droid'
+            );
 
         state.fetchedMetadata = metadata;
         state.fetchedPackageId = packageId;
+        state.resolvedSourceMode =
+            data.provider || sourceMode;
 
-        elements.applicationPackageId.value = packageId;
-        elements.applicationVersion.value = metadata.version || '';
-        elements.applicationSize.value = metadata.size || '';
-        elements.applicationDownloadUrl.value = metadata.downloadUrl || '';
-        elements.applicationImageUrl.value = metadata.imageUrl || '';
-        elements.applicationIconType.value = 'image';
+        elements.applicationPackageId.value =
+            packageId;
 
-        if (!elements.applicationName.value.trim() && metadata.name) {
-            elements.applicationName.value = metadata.name;
-            handleApplicationNameInput();
+        elements.applicationVersion.value =
+            metadata.version || 'Latest';
+
+        elements.applicationSize.value =
+            metadata.size || 'Varies';
+
+        elements.applicationDownloadUrl.value =
+            metadata.downloadUrl || '';
+
+        elements.applicationImageUrl.value =
+            metadata.imageUrl || '';
+
+        elements.applicationIconType.value =
+            metadata.imageUrl ? 'image' : 'default';
+
+        elements.applicationSource.value =
+            resolvedSource;
+
+        if (
+            !elements.applicationName.value.trim() &&
+            metadata.name
+        ) {
+            elements.applicationName.value =
+                metadata.name;
         }
 
-        setMetadataStatus(
-            `Ready: version ${metadata.version}, ${metadata.size}. Direct APK and icon verified.`,
-            'success'
-        );
+        if (
+            !elements.applicationDescription.value.trim() &&
+            metadata.description
+        ) {
+            elements.applicationDescription.value =
+                String(metadata.description).slice(0, 300);
+        }
+
+        if (
+            !elements.applicationLongDescription.value.trim() &&
+            metadata.longDescription
+        ) {
+            elements.applicationLongDescription.value =
+                String(metadata.longDescription).slice(0, 3000);
+        }
+
+        if (
+            !elements.applicationLicense.value.trim() &&
+            metadata.license
+        ) {
+            elements.applicationLicense.value =
+                metadata.license;
+        }
+
+        handleApplicationNameInput();
+        updateResolvedPreview();
+        updateValidationChecklist();
+
+        if (metadata.downloadUrl) {
+            setMetadataStatus(
+                `Ready: ${resolvedSource} returned a direct APK and app metadata.`,
+                'success'
+            );
+        } else {
+            setMetadataStatus(
+                `${resolvedSource} metadata found. No verified direct APK was returned, so upload the APK below to host it with OSGuide.`,
+                'info'
+            );
+        }
 
         return metadata;
     } catch (error) {
-        console.error('Unable to fetch F-Droid metadata:', error);
+        console.error(
+            'Unable to resolve application metadata:',
+            error
+        );
 
         const message =
             error?.context?.body?.error ||
             error?.message ||
-            'Unable to fetch F-Droid metadata.';
+            'Unable to resolve application metadata.';
 
         state.fetchedMetadata = null;
         state.fetchedPackageId = null;
-        setMetadataStatus(message, 'error');
-        showApplicationFormError(message);
+
+        setMetadataStatus(
+            message,
+            'error'
+        );
+
+        showApplicationFormError(
+            message
+        );
+
+        updateValidationChecklist();
         return null;
     } finally {
         setButtonLoading(
@@ -1270,6 +1485,402 @@ async function fetchAndApplyFdroidMetadata() {
             false
         );
     }
+}
+
+
+function handleSourceModeChange() {
+    const sourceMode =
+        elements.sourceMode?.value || 'auto';
+
+    if (elements.repositoryGroup) {
+        elements.repositoryGroup.hidden =
+            sourceMode !== 'github';
+    }
+
+    state.fetchedMetadata = null;
+    state.fetchedPackageId = null;
+    state.uploadedApkUrl = '';
+    state.uploadedIconUrl = '';
+
+    setMetadataStatus('', '');
+    updateValidationChecklist();
+}
+
+function applyManualOverrides() {
+    const manualDownloadUrl =
+        elements.manualDownloadUrl?.value.trim() || '';
+
+    const manualImageUrl =
+        elements.manualImageUrl?.value.trim() || '';
+
+    if (manualDownloadUrl) {
+        elements.applicationDownloadUrl.value =
+            manualDownloadUrl;
+    }
+
+    if (manualImageUrl) {
+        elements.applicationImageUrl.value =
+            manualImageUrl;
+        elements.applicationIconType.value = 'image';
+    }
+
+    updateResolvedPreview();
+    updateValidationChecklist();
+}
+
+function setValidationCheck(
+    checkName,
+    ready,
+    readyText,
+    pendingText
+) {
+    if (!elements.validationChecklist) {
+        return;
+    }
+
+    const row =
+        elements.validationChecklist.querySelector(
+            `[data-check="${checkName}"]`
+        );
+
+    if (!row) {
+        return;
+    }
+
+    row.classList.toggle(
+        'is-ready',
+        ready
+    );
+
+    row.classList.toggle(
+        'is-pending',
+        !ready
+    );
+
+    const value =
+        row.querySelector('strong');
+
+    if (value) {
+        value.textContent =
+            ready
+                ? readyText
+                : pendingText;
+    }
+}
+
+function updateResolvedPreview() {
+    if (!elements.resolvedPreview) {
+        return;
+    }
+
+    const name =
+        elements.applicationName.value.trim();
+
+    const source =
+        elements.applicationSource.value.trim();
+
+    const version =
+        elements.applicationVersion.value.trim();
+
+    const size =
+        elements.applicationSize.value.trim();
+
+    const imageUrl =
+        elements.applicationImageUrl.value.trim();
+
+    const hasData =
+        Boolean(
+            name ||
+            source ||
+            version ||
+            imageUrl
+        );
+
+    elements.resolvedPreview.hidden =
+        !hasData;
+
+    if (!hasData) {
+        return;
+    }
+
+    elements.resolvedName.textContent =
+        name || 'Application';
+
+    elements.resolvedSource.textContent =
+        source
+            ? `Source: ${source}`
+            : 'Source pending';
+
+    elements.resolvedTechnical.textContent =
+        [
+            version
+                ? `Version ${version}`
+                : '',
+            size || ''
+        ]
+            .filter(Boolean)
+            .join(' · ') ||
+        'Technical metadata pending';
+
+    if (imageUrl) {
+        elements.resolvedIcon.src =
+            imageUrl;
+
+        elements.resolvedIcon.alt =
+            `${name || 'Application'} icon`;
+
+        elements.resolvedIcon.hidden =
+            false;
+
+        elements.resolvedIconFallback.hidden =
+            true;
+
+        elements.resolvedIcon.onerror = () => {
+            elements.resolvedIcon.hidden = true;
+            elements.resolvedIconFallback.hidden = false;
+            if (elements.iconStatus) {
+                elements.iconStatus.textContent =
+                    'Needs fallback';
+            }
+        };
+    } else {
+        elements.resolvedIcon.hidden = true;
+        elements.resolvedIconFallback.hidden = false;
+    }
+
+    const hasApk =
+        Boolean(
+            elements.applicationDownloadUrl.value.trim() ||
+            elements.apkFile?.files?.[0]
+        );
+
+    elements.resolvedHealth.textContent =
+        hasApk
+            ? 'Ready'
+            : 'Needs APK';
+
+    elements.resolvedHealth.classList.toggle(
+        'is-ready',
+        hasApk
+    );
+}
+
+function updateValidationChecklist() {
+    const packageId =
+        normalizePackageId(
+            elements.applicationPackageId.value
+        );
+
+    const identityReady =
+        Boolean(
+            elements.applicationName.value.trim() &&
+            isValidPackageId(packageId)
+        );
+
+    const metadataReady =
+        Boolean(
+            elements.applicationVersion.value.trim() &&
+            elements.applicationSize.value.trim() &&
+            elements.applicationSource.value.trim()
+        );
+
+    const apkReady =
+        Boolean(
+            elements.applicationDownloadUrl.value.trim() ||
+            elements.apkFile?.files?.[0]
+        );
+
+    const iconReady =
+        Boolean(
+            elements.applicationImageUrl.value.trim() ||
+            elements.iconFile?.files?.[0]
+        );
+
+    setValidationCheck(
+        'identity',
+        identityReady,
+        'Ready',
+        'Name + Package ID'
+    );
+
+    setValidationCheck(
+        'metadata',
+        metadataReady,
+        'Ready',
+        'Resolve data'
+    );
+
+    setValidationCheck(
+        'apk',
+        apkReady,
+        'Ready',
+        'Direct APK or upload'
+    );
+
+    setValidationCheck(
+        'icon',
+        iconReady,
+        'Ready',
+        'Resolve or upload'
+    );
+
+    if (elements.directApkStatus) {
+        elements.directApkStatus.textContent =
+            elements.applicationDownloadUrl.value.trim()
+                ? 'Verified URL ready'
+                : elements.apkFile?.files?.[0]
+                    ? 'Will upload to OSGuide'
+                    : 'APK required';
+    }
+
+    if (elements.iconStatus) {
+        elements.iconStatus.textContent =
+            elements.applicationImageUrl.value.trim()
+                ? 'Resolved'
+                : elements.iconFile?.files?.[0]
+                    ? 'Will upload'
+                    : 'Icon required';
+    }
+
+    updateResolvedPreview();
+}
+
+async function uploadAdminFile(
+    bucket,
+    file,
+    packageId,
+    kind
+) {
+    if (!file) {
+        return '';
+    }
+
+    const safePackageId =
+        packageId.replace(
+            /[^a-z0-9._-]/gi,
+            '-'
+        );
+
+    const extension =
+        String(file.name || '')
+            .split('.')
+            .pop()
+            .toLowerCase() ||
+        (
+            kind === 'apk'
+                ? 'apk'
+                : 'png'
+        );
+
+    const filePath =
+        `${safePackageId}/${kind}-${Date.now()}.${extension}`;
+
+    const {
+        error
+    } = await supabaseClient
+        .storage
+        .from(bucket)
+        .upload(
+            filePath,
+            file,
+            {
+                upsert: false,
+                contentType:
+                    file.type ||
+                    (
+                        kind === 'apk'
+                            ? 'application/vnd.android.package-archive'
+                            : 'application/octet-stream'
+                    )
+            }
+        );
+
+    if (error) {
+        throw error;
+    }
+
+    const {
+        data
+    } = supabaseClient
+        .storage
+        .from(bucket)
+        .getPublicUrl(
+            filePath,
+            kind === 'apk'
+                ? { download: true }
+                : undefined
+        );
+
+    return data?.publicUrl || '';
+}
+
+async function prepareHostedFilesBeforeSave() {
+    const packageId =
+        normalizePackageId(
+            elements.applicationPackageId.value
+        );
+
+    const apkFile =
+        elements.apkFile?.files?.[0] || null;
+
+    const iconFile =
+        elements.iconFile?.files?.[0] || null;
+
+    if (
+        !elements.applicationDownloadUrl.value.trim() &&
+        apkFile
+    ) {
+        setMetadataStatus(
+            'Uploading APK to OSGuide Storage…',
+            'loading'
+        );
+
+        const apkUrl =
+            await uploadAdminFile(
+                'osguide-apks',
+                apkFile,
+                packageId,
+                'app'
+            );
+
+        elements.applicationDownloadUrl.value =
+            apkUrl;
+
+        elements.applicationSource.value =
+            'OSGuide Hosted';
+
+        state.uploadedApkUrl =
+            apkUrl;
+    }
+
+    if (
+        !elements.applicationImageUrl.value.trim() &&
+        iconFile
+    ) {
+        setMetadataStatus(
+            'Uploading application icon…',
+            'loading'
+        );
+
+        const iconUrl =
+            await uploadAdminFile(
+                'osguide-icons',
+                iconFile,
+                packageId,
+                'icon'
+            );
+
+        elements.applicationImageUrl.value =
+            iconUrl;
+
+        elements.applicationIconType.value =
+            'image';
+
+        state.uploadedIconUrl =
+            iconUrl;
+    }
+
+    updateValidationChecklist();
 }
 
 function openApplicationModal(
@@ -1360,7 +1971,7 @@ function openApplicationModal(
         elements.applicationPackageId.value = '';
 
         elements.applicationSource.value =
-            'F-Droid';
+            '';
 
         elements.applicationPlatform.value =
             'Android';
@@ -1387,12 +1998,42 @@ function openApplicationModal(
 
     if (application?.package_id) {
         setMetadataStatus(
-            'Stored F-Droid metadata is loaded. Use “Fetch F-Droid data” to refresh it.',
+            'Stored metadata is loaded. Use “Resolve app data” to refresh it.',
             'info'
         );
     } else {
         setMetadataStatus('', '');
     }
+
+    if (elements.sourceMode) {
+        elements.sourceMode.value =
+            application?.source === 'F-Droid'
+                ? 'fdroid'
+                : 'auto';
+    }
+
+    if (elements.repositoryGroup) {
+        elements.repositoryGroup.hidden = true;
+    }
+
+    if (elements.manualDownloadUrl) {
+        elements.manualDownloadUrl.value = '';
+    }
+
+    if (elements.manualImageUrl) {
+        elements.manualImageUrl.value = '';
+    }
+
+    if (elements.apkFile) {
+        elements.apkFile.value = '';
+    }
+
+    if (elements.iconFile) {
+        elements.iconFile.value = '';
+    }
+
+    updateResolvedPreview();
+    updateValidationChecklist();
 
     elements.applicationModal.hidden = false;
     document.body.classList.add('modal-open');
@@ -1486,17 +2127,39 @@ function closeDeleteModal() {
 
     if (!isValidPackageId(packageId)) {
         showApplicationFormError(
-            'Enter a valid F-Droid Package ID.'
+            'Enter a valid Android Package ID.'
         );
         return;
     }
 
-    if (state.fetchedPackageId !== packageId) {
-        const metadata = await fetchAndApplyFdroidMetadata();
+    if (
+        state.fetchedPackageId !== packageId &&
+        !elements.applicationDownloadUrl.value.trim()
+    ) {
+        const metadata =
+            await fetchAndApplyFdroidMetadata();
 
-        if (!metadata) {
+        if (
+            !metadata &&
+            !elements.apkFile?.files?.[0]
+        ) {
             return;
         }
+    }
+
+    try {
+        await prepareHostedFilesBeforeSave();
+    } catch (error) {
+        console.error(
+            'Unable to upload OSGuide-hosted files:',
+            error
+        );
+
+        showApplicationFormError(
+            error?.message ||
+            'Unable to upload the APK or icon.'
+        );
+        return;
     }
 
     const applicationData =
@@ -1655,19 +2318,19 @@ function validateApplicationData(applicationData) {
     }
 
     if (!applicationData.package_id) {
-        return 'F-Droid Package ID is required.';
+        return 'Android Package ID is required.';
     }
 
     if (!isValidPackageId(applicationData.package_id)) {
-        return 'Enter a valid F-Droid Package ID.';
+        return 'Enter a valid Android Package ID.';
     }
 
     if (!applicationData.version) {
-        return 'Fetch F-Droid data before saving.';
+        return 'Resolve application data before saving.';
     }
 
     if (!applicationData.size) {
-        return 'APK size could not be fetched from F-Droid.';
+        return 'APK size is required before publishing.';
     }
 
     if (!applicationData.category) {
@@ -1702,7 +2365,7 @@ function validateApplicationData(applicationData) {
     }
 
     if (!applicationData.download_url) {
-        return 'Direct APK URL could not be fetched from F-Droid.';
+        return 'A direct APK URL or OSGuide-hosted APK is required.';
     }
 
     if (
@@ -1760,6 +2423,8 @@ function handleApplicationNameInput() {
         createSlug(
             elements.applicationName.value
         );
+
+    updateValidationChecklist();
 }
 
 function handleApplicationSlugInput() {
