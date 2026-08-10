@@ -18,7 +18,7 @@
 
     <link
         rel="stylesheet"
-        href="admin.css?v=20260805-fdroid-auto"
+        href="admin.css?v=20260810-admin-v2"
     >
 
     <script
@@ -513,7 +513,7 @@
                     </h2>
 
                     <p id="application-modal-description">
-                        Enter the application information below.
+                        Resolve, validate and publish Android applications with minimal manual work.
                     </p>
                 </div>
 
@@ -530,238 +530,304 @@
 
             <form
                 id="application-form"
-                class="application-form"
+                class="application-form admin-v2-form"
                 novalidate
             >
-                <input
-                    type="hidden"
-                    id="application-id"
-                >
+                <input type="hidden" id="application-id">
 
-                <div class="form-grid">
-
-                    <div class="form-group">
-                        <label for="application-name">
-                            Application name *
-                        </label>
-
-                        <input
-                            type="text"
-                            id="application-name"
-                            maxlength="100"
-                            required
-                        >
+                <section class="admin-v2-step">
+                    <div class="admin-v2-step-heading">
+                        <span class="admin-v2-step-number">1</span>
+                        <div>
+                            <h3>Identify application</h3>
+                            <p>Enter the app name and Android Package ID. OSGuide will try to resolve the best source automatically.</p>
+                        </div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="application-slug">
-                            Slug *
-                        </label>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="application-name">Application name *</label>
+                            <input
+                                type="text"
+                                id="application-name"
+                                maxlength="100"
+                                placeholder="Example: WhatsApp Business"
+                                autocomplete="off"
+                                required
+                            >
+                        </div>
 
-                        <input
-                            type="text"
-                            id="application-slug"
-                            maxlength="120"
-                            placeholder="Example: termux"
-                            autocomplete="off"
-                            spellcheck="false"
-                            required
-                        >
-
-                        <small>
-                            Lowercase letters, numbers and hyphens only.
-                        </small>
-                    </div>
-
-                    <div class="form-group form-group-full fdroid-package-group">
-                        <label for="application-package-id">
-                            F-Droid Package ID *
-                        </label>
-
-                        <div class="metadata-fetch-row">
+                        <div class="form-group">
+                            <label for="application-package-id">Package ID *</label>
                             <input
                                 type="text"
                                 id="application-package-id"
                                 maxlength="200"
-                                placeholder="Example: dev.debene.gopher"
+                                placeholder="Example: com.whatsapp.w4b"
                                 autocomplete="off"
                                 spellcheck="false"
                                 required
                             >
+                        </div>
 
+                        <div class="form-group form-group-full">
+                            <label for="application-source-mode">Source strategy</label>
+                            <select id="application-source-mode">
+                                <option value="auto" selected>Auto detect — recommended</option>
+                                <option value="fdroid">F-Droid</option>
+                                <option value="github">GitHub Releases</option>
+                                <option value="official">Official / Google Play metadata</option>
+                                <option value="osguide">OSGuide Hosted</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group form-group-full" id="github-repository-group" hidden>
+                            <label for="application-repository-url">GitHub repository URL</label>
+                            <input
+                                type="url"
+                                id="application-repository-url"
+                                placeholder="https://github.com/owner/repository"
+                                autocomplete="off"
+                            >
+                            <small>Only needed when GitHub cannot be discovered automatically.</small>
+                        </div>
+
+                        <div class="form-group form-group-full">
                             <button
                                 type="button"
-                                id="fetch-fdroid-metadata"
-                                class="secondary-button metadata-fetch-button"
+                                id="fetch-app-metadata"
+                                class="primary-button metadata-fetch-button admin-v2-resolve-button"
                             >
-                                <span class="button-text">Fetch F-Droid data</span>
+                                <span class="button-text">Resolve app data</span>
                                 <span class="button-loader" hidden></span>
                             </button>
                         </div>
 
-                        <small>
-                            OSGuide will fetch the latest APK URL, icon, version and file size automatically.
-                        </small>
-
                         <div
-                            id="fdroid-metadata-status"
-                            class="metadata-status"
+                            id="app-metadata-status"
+                            class="metadata-status admin-v2-status"
                             aria-live="polite"
                             hidden
                         ></div>
                     </div>
+                </section>
 
-                    <div class="form-group">
-                        <label for="application-version">
-                            Version (automatic)
-                        </label>
-
-                        <input
-                            type="text"
-                            id="application-version"
-                            maxlength="50"
-                            placeholder="Fetched from F-Droid"
-                            readonly
-                            required
-                        >
+                <section class="admin-v2-step">
+                    <div class="admin-v2-step-heading">
+                        <span class="admin-v2-step-number">2</span>
+                        <div>
+                            <h3>Review resolved data</h3>
+                            <p>OSGuide fills technical fields automatically. You only complete editorial information when needed.</p>
+                        </div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="application-size">
-                            APK size (automatic)
-                        </label>
-
-                        <input
-                            type="text"
-                            id="application-size"
-                            maxlength="50"
-                            placeholder="Fetched from F-Droid"
-                            readonly
-                            required
-                        >
+                    <div id="resolved-app-preview" class="resolved-app-preview" hidden>
+                        <div class="resolved-app-icon-shell">
+                            <img id="resolved-app-icon" alt="" hidden>
+                            <span id="resolved-app-icon-fallback">APP</span>
+                        </div>
+                        <div class="resolved-app-copy">
+                            <strong id="resolved-app-name">Application</strong>
+                            <span id="resolved-app-source">Source pending</span>
+                            <small id="resolved-app-technical">Resolve data to preview version and APK size.</small>
+                        </div>
+                        <span id="resolved-app-health" class="resolved-app-health">Pending</span>
                     </div>
 
-                    <div class="form-group">
-                        <label for="application-category">
-                            Category *
-                        </label>
+                    <div class="form-grid">
+                        <input type="hidden" id="application-slug">
+                        <input type="hidden" id="application-download-url">
+                        <input type="hidden" id="application-icon-type" value="image">
+                        <input type="hidden" id="application-image-url">
 
-                        <input
-                            type="text"
-                            id="application-category"
-                            maxlength="100"
-                            placeholder="Example: Development"
-                            required
-                        >
-                    </div>
-
-                    <div class="form-group">
-                        <label for="application-source">
-                            Source *
-                        </label>
-
-                        <input
-                            type="text"
-                            id="application-source"
-                            maxlength="100"
-                            value="F-Droid"
-                            required
-                        >
-                    </div>
-
-                    <div class="form-group">
-                        <label for="application-license">
-                            License
-                        </label>
-
-                        <input
-                            type="text"
-                            id="application-license"
-                            maxlength="100"
-                            placeholder="Example: GPL-3.0"
-                        >
-                    </div>
-
-                    <div class="form-group">
-                        <label for="application-platform">
-                            Platform
-                        </label>
-
-                        <input
-                            type="text"
-                            id="application-platform"
-                            maxlength="100"
-                            value="Android"
-                        >
-                    </div>
-
-                    <div class="form-group">
-                        <label for="application-added">
-                            Added date *
-                        </label>
-
-                        <input
-                            type="date"
-                            id="application-added"
-                            required
-                        >
-                    </div>
-
-                    <div class="form-group form-group-full">
-                        <label for="application-description">
-                            Short description *
-                        </label>
-
-                        <textarea
-                            id="application-description"
-                            rows="3"
-                            maxlength="300"
-                            required
-                        ></textarea>
-
-                        <small>
-                            Maximum 300 characters.
-                        </small>
-                    </div>
-
-                    <div class="form-group form-group-full">
-                        <label for="application-long-description">
-                            Full description
-                        </label>
-
-                        <textarea
-                            id="application-long-description"
-                            rows="6"
-                            maxlength="3000"
-                        ></textarea>
-                    </div>
-
-                    <input type="hidden" id="application-download-url">
-                    <input type="hidden" id="application-icon-type" value="image">
-                    <input type="hidden" id="application-image-url">
-
-                    <div class="form-group form-group-full auto-metadata-summary">
-                        <strong>Automatic F-Droid metadata</strong>
-                        <p>
-                            Download URL and Image URL are generated automatically and stored with the application.
-                        </p>
-                    </div>
-
-                    <div class="form-group checkbox-group">
-                        <label class="checkbox-label">
+                        <div class="form-group">
+                            <label for="application-version">Version</label>
                             <input
-                                type="checkbox"
-                                id="application-published"
-                                checked
+                                type="text"
+                                id="application-version"
+                                maxlength="80"
+                                placeholder="Resolved automatically"
+                                readonly
+                                required
                             >
+                        </div>
 
-                            <span>
-                                Publish this application
-                            </span>
-                        </label>
+                        <div class="form-group">
+                            <label for="application-size">APK size</label>
+                            <input
+                                type="text"
+                                id="application-size"
+                                maxlength="80"
+                                placeholder="Resolved automatically"
+                                readonly
+                                required
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="application-source">Resolved source</label>
+                            <input
+                                type="text"
+                                id="application-source"
+                                maxlength="100"
+                                placeholder="Auto detected"
+                                readonly
+                                required
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="application-category">Category *</label>
+                            <select id="application-category" required>
+                                <option value="">Choose category</option>
+                                <option value="Development">Development</option>
+                                <option value="Security">Security</option>
+                                <option value="Internet">Internet</option>
+                                <option value="Media">Media</option>
+                                <option value="Productivity">Productivity</option>
+                                <option value="System">System</option>
+                                <option value="Games">Games</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="application-license">License</label>
+                            <input
+                                type="text"
+                                id="application-license"
+                                maxlength="100"
+                                placeholder="Resolved when available"
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="application-platform">Platform</label>
+                            <input
+                                type="text"
+                                id="application-platform"
+                                maxlength="100"
+                                value="Android"
+                                readonly
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="application-added">Added date *</label>
+                            <input type="date" id="application-added" required>
+                        </div>
+
+                        <div class="form-group checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="application-published" checked>
+                                <span>Publish after validation</span>
+                            </label>
+                        </div>
+
+                        <div class="form-group form-group-full">
+                            <label for="application-description">Short description *</label>
+                            <textarea
+                                id="application-description"
+                                rows="3"
+                                maxlength="300"
+                                placeholder="A short OSGuide description"
+                                required
+                            ></textarea>
+                            <small>Maximum 300 characters.</small>
+                        </div>
+
+                        <div class="form-group form-group-full">
+                            <label for="application-long-description">Full description</label>
+                            <textarea
+                                id="application-long-description"
+                                rows="6"
+                                maxlength="3000"
+                                placeholder="Optional detailed description"
+                            ></textarea>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="admin-v2-step" id="osguide-hosting-step">
+                    <div class="admin-v2-step-heading">
+                        <span class="admin-v2-step-number">3</span>
+                        <div>
+                            <h3>APK delivery</h3>
+                            <p>If a verified direct APK is found, nothing else is required. Otherwise upload the APK and OSGuide creates the URL automatically.</p>
+                        </div>
                     </div>
 
-                </div>
+                    <div class="delivery-status-grid">
+                        <div class="delivery-status-card">
+                            <span>Direct APK</span>
+                            <strong id="direct-apk-status">Not checked</strong>
+                        </div>
+                        <div class="delivery-status-card">
+                            <span>Icon</span>
+                            <strong id="icon-status">Not checked</strong>
+                        </div>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group form-group-full">
+                            <label for="application-apk-file">Upload APK to OSGuide</label>
+                            <input
+                                type="file"
+                                id="application-apk-file"
+                                accept=".apk,application/vnd.android.package-archive"
+                            >
+                            <small>Use this only when no verified direct APK was resolved. The final public URL is created automatically.</small>
+                        </div>
+
+                        <div class="form-group form-group-full">
+                            <label for="application-icon-file">Upload icon fallback</label>
+                            <input
+                                type="file"
+                                id="application-icon-file"
+                                accept="image/png,image/jpeg,image/webp"
+                            >
+                            <small>Optional. Use only if the resolver could not obtain a working icon.</small>
+                        </div>
+                    </div>
+
+                    <details class="advanced-override">
+                        <summary>Advanced / emergency override</summary>
+                        <div class="form-grid advanced-override-grid">
+                            <div class="form-group form-group-full">
+                                <label for="manual-download-url">Direct APK URL</label>
+                                <input
+                                    type="url"
+                                    id="manual-download-url"
+                                    placeholder="https://..."
+                                >
+                            </div>
+                            <div class="form-group form-group-full">
+                                <label for="manual-image-url">Image URL</label>
+                                <input
+                                    type="url"
+                                    id="manual-image-url"
+                                    placeholder="https://..."
+                                >
+                            </div>
+                        </div>
+                    </details>
+                </section>
+
+                <section class="admin-v2-step">
+                    <div class="admin-v2-step-heading">
+                        <span class="admin-v2-step-number">4</span>
+                        <div>
+                            <h3>Validate & publish</h3>
+                            <p>The application will not be saved until required technical data passes validation.</p>
+                        </div>
+                    </div>
+
+                    <div id="validation-checklist" class="validation-checklist">
+                        <div data-check="identity"><span>Identity</span><strong>Pending</strong></div>
+                        <div data-check="metadata"><span>Metadata</span><strong>Pending</strong></div>
+                        <div data-check="apk"><span>APK delivery</span><strong>Pending</strong></div>
+                        <div data-check="icon"><span>Icon</span><strong>Pending</strong></div>
+                    </div>
+                </section>
 
                 <p
                     id="application-form-error"
@@ -770,7 +836,7 @@
                     hidden
                 ></p>
 
-                <footer class="modal-footer">
+                <footer class="modal-footer admin-v2-footer">
                     <button
                         type="button"
                         id="cancel-application"
@@ -784,14 +850,8 @@
                         id="save-application"
                         class="primary-button"
                     >
-                        <span class="button-text">
-                            Save application
-                        </span>
-
-                        <span
-                            class="button-loader"
-                            hidden
-                        ></span>
+                        <span class="button-text">Validate & publish</span>
+                        <span class="button-loader" hidden></span>
                     </button>
                 </footer>
             </form>
@@ -890,7 +950,7 @@
     </noscript>
 
 
-    <script src="admin.js?v=20260805-fdroid-auto"></script>
+    <script src="admin.js?v=20260810-admin-v2"></script>
 
 </body>
 </html>
