@@ -2151,19 +2151,20 @@ document.addEventListener('DOMContentLoaded', async () => {
             return false;
         }
 
+        /*
+         * Public listing validation must only reject records that
+         * cannot be rendered or downloaded at all.
+         *
+         * Metadata such as license, version, size, description and
+         * icon may legitimately be unavailable for some sources.
+         * Those fields receive display fallbacks when rows are mapped
+         * from Supabase, so future published applications are not
+         * silently removed from the home page.
+         */
         const requiredProperties = [
             'id',
             'name',
-            'description',
-            'longDescription',
-            'version',
-            'size',
-            'source',
-            'license',
-            'platform',
-            'added',
-            'downloadUrl',
-            'iconType'
+            'downloadUrl'
         ];
 
         return requiredProperties.every(property => {
@@ -3096,22 +3097,42 @@ try {
     }
 
     const supabaseApplications = Array.isArray(data)
-        ? data.map((app) => ({
-            id: String(app.id),
-            name: app.name || '',
-            description: app.description || '',
-            longDescription: app.long_description || app.description || '',
-            version: app.version || '',
-            size: app.size || '',
-            source: app.source || 'F-Droid',
-            license: app.license || '',
-            platform: app.platform || 'Android',
-            category: app.category || '',
-            added: app.added || '',
-            downloadUrl: app.download_url || '',
-            iconType: app.icon_type || 'default',
-            imageUrl: app.image_url || ''
-        }))
+        ? data.map((app) => {
+            const applicationName =
+                String(app.name || '').trim();
+
+            const description =
+                String(
+                    app.description ||
+                    `Download ${applicationName || 'this application'} from OSGuide.`
+                ).trim();
+
+            return {
+                id: String(app.id || '').trim(),
+                name: applicationName,
+                description,
+                longDescription: String(
+                    app.long_description ||
+                    app.description ||
+                    description
+                ).trim(),
+                version: String(app.version || 'Latest').trim(),
+                size: String(app.size || 'Unknown').trim(),
+                source: String(app.source || 'OSGuide').trim(),
+                license: String(app.license || 'Not specified').trim(),
+                platform: String(app.platform || 'Android').trim(),
+                category: String(app.category || 'Other').trim(),
+                added: String(
+                    app.added ||
+                    app.metadata_updated_at ||
+                    app.created_at ||
+                    ''
+                ).trim(),
+                downloadUrl: String(app.download_url || '').trim(),
+                iconType: String(app.icon_type || 'default').trim(),
+                imageUrl: String(app.image_url || '').trim()
+            };
+        })
         : [];
 
     applications.splice(
@@ -3135,7 +3156,7 @@ try {
         applications.length
     ) {
         console.warn(
-            'Some invalid or duplicate applications were removed.'
+            'Some published rows were skipped because they are missing an ID, name, download URL, or are duplicates.'
         );
     }    /* =====================================================
        48. Side Navigation and Featured Application
