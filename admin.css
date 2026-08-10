@@ -1386,3 +1386,256 @@ img {
         min-width: 0;
     }
 }
+
+
+/* =========================================================
+   OSGuide Admin V2 — Smart resolver workflow
+========================================================= */
+
+.admin-v2-form {
+    gap: 22px;
+}
+
+.application-modal-card {
+    max-width: 980px;
+}
+
+.admin-v2-step {
+    padding: 20px;
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+    background: var(--color-surface-soft);
+}
+
+.admin-v2-step-heading {
+    display: flex;
+    align-items: flex-start;
+    gap: 13px;
+    margin-bottom: 18px;
+}
+
+.admin-v2-step-number {
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+    display: grid;
+    place-items: center;
+    border-radius: 10px;
+    background: var(--color-primary);
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.admin-v2-step-heading h3 {
+    margin: 0;
+    font-size: 17px;
+}
+
+.admin-v2-step-heading p {
+    margin: 4px 0 0;
+    color: var(--color-text-soft);
+    font-size: 13px;
+}
+
+.admin-v2-resolve-button {
+    width: 100%;
+    min-height: 50px;
+}
+
+.admin-v2-status {
+    margin-top: 0;
+}
+
+.resolved-app-preview {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 18px;
+    padding: 14px;
+    border: 1px solid var(--color-border);
+    border-radius: 13px;
+    background: var(--color-surface);
+}
+
+.resolved-app-icon-shell {
+    width: 58px;
+    height: 58px;
+    flex: 0 0 58px;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+    border-radius: 14px;
+    background: #111827;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 900;
+}
+
+.resolved-app-icon-shell img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.resolved-app-copy {
+    min-width: 0;
+    flex: 1;
+}
+
+.resolved-app-copy strong,
+.resolved-app-copy span,
+.resolved-app-copy small {
+    display: block;
+}
+
+.resolved-app-copy strong {
+    font-size: 16px;
+}
+
+.resolved-app-copy span {
+    margin-top: 2px;
+    color: var(--color-primary);
+    font-size: 12px;
+    font-weight: 750;
+}
+
+.resolved-app-copy small {
+    margin-top: 4px;
+    color: var(--color-text-soft);
+    font-size: 12px;
+}
+
+.resolved-app-health {
+    flex: 0 0 auto;
+    padding: 6px 9px;
+    border-radius: 999px;
+    background: var(--color-warning-soft);
+    color: var(--color-warning);
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.resolved-app-health.is-ready {
+    background: var(--color-success-soft);
+    color: var(--color-success);
+}
+
+.delivery-status-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.delivery-status-card {
+    padding: 13px;
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    background: var(--color-surface);
+}
+
+.delivery-status-card span,
+.delivery-status-card strong {
+    display: block;
+}
+
+.delivery-status-card span {
+    color: var(--color-text-soft);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.delivery-status-card strong {
+    margin-top: 5px;
+    font-size: 13px;
+}
+
+.advanced-override {
+    margin-top: 14px;
+    border: 1px dashed var(--color-border-dark);
+    border-radius: 12px;
+    background: var(--color-surface);
+}
+
+.advanced-override summary {
+    padding: 13px 14px;
+    cursor: pointer;
+    color: var(--color-text-soft);
+    font-size: 12px;
+    font-weight: 750;
+}
+
+.advanced-override-grid {
+    padding: 0 14px 14px;
+}
+
+.validation-checklist {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.validation-checklist > div {
+    padding: 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 11px;
+    background: var(--color-surface);
+}
+
+.validation-checklist span,
+.validation-checklist strong {
+    display: block;
+}
+
+.validation-checklist span {
+    color: var(--color-text-soft);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.validation-checklist strong {
+    margin-top: 5px;
+    color: var(--color-warning);
+    font-size: 12px;
+}
+
+.validation-checklist .is-ready {
+    border-color: #bbf7d0;
+    background: var(--color-success-soft);
+}
+
+.validation-checklist .is-ready strong {
+    color: var(--color-success);
+}
+
+.admin-v2-footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 4;
+    margin: 0 -24px -24px;
+    padding: 16px 24px;
+    border-top: 1px solid var(--color-border);
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(12px);
+}
+
+@media (max-width: 760px) {
+    .admin-v2-step {
+        padding: 15px;
+    }
+
+    .delivery-status-grid,
+    .validation-checklist {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .resolved-app-preview {
+        align-items: flex-start;
+    }
+
+    .resolved-app-health {
+        display: none;
+    }
+}
