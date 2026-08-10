@@ -1223,6 +1223,37 @@ function isValidPackageId(value) {
     return /^[a-z0-9_]+(?:\.[a-z0-9_]+)+$/.test(value);
 }
 
+function buildOSGuideDownloadResolverUrl(applicationName, packageId) {
+    const resolverUrl = new URL(
+        `${SUPABASE_URL}/functions/v1/download-apk`
+    );
+
+    resolverUrl.searchParams.set(
+        'name',
+        String(applicationName || '').trim()
+    );
+
+    resolverUrl.searchParams.set(
+        'packageId',
+        normalizePackageId(packageId)
+    );
+
+    return resolverUrl.toString();
+}
+
+function isOSGuideDownloadResolverUrl(value) {
+    try {
+        const url = new URL(String(value || '').trim());
+
+        return (
+            url.origin === new URL(SUPABASE_URL).origin &&
+            url.pathname === '/functions/v1/download-apk'
+        );
+    } catch {
+        return false;
+    }
+}
+
 function handlePackageIdInput() {
     const packageId = normalizePackageId(
         elements.applicationPackageId.value
@@ -1393,8 +1424,15 @@ async function fetchAndApplyFdroidMetadata() {
         elements.applicationSize.value =
             metadata.size || 'Varies';
 
+        const resolvedDownloadUrl =
+            metadata.downloadUrl ||
+            buildOSGuideDownloadResolverUrl(
+                applicationName,
+                packageId
+            );
+
         elements.applicationDownloadUrl.value =
-            metadata.downloadUrl || '';
+            resolvedDownloadUrl;
 
         elements.applicationImageUrl.value =
             metadata.imageUrl || '';
@@ -1448,8 +1486,8 @@ async function fetchAndApplyFdroidMetadata() {
             );
         } else {
             setMetadataStatus(
-                `${resolvedSource} metadata found. No verified direct APK was returned, so upload the APK below to host it with OSGuide.`,
-                'info'
+                `Ready: ${resolvedSource} metadata found. Downloads will be resolved automatically through OSGuide.`,
+                'success'
             );
         }
 
@@ -1725,9 +1763,16 @@ function updateValidationChecklist() {
     );
 
     if (elements.directApkStatus) {
+        const currentDownloadUrl =
+            elements.applicationDownloadUrl.value.trim();
+
         elements.directApkStatus.textContent =
-            elements.applicationDownloadUrl.value.trim()
-                ? 'Verified URL ready'
+            currentDownloadUrl
+                ? (
+                    isOSGuideDownloadResolverUrl(currentDownloadUrl)
+                        ? 'OSGuide resolver ready'
+                        : 'Verified URL ready'
+                )
                 : elements.apkFile?.files?.[0]
                     ? 'Will upload to OSGuide'
                     : 'APK required';
