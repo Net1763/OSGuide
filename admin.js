@@ -1552,8 +1552,24 @@ function applyManualOverrides() {
         elements.manualImageUrl?.value.trim() || '';
 
     if (manualDownloadUrl) {
-        elements.applicationDownloadUrl.value =
-            manualDownloadUrl;
+        const packageId =
+            normalizePackageId(
+                elements.applicationPackageId.value
+            );
+
+        const applicationName =
+            elements.applicationName.value.trim();
+
+        if (
+            applicationName &&
+            isValidPackageId(packageId)
+        ) {
+            elements.applicationDownloadUrl.value =
+                buildOSGuideDownloadResolverUrl(
+                    applicationName,
+                    packageId
+                );
+        }
     }
 
     if (manualImageUrl) {
@@ -1689,6 +1705,7 @@ function updateResolvedPreview() {
     const hasApk =
         Boolean(
             elements.applicationDownloadUrl.value.trim() ||
+            elements.manualDownloadUrl?.value.trim() ||
             elements.apkFile?.files?.[0]
         );
 
@@ -1725,6 +1742,7 @@ function updateValidationChecklist() {
     const apkReady =
         Boolean(
             elements.applicationDownloadUrl.value.trim() ||
+            elements.manualDownloadUrl?.value.trim() ||
             elements.apkFile?.files?.[0]
         );
 
@@ -1766,16 +1784,21 @@ function updateValidationChecklist() {
         const currentDownloadUrl =
             elements.applicationDownloadUrl.value.trim();
 
+        const manualDownloadUrl =
+            elements.manualDownloadUrl?.value.trim() || '';
+
         elements.directApkStatus.textContent =
-            currentDownloadUrl
-                ? (
-                    isOSGuideDownloadResolverUrl(currentDownloadUrl)
-                        ? 'OSGuide resolver ready'
-                        : 'Verified URL ready'
-                )
-                : elements.apkFile?.files?.[0]
-                    ? 'Will upload to OSGuide'
-                    : 'APK required';
+            manualDownloadUrl
+                ? 'Manual URL will be verified'
+                : currentDownloadUrl
+                    ? (
+                        isOSGuideDownloadResolverUrl(currentDownloadUrl)
+                            ? 'OSGuide resolver ready'
+                            : 'Verified URL ready'
+                    )
+                    : elements.apkFile?.files?.[0]
+                        ? 'Will upload to OSGuide'
+                        : 'APK required';
     }
 
     if (elements.iconStatus) {
@@ -1963,6 +1986,11 @@ function openApplicationModal(
         elements.applicationPackageId.value =
             application.package_id || '';
 
+        if (elements.repositoryUrl) {
+            elements.repositoryUrl.value =
+                application.repository_url || '';
+        }
+
         elements.applicationVersion.value =
             application.version || '';
 
@@ -2054,15 +2082,19 @@ function openApplicationModal(
         elements.sourceMode.value =
             application?.source === 'F-Droid'
                 ? 'fdroid'
-                : 'auto';
+                : application?.repository_url
+                    ? 'github'
+                    : 'auto';
     }
 
     if (elements.repositoryGroup) {
-        elements.repositoryGroup.hidden = true;
+        elements.repositoryGroup.hidden =
+            elements.sourceMode?.value !== 'github';
     }
 
     if (elements.manualDownloadUrl) {
-        elements.manualDownloadUrl.value = '';
+        elements.manualDownloadUrl.value =
+            application?.manual_download_url || '';
     }
 
     if (elements.manualImageUrl) {
@@ -2328,7 +2360,22 @@ function getApplicationFormData() {
             elements.applicationAdded.value,
 
         download_url:
-            elements.applicationDownloadUrl.value.trim(),
+            (
+                elements.manualDownloadUrl?.value.trim()
+                    ? buildOSGuideDownloadResolverUrl(
+                        elements.applicationName.value.trim(),
+                        normalizePackageId(
+                            elements.applicationPackageId.value
+                        )
+                    )
+                    : elements.applicationDownloadUrl.value.trim()
+            ),
+
+        repository_url:
+            elements.repositoryUrl?.value.trim() || null,
+
+        manual_download_url:
+            elements.manualDownloadUrl?.value.trim() || null,
 
         icon_type:
             elements.applicationIconType.value,
