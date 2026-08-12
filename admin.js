@@ -22,6 +22,7 @@ const state = {
     fetchedMetadata: null,
     fetchedPackageId: null,
     resolvedSourceMode: 'auto',
+    resolvedRepositoryUrl: '',
     uploadedApkUrl: '',
     uploadedIconUrl: ''
 };
@@ -1415,6 +1416,26 @@ async function fetchAndApplyFdroidMetadata() {
         state.resolvedSourceMode =
             data.provider || sourceMode;
 
+        const resolvedRepositoryUrl = String(
+            metadata.repositoryUrl ||
+            metadata.repository_url ||
+            data.repositoryUrl ||
+            data.repository_url ||
+            repositoryUrl ||
+            ''
+        ).trim();
+
+        state.resolvedRepositoryUrl =
+            resolvedRepositoryUrl;
+
+        if (
+            resolvedRepositoryUrl &&
+            elements.repositoryUrl
+        ) {
+            elements.repositoryUrl.value =
+                resolvedRepositoryUrl;
+        }
+
         elements.applicationPackageId.value =
             packageId;
 
@@ -1537,6 +1558,7 @@ function handleSourceModeChange() {
 
     state.fetchedMetadata = null;
     state.fetchedPackageId = null;
+    state.resolvedRepositoryUrl = '';
     state.uploadedApkUrl = '';
     state.uploadedIconUrl = '';
 
@@ -2068,6 +2090,8 @@ function openApplicationModal(
         imageUrl: application.image_url || ''
     } : null;
     state.fetchedPackageId = application?.package_id || null;
+    state.resolvedRepositoryUrl =
+        application?.repository_url || '';
 
     if (application?.package_id) {
         setMetadataStatus(
@@ -2133,6 +2157,7 @@ function closeApplicationModal() {
     state.editingApplicationId = null;
     state.fetchedMetadata = null;
     state.fetchedPackageId = null;
+    state.resolvedRepositoryUrl = '';
 
     elements.applicationForm.reset();
     elements.applicationId.value = '';
@@ -2372,7 +2397,9 @@ function getApplicationFormData() {
             ),
 
         repository_url:
-            elements.repositoryUrl?.value.trim() || null,
+            elements.repositoryUrl?.value.trim() ||
+            state.resolvedRepositoryUrl ||
+            null,
 
         manual_download_url:
             elements.manualDownloadUrl?.value.trim() || null,
