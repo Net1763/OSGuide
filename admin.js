@@ -1455,11 +1455,23 @@ async function fetchAndApplyFdroidMetadata() {
         elements.applicationDownloadUrl.value =
             resolvedDownloadUrl;
 
-        elements.applicationImageUrl.value =
-            metadata.imageUrl || '';
+        const resolvedImageUrl =
+            String(metadata.imageUrl || '').trim();
 
-        elements.applicationIconType.value =
-            metadata.imageUrl ? 'image' : 'default';
+        /*
+         * GitHub metadata may legitimately have no application icon.
+         * Never replace a previously verified app icon with an empty value
+         * (and never fall back to a repository-owner avatar).
+         */
+        if (resolvedImageUrl) {
+            elements.applicationImageUrl.value =
+                resolvedImageUrl;
+            elements.applicationIconType.value =
+                'image';
+        } else if (elements.applicationImageUrl.value.trim()) {
+            elements.applicationIconType.value =
+                'image';
+        }
 
         elements.applicationSource.value =
             resolvedSource;
