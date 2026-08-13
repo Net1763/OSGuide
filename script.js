@@ -9,6 +9,45 @@ document.addEventListener('DOMContentLoaded', async () => {
     const SUPABASE_URL = 'https://rqvicenfdzlleureteis.supabase.co';
     const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_U64um_oKyNG0zXHQu6PuTg_lR9rSIwA';
 
+    async function waitForSupabaseLibrary() {
+        const maxAttempts = 24;
+        const delayMs = 250;
+
+        for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+            if (
+                window.supabase &&
+                typeof window.supabase.createClient === 'function'
+            ) {
+                return true;
+            }
+
+            await new Promise(resolve => {
+                window.setTimeout(resolve, delayMs);
+            });
+        }
+
+        return false;
+    }
+
+    const supabaseLibraryReady =
+        await waitForSupabaseLibrary();
+
+    if (!supabaseLibraryReady) {
+        console.error(
+            'Supabase JavaScript library did not load.'
+        );
+
+        const countElement =
+            document.getElementById('application-count');
+
+        if (countElement) {
+            countElement.textContent =
+                'Applications temporarily unavailable';
+        }
+
+        return;
+    }
+
     const supabaseClient = window.supabase.createClient(
         SUPABASE_URL,
         SUPABASE_PUBLISHABLE_KEY
@@ -3176,69 +3215,140 @@ document.addEventListener('DOMContentLoaded', async () => {
     /* =====================================================
        47. Prepared Applications
     ===================================================== */
-try {
-    const { data, error } = await supabaseClient
-        .from('applications')
-        .select('*')
-        .eq('is_published', true)
-        .order('added', { ascending: false });
 
-    if (error) {
-        throw error;
+    function mapSupabaseApplication(app) {
+        const applicationName =
+            String(app.name || '').trim();
+
+        const description =
+            String(
+                app.description ||
+                `Download ${applicationName || 'this application'} from OSGuide.`
+            ).trim();
+
+        return {
+            id: String(app.id || '').trim(),
+            name: applicationName,
+            description,
+            longDescription: String(
+                app.long_description ||
+                app.description ||
+                description
+            ).trim(),
+            version: String(app.version || 'Latest').trim(),
+            size: String(app.size || 'Unknown').trim(),
+            source: String(app.source || 'OSGuide').trim(),
+            license: String(app.license || 'Not specified').trim(),
+            platform: String(app.platform || 'Android').trim(),
+            category: String(app.category || 'Other').trim(),
+            added: String(
+                app.added ||
+                app.metadata_updated_at ||
+                app.created_at ||
+                ''
+            ).trim(),
+            downloadUrl: String(app.download_url || '').trim(),
+            iconType: String(app.icon_type || 'default').trim(),
+            imageUrl: String(app.image_url || '').trim()
+        };
     }
 
-    const supabaseApplications = Array.isArray(data)
-        ? data.map((app) => {
-            const applicationName =
-                String(app.name || '').trim();
+    async function fetchPublishedApplications() {
+        const maxAttempts = 3;
+        let lastError = null;
 
-            const description =
-                String(
-                    app.description ||
-                    `Download ${applicationName || 'this application'} from OSGuide.`
-                ).trim();
+        for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+            try {
+                const {
+                    data,
+                    error
+                } =
+                    await supabaseClient
+                        .from('applications')
+                        .select('*')
+                        .eq('is_published', true)
+                        .order('added', {
+                            ascending: false
+                        });
 
-            return {
-                id: String(app.id || '').trim(),
-                name: applicationName,
-                description,
-                longDescription: String(
-                    app.long_description ||
-                    app.description ||
-                    description
-                ).trim(),
-                version: String(app.version || 'Latest').trim(),
-                size: String(app.size || 'Unknown').trim(),
-                source: String(app.source || 'OSGuide').trim(),
-                license: String(app.license || 'Not specified').trim(),
-                platform: String(app.platform || 'Android').trim(),
-                category: String(app.category || 'Other').trim(),
-                added: String(
-                    app.added ||
-                    app.metadata_updated_at ||
-                    app.created_at ||
-                    ''
-                ).trim(),
-                downloadUrl: String(app.download_url || '').trim(),
-                iconType: String(app.icon_type || 'default').trim(),
-                imageUrl: String(app.image_url || '').trim()
-            };
-        })
-        : [];
+                if (error) {
+                    throw error;
+                }
+
+                return Array.isArray(data)
+                    ? data.map(mapSupabaseApplication)
+                    : [];
+            } catch (error) {
+                lastError = error;
+
+                console.warn(
+                    `Published applications request ${attempt}/${maxAttempts} failed.`,
+                    error
+                );
+
+                if (attempt < maxAttempts) {
+                    await new Promise(resolve => {
+                        window.setTimeout(
+                            resolve,
+                            700 * attempt
+                        );
+                    });
+                }
+            }
+        }
+
+        /*
+         * Fallback: if the published-filter query itself fails, request
+         * accessible rows and filter on the client. This protects the
+         * homepage from collapsing to "0 applications" because of a
+         * temporary query/filter problem.
+         */
+        try {
+            const {
+                data,
+                error
+            } =
+                await supabaseClient
+                    .from('applications')
+                    .select('*')
+                    .order('added', {
+                        ascending: false
+                    });
+
+            if (error) {
+                throw error;
+            }
+
+            const accessibleRows =
+                Array.isArray(data)
+                    ? data
+                    : [];
+
+            return accessibleRows
+                .filter(app =>
+                    app.is_published !== false
+                )
+                .map(mapSupabaseApplication);
+        } catch (fallbackError) {
+            console.error(
+                'Could not load applications from Supabase after retry and fallback.',
+                fallbackError,
+                lastError
+            );
+
+            return [];
+        }
+    }
+
+    const supabaseApplications =
+        await fetchPublishedApplications();
 
     applications.splice(
         0,
         applications.length,
         ...supabaseApplications
     );
-} catch (error) {
-    applications.splice(0, applications.length);
 
-    console.error(
-        'Could not load applications from Supabase.',
-        error
-    );
-}
     const preparedApplications =
         prepareApplications();
 
