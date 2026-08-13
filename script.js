@@ -1776,22 +1776,72 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     /* =====================================================
-       16. Guide Modal
+       16. Guide Modal + Google Authentication
     ===================================================== */
+
+    function getGuideDestination(applicationSlug = 'termux') {
+        const safeSlug =
+            String(applicationSlug || 'termux')
+                .trim()
+                .toLowerCase();
+
+        return new URL(
+            `guide.html?slug=${encodeURIComponent(safeSlug)}`,
+            window.location.href
+        ).href;
+    }
+
+    async function openGuideWithGoogle(applicationSlug = 'termux') {
+        const redirectUrl =
+            getGuideDestination(applicationSlug);
+
+        const {
+            data: sessionData,
+            error: sessionError
+        } =
+            await supabaseClient.auth.getSession();
+
+        if (sessionError) {
+            console.error(
+                'OSGuide could not read the current authentication session:',
+                sessionError
+            );
+        }
+
+        if (sessionData?.session?.user) {
+            window.location.href =
+                redirectUrl;
+
+            return;
+        }
+
+        const {
+            error
+        } =
+            await supabaseClient.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo:
+                        redirectUrl
+                }
+            });
+
+        if (error) {
+            console.error(
+                'OSGuide Google sign-in failed:',
+                error
+            );
+
+            alert(
+                'Google sign-in could not be started. Please try again.'
+            );
+        }
+    }
 
     if (guideButton) {
         guideButton.addEventListener('click', () => {
             openModal(guideModal);
         });
-    }
-
-    function showLoginMessage(providerName) {
-        const provider =
-            String(providerName || 'selected method');
-
-        alert(
-            `${provider} authentication will be connected in a later development stage.`
-        );
     }
 
     function attachGuideLoginEvents() {
@@ -1800,15 +1850,56 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         const loginButtons =
-            guideModal.querySelectorAll('.login-option');
+            Array.from(
+                guideModal.querySelectorAll('.login-option')
+            );
 
         loginButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const providerName =
-                    button.textContent.trim();
+            const providerName =
+                button.textContent
+                    .trim()
+                    .toLowerCase();
 
-                showLoginMessage(providerName);
-            });
+            if (providerName.includes('google')) {
+                button.addEventListener(
+                    'click',
+                    async () => {
+                        button.disabled =
+                            true;
+
+                        const originalText =
+                            button.textContent;
+
+                        button.textContent =
+                            'Opening Google...';
+
+                        try {
+                            await openGuideWithGoogle(
+                                'termux'
+                            );
+                        } finally {
+                            button.disabled =
+                                false;
+
+                            button.textContent =
+                                originalText;
+                        }
+                    }
+                );
+
+                return;
+            }
+
+            if (providerName.includes('email')) {
+                button.addEventListener(
+                    'click',
+                    () => {
+                        alert(
+                            'Guide access currently uses Google sign-in.'
+                        );
+                    }
+                );
+            }
         });
     }
 
