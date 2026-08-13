@@ -1,0 +1,2867 @@
+/* =========================================================
+   OSGuide — Guide System V2
+   Independent rebuild
+   Permanent dark theme
+   Desktop + tablet + phone
+========================================================= */
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    min-height: 100%;
+    scroll-behavior: smooth;
+    background: #05090e;
+}
+
+body {
+    min-height: 100vh;
+    overflow-x: hidden;
+    background:
+        radial-gradient(circle at 80% -10%, rgba(35, 98, 215, 0.08), transparent 36rem),
+        #05090e;
+    color: #eef4fb;
+    font-family:
+        Inter,
+        ui-sans-serif,
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+}
+
+button,
+input {
+    font: inherit;
+}
+
+button {
+    border: 0;
+}
+
+button,
+a {
+    color: inherit;
+    -webkit-tap-highlight-color: transparent;
+}
+
+a {
+    text-decoration: none;
+}
+
+img,
+svg {
+    display: block;
+}
+
+img {
+    max-width: 100%;
+}
+
+[hidden] {
+    display: none !important;
+}
+
+:root {
+    --guide-page: #05090e;
+    --guide-page-2: #060c13;
+
+    --guide-surface: #08111a;
+    --guide-surface-2: #0a141f;
+    --guide-surface-3: #0d1824;
+    --guide-surface-hover: #101d2b;
+
+    --guide-border: #172536;
+    --guide-border-strong: #24364d;
+
+    --guide-text: #f3f7fc;
+    --guide-text-soft: #9aa8ba;
+    --guide-text-faint: #66768b;
+
+    --guide-blue: #3f7df2;
+    --guide-blue-strong: #2366e8;
+    --guide-blue-soft: rgba(63, 125, 242, 0.14);
+
+    --guide-green: #35cf7c;
+    --guide-green-soft: rgba(53, 207, 124, 0.12);
+
+    --guide-purple: #a56cff;
+    --guide-purple-soft: rgba(165, 108, 255, 0.12);
+
+    --guide-orange: #ff9c32;
+    --guide-orange-soft: rgba(255, 156, 50, 0.12);
+
+    --guide-reference: #4e8cff;
+    --guide-reference-soft: rgba(78, 140, 255, 0.12);
+
+    --guide-danger: #ff5864;
+
+    --guide-radius-sm: 9px;
+    --guide-radius-md: 13px;
+    --guide-radius-lg: 17px;
+    --guide-radius-xl: 22px;
+
+    --guide-sidebar-width: 190px;
+    --guide-topbar-height: 64px;
+
+    --guide-shadow: 0 20px 55px rgba(0, 0, 0, 0.28);
+    --guide-transition: 160ms ease;
+}
+
+.guide-page button:focus-visible,
+.guide-page a:focus-visible,
+.guide-page input:focus-visible {
+    outline: 3px solid rgba(63, 125, 242, 0.28);
+    outline-offset: 2px;
+}
+
+
+/* =========================================================
+   AUTH
+========================================================= */
+
+.guide-auth-gate {
+    position: fixed;
+    inset: 0;
+    z-index: 5000;
+    display: grid;
+    place-items: center;
+    min-height: 100dvh;
+    overflow: hidden;
+    padding: 24px;
+    background:
+        radial-gradient(circle at 80% 10%, rgba(39, 94, 203, 0.16), transparent 24rem),
+        radial-gradient(circle at 10% 90%, rgba(45, 207, 116, 0.08), transparent 26rem),
+        rgba(5, 9, 14, 0.985);
+}
+
+.guide-auth-card {
+    position: relative;
+    width: min(100%, 470px);
+    padding: 34px;
+    border: 1px solid var(--guide-border-strong);
+    border-radius: 24px;
+    background:
+        linear-gradient(
+            145deg,
+            rgba(12, 22, 34, 0.98),
+            rgba(7, 14, 22, 0.98)
+        );
+    box-shadow: 0 32px 100px rgba(0, 0, 0, 0.58);
+}
+
+.guide-auth-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 30px;
+}
+
+.guide-auth-brand-mark {
+    width: 35px;
+    height: 35px;
+    display: grid;
+    place-items: center;
+    border: 2px solid var(--guide-blue);
+    border-radius: 50%;
+}
+
+.guide-auth-brand-mark::after {
+    content: "";
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: var(--guide-blue);
+    box-shadow: 0 0 0 4px rgba(63, 125, 242, 0.13);
+}
+
+.guide-auth-brand strong {
+    color: #ffffff;
+    font-size: 20px;
+    letter-spacing: -0.5px;
+}
+
+.guide-auth-brand strong span {
+    color: var(--guide-blue);
+}
+
+.guide-auth-icon {
+    width: 58px;
+    height: 58px;
+    display: grid;
+    place-items: center;
+    margin-bottom: 18px;
+    border: 1px solid #26456e;
+    border-radius: 17px;
+    background: #0d1b2c;
+    color: #6ea5ff;
+}
+
+.guide-auth-icon svg {
+    width: 29px;
+    height: 29px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.guide-auth-eyebrow {
+    color: var(--guide-blue);
+    font-size: 11px;
+    font-weight: 850;
+    letter-spacing: 0.14em;
+}
+
+.guide-auth-card h1 {
+    margin-top: 8px;
+    color: var(--guide-text);
+    font-size: clamp(29px, 7vw, 40px);
+    line-height: 1.05;
+    letter-spacing: -1.4px;
+}
+
+.guide-auth-copy {
+    margin-top: 15px;
+    color: var(--guide-text-soft);
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+.guide-google-login {
+    width: 100%;
+    min-height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 11px;
+    margin-top: 24px;
+    cursor: pointer;
+    border: 1px solid #315b9b;
+    border-radius: 12px;
+    background: #1767e6;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 800;
+    transition:
+        background var(--guide-transition),
+        transform var(--guide-transition);
+}
+
+.guide-google-login:hover {
+    background: #2475f0;
+}
+
+.guide-google-login:active {
+    transform: scale(0.985);
+}
+
+.guide-google-login:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
+.guide-google-mark {
+    width: 26px;
+    height: 26px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: #ffffff;
+    color: #2967d6;
+    font-size: 15px;
+    font-weight: 900;
+}
+
+.guide-auth-status {
+    min-height: 19px;
+    margin-top: 10px;
+    color: #ff8f98;
+    font-size: 12px;
+    text-align: center;
+}
+
+.guide-auth-benefits {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.guide-auth-benefits span {
+    padding: 9px 10px;
+    border: 1px solid var(--guide-border);
+    border-radius: 9px;
+    background: rgba(8, 17, 26, 0.7);
+    color: #9eabba;
+    font-size: 11px;
+    text-align: center;
+}
+
+.guide-auth-note {
+    margin-top: 18px;
+    color: var(--guide-text-faint);
+    font-size: 11px;
+    line-height: 1.5;
+    text-align: center;
+}
+
+.guide-auth-back {
+    display: block;
+    width: max-content;
+    margin: 15px auto 0;
+    color: #7991ad;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.guide-auth-back:hover {
+    color: #ffffff;
+}
+
+
+/* =========================================================
+   TOP BAR
+========================================================= */
+
+.guide-topbar {
+    position: fixed;
+    inset: 0 0 auto 0;
+    z-index: 1000;
+    height: var(--guide-topbar-height);
+    display: grid;
+    grid-template-columns:
+        var(--guide-sidebar-width)
+        minmax(280px, 440px)
+        minmax(0, 1fr);
+    align-items: center;
+    gap: 20px;
+    padding: 0 24px;
+    border-bottom: 1px solid #121f2e;
+    background: rgba(4, 9, 14, 0.92);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+}
+
+.guide-topbar-leading {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.guide-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+}
+
+.guide-brand-symbol {
+    width: 25px;
+    height: 25px;
+    display: grid;
+    place-items: center;
+    border: 2px solid var(--guide-blue);
+    border-radius: 50%;
+}
+
+.guide-brand-symbol span {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--guide-blue);
+}
+
+.guide-brand strong {
+    color: #f7f9fc;
+    font-size: 18px;
+    letter-spacing: -0.5px;
+}
+
+.guide-brand strong span {
+    color: var(--guide-blue);
+}
+
+.guide-mobile-menu-button {
+    display: none !important;
+}
+
+.guide-global-search {
+    position: relative;
+    min-width: 0;
+}
+
+.guide-global-search > svg {
+    position: absolute;
+    top: 50%;
+    left: 13px;
+    width: 17px;
+    height: 17px;
+    transform: translateY(-50%);
+    fill: none;
+    stroke: #76869a;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+}
+
+.guide-global-search input {
+    width: 100%;
+    height: 38px;
+    padding: 0 44px 0 39px;
+    border: 1px solid #1b2a3b;
+    outline: none;
+    border-radius: 8px;
+    background: #0a121b;
+    color: #eef4fb;
+    font-size: 12px;
+}
+
+.guide-global-search input::placeholder {
+    color: #68788c;
+}
+
+.guide-global-search input:focus {
+    border-color: #315b91;
+    box-shadow: 0 0 0 3px rgba(63, 125, 242, 0.08);
+}
+
+.guide-global-search kbd {
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    min-width: 22px;
+    height: 22px;
+    display: grid;
+    place-items: center;
+    transform: translateY(-50%);
+    border: 1px solid #263548;
+    border-radius: 6px;
+    background: #101923;
+    color: #8290a1;
+    font-family: inherit;
+    font-size: 10px;
+}
+
+.guide-search-results {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    width: min(100%, 440px);
+    max-height: 370px;
+    overflow-y: auto;
+    padding: 7px;
+    border: 1px solid var(--guide-border-strong);
+    border-radius: 11px;
+    background: #09121c;
+    box-shadow: var(--guide-shadow);
+}
+
+.guide-search-result {
+    width: 100%;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    cursor: pointer;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--guide-text);
+    text-align: left;
+}
+
+.guide-search-result:hover {
+    background: #111d2a;
+}
+
+.guide-search-result-type {
+    min-width: 60px;
+    color: var(--guide-blue);
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+}
+
+.guide-search-result-copy {
+    min-width: 0;
+}
+
+.guide-search-result-copy strong,
+.guide-search-result-copy small {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.guide-search-result-copy strong {
+    font-size: 12px;
+}
+
+.guide-search-result-copy small {
+    margin-top: 2px;
+    color: var(--guide-text-faint);
+    font-size: 10px;
+}
+
+.guide-search-result-arrow {
+    color: #718298;
+}
+
+.guide-topbar-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.guide-topbar-pill {
+    min-height: 37px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 12px;
+    cursor: pointer;
+    border: 1px solid #1d2b3d;
+    border-radius: 8px;
+    background: #0a121b;
+    color: #cad3df;
+    font-size: 11px;
+    font-weight: 750;
+}
+
+.guide-topbar-pill.is-active {
+    border-color: #2a3f5a;
+    background: #0d1824;
+}
+
+.guide-topbar-pill svg {
+    width: 17px;
+    height: 17px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.guide-icon-button {
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    border: 1px solid #1d2b3d;
+    border-radius: 9px;
+    background: #0a121b;
+    color: #9eabba;
+    transition:
+        background var(--guide-transition),
+        border-color var(--guide-transition);
+}
+
+.guide-icon-button:hover {
+    border-color: #334b69;
+    background: #101b27;
+    color: #ffffff;
+}
+
+.guide-icon-button svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.guide-notification-button {
+    position: relative;
+}
+
+.guide-notification-dot {
+    position: absolute;
+    top: 7px;
+    right: 6px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #ff5262;
+    box-shadow: 0 0 0 2px #0a121b;
+}
+
+.guide-account-button {
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    border: 1px solid #2b3c52;
+    border-radius: 50%;
+    background: #0e1721;
+}
+
+.guide-account-avatar {
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    border-radius: 50%;
+    background: #b8c8dd;
+    color: #0b1017;
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.guide-account-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.guide-account-menu {
+    position: absolute;
+    top: 54px;
+    right: 24px;
+    width: 240px;
+    padding: 8px;
+    border: 1px solid var(--guide-border-strong);
+    border-radius: 12px;
+    background: #09121c;
+    box-shadow: var(--guide-shadow);
+}
+
+.guide-account-menu-user {
+    padding: 10px;
+}
+
+.guide-account-menu-user strong,
+.guide-account-menu-user small {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.guide-account-menu-user strong {
+    font-size: 13px;
+}
+
+.guide-account-menu-user small {
+    margin-top: 4px;
+    color: var(--guide-text-faint);
+    font-size: 10px;
+}
+
+.guide-account-menu button {
+    width: 100%;
+    min-height: 38px;
+    cursor: pointer;
+    border-radius: 8px;
+    background: #111b27;
+    color: #ff949c;
+    font-size: 11px;
+    font-weight: 800;
+}
+
+
+/* =========================================================
+   SIDEBAR
+========================================================= */
+
+.guide-sidebar {
+    position: fixed;
+    top: var(--guide-topbar-height);
+    left: 0;
+    bottom: 0;
+    z-index: 800;
+    width: var(--guide-sidebar-width);
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #122031;
+    background:
+        linear-gradient(
+            180deg,
+            #071019,
+            #060c12
+        );
+}
+
+.guide-sidebar-nav {
+    min-height: 0;
+    flex: 1;
+    overflow-y: auto;
+    padding: 18px 10px;
+}
+
+.guide-sidebar-item {
+    width: 100%;
+    min-height: 42px;
+    display: grid;
+    grid-template-columns: 31px minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+    padding: 5px 8px;
+    cursor: pointer;
+    border-radius: 8px;
+    background: transparent;
+    color: #a8b3c2;
+    font-size: 11px;
+    font-weight: 650;
+    text-align: left;
+    transition:
+        background var(--guide-transition),
+        color var(--guide-transition);
+}
+
+.guide-sidebar-item:hover {
+    background: #0e1925;
+    color: #ffffff;
+}
+
+.guide-sidebar-item.is-active {
+    background:
+        linear-gradient(
+            90deg,
+            rgba(45, 106, 219, 0.42),
+            rgba(45, 106, 219, 0.18)
+        );
+    color: #ffffff;
+}
+
+.guide-sidebar-icon {
+    width: 31px;
+    height: 31px;
+    display: grid;
+    place-items: center;
+    color: #8b9bb0;
+}
+
+.guide-sidebar-item.is-active .guide-sidebar-icon {
+    color: #78aaff;
+}
+
+.guide-sidebar-icon svg {
+    width: 17px;
+    height: 17px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.guide-sidebar-label {
+    margin: 17px 8px 7px;
+    color: #536276;
+    font-size: 8px;
+    font-weight: 900;
+    letter-spacing: 0.14em;
+}
+
+.guide-sidebar-source {
+    min-height: 54px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 16px;
+    border-top: 1px solid #122031;
+    color: #6e7e91;
+    font-size: 10px;
+}
+
+.guide-source-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    background: #6abf45;
+}
+
+
+/* =========================================================
+   MAIN + HOME
+========================================================= */
+
+.guide-main {
+    width: calc(100% - var(--guide-sidebar-width));
+    min-height: 100vh;
+    margin-left: var(--guide-sidebar-width);
+    padding:
+        calc(var(--guide-topbar-height) + 24px)
+        24px
+        70px;
+}
+
+.guide-home,
+.guide-workspace-header,
+.guide-workspace {
+    width: min(100%, 1250px);
+    margin-inline: auto;
+}
+
+.guide-home {
+    border: 1px solid #152638;
+    border-radius: var(--guide-radius-md);
+    background:
+        linear-gradient(
+            160deg,
+            rgba(8, 17, 26, 0.96),
+            rgba(6, 13, 20, 0.98)
+        );
+    box-shadow: 0 14px 44px rgba(0, 0, 0, 0.16);
+}
+
+.guide-home-top {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(270px, 0.65fr);
+    gap: 28px;
+    padding: 22px;
+}
+
+.guide-back-link {
+    color: #7f91a8;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.guide-back-link:hover {
+    color: #ffffff;
+}
+
+.guide-app-heading {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-top: 14px;
+}
+
+.guide-app-icon-frame {
+    width: 78px;
+    height: 78px;
+    flex: 0 0 78px;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    border: 1px solid #31435a;
+    border-radius: 15px;
+    background: #030609;
+}
+
+.guide-app-icon-frame img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.guide-app-heading-copy {
+    min-width: 0;
+}
+
+.guide-app-heading-copy h1 {
+    color: var(--guide-text);
+    font-size: clamp(27px, 4vw, 38px);
+    line-height: 1.02;
+    letter-spacing: -1.2px;
+}
+
+.guide-app-heading-copy > p {
+    max-width: 620px;
+    margin-top: 7px;
+    color: var(--guide-text-soft);
+    font-size: 12px;
+    line-height: 1.55;
+}
+
+.guide-app-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-top: 12px;
+}
+
+.guide-app-badges span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 27px;
+    padding: 0 9px;
+    border: 1px solid #26364a;
+    border-radius: 7px;
+    background: #09121b;
+    color: #9ba8b8;
+    font-size: 9px;
+    font-weight: 760;
+}
+
+.guide-app-badges span.is-learn {
+    border-color: #285039;
+    color: #6cda9a;
+}
+
+.guide-app-badges span.is-do {
+    border-color: #4f3770;
+    color: #ba8aff;
+}
+
+.guide-app-badges span.is-fix {
+    border-color: #68431f;
+    color: #ffb866;
+}
+
+.guide-progress-card {
+    min-height: 128px;
+    display: grid;
+    grid-template-columns: 90px minmax(0, 1fr);
+    align-items: center;
+    gap: 18px;
+    padding: 16px;
+    border: 1px solid #1c2d40;
+    border-radius: 12px;
+    background:
+        linear-gradient(
+            145deg,
+            #0b151f,
+            #09111a
+        );
+}
+
+.guide-progress-ring {
+    --guide-progress-value: 0deg;
+
+    width: 82px;
+    height: 82px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background:
+        radial-gradient(circle, #0a131c 58%, transparent 60%),
+        conic-gradient(var(--guide-blue) var(--guide-progress-value), #1b2836 0);
+}
+
+.guide-progress-ring span {
+    color: #ffffff;
+    font-size: 22px;
+    font-weight: 850;
+}
+
+.guide-progress-card-copy small,
+.guide-progress-card-copy strong,
+.guide-progress-card-copy span {
+    display: block;
+}
+
+.guide-progress-card-copy small {
+    color: #76869b;
+    font-size: 9px;
+    font-weight: 850;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.guide-progress-card-copy strong {
+    margin-top: 3px;
+    font-size: 12px;
+}
+
+.guide-progress-card-copy > span {
+    margin-top: 3px;
+    color: #7f8da0;
+    font-size: 9px;
+}
+
+.guide-primary-button,
+.guide-secondary-button,
+.guide-success-button {
+    min-height: 35px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 13px;
+    cursor: pointer;
+    border-radius: 7px;
+    font-size: 10px;
+    font-weight: 850;
+    transition:
+        background var(--guide-transition),
+        border-color var(--guide-transition),
+        transform var(--guide-transition);
+}
+
+.guide-primary-button {
+    border: 1px solid #2f70eb;
+    background: #1d61df;
+    color: #ffffff;
+}
+
+.guide-primary-button:hover {
+    background: #2b72ef;
+}
+
+.guide-primary-button:active,
+.guide-secondary-button:active,
+.guide-success-button:active {
+    transform: scale(0.98);
+}
+
+.guide-secondary-button {
+    border: 1px solid #25374b;
+    background: #0d1721;
+    color: #bac5d2;
+}
+
+.guide-secondary-button:hover {
+    background: #132130;
+}
+
+.guide-success-button {
+    border: 1px solid #276a48;
+    background: #123422;
+    color: #7de0aa;
+}
+
+.guide-success-button.is-complete {
+    border-color: #38895e;
+    background: #17482e;
+    color: #a5f4c8;
+}
+
+.guide-progress-card .guide-primary-button {
+    width: 100%;
+    margin-top: 10px;
+}
+
+.guide-home-divider {
+    height: 1px;
+    margin-inline: 22px;
+    background: #142334;
+}
+
+.guide-home-question {
+    padding: 14px 22px 10px;
+    color: #a6b2c0;
+    font-size: 10px;
+    font-weight: 750;
+}
+
+.guide-mode-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    padding: 0 22px;
+}
+
+.guide-mode-card {
+    min-height: 168px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 17px;
+    cursor: pointer;
+    border: 1px solid;
+    border-radius: 11px;
+    background: #081018;
+    text-align: left;
+    transition:
+        transform var(--guide-transition),
+        background var(--guide-transition),
+        box-shadow var(--guide-transition);
+}
+
+.guide-mode-card:hover {
+    transform: translateY(-2px);
+}
+
+.guide-mode-icon {
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    margin-bottom: 11px;
+}
+
+.guide-mode-icon svg {
+    width: 31px;
+    height: 31px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.guide-mode-card > strong {
+    font-size: 14px;
+}
+
+.guide-mode-card > p {
+    flex: 1;
+    margin-top: 6px;
+    color: #8998aa;
+    font-size: 10px;
+    line-height: 1.55;
+}
+
+.guide-mode-meta {
+    width: 100%;
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid currentColor;
+    font-size: 10px;
+    font-weight: 800;
+    opacity: 0.92;
+}
+
+.guide-mode-learn {
+    border-color: #255d3c;
+    color: var(--guide-green);
+    background:
+        linear-gradient(
+            150deg,
+            rgba(22, 71, 43, 0.22),
+            rgba(6, 18, 12, 0.35)
+        );
+}
+
+.guide-mode-do {
+    border-color: #523675;
+    color: var(--guide-purple);
+    background:
+        linear-gradient(
+            150deg,
+            rgba(81, 49, 123, 0.18),
+            rgba(17, 8, 26, 0.32)
+        );
+}
+
+.guide-mode-fix {
+    border-color: #6b4219;
+    color: var(--guide-orange);
+    background:
+        linear-gradient(
+            150deg,
+            rgba(111, 61, 12, 0.18),
+            rgba(27, 14, 5, 0.32)
+        );
+}
+
+.guide-mode-reference {
+    border-color: #2853a0;
+    color: var(--guide-reference);
+    background:
+        linear-gradient(
+            150deg,
+            rgba(29, 78, 163, 0.19),
+            rgba(7, 15, 30, 0.32)
+        );
+}
+
+.guide-home-lower-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 0.8fr);
+    gap: 12px;
+    padding: 13px 22px 20px;
+}
+
+.guide-resume-card,
+.guide-recent-card {
+    min-height: 94px;
+    padding: 13px;
+    border: 1px solid #162638;
+    border-radius: 9px;
+    background: #071019;
+}
+
+.guide-small-label {
+    color: #8c9bad;
+    font-size: 9px;
+    font-weight: 850;
+}
+
+.guide-resume-row {
+    display: grid;
+    grid-template-columns: 42px minmax(120px, 0.9fr) minmax(100px, 1fr) 38px auto;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.guide-resume-number {
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    border: 1px solid #23374d;
+    border-radius: 9px;
+    background: #0b1520;
+    color: #dce5ef;
+    font-size: 13px;
+    font-weight: 850;
+}
+
+.guide-resume-copy {
+    min-width: 0;
+}
+
+.guide-resume-copy strong,
+.guide-resume-copy small {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.guide-resume-copy strong {
+    font-size: 11px;
+}
+
+.guide-resume-copy small {
+    margin-top: 3px;
+    color: #6f7f92;
+    font-size: 9px;
+}
+
+.guide-resume-progress {
+    height: 4px;
+    overflow: hidden;
+    border-radius: 99px;
+    background: #172331;
+}
+
+.guide-resume-progress span {
+    display: block;
+    width: 0%;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--guide-blue);
+    transition: width 240ms ease;
+}
+
+.guide-resume-row > strong {
+    color: #8392a4;
+    font-size: 9px;
+}
+
+.guide-recent-list {
+    display: grid;
+    gap: 4px;
+    margin-top: 8px;
+}
+
+.guide-recent-item {
+    width: 100%;
+    min-height: 22px;
+    display: grid;
+    grid-template-columns: 14px minmax(0, 1fr) 14px;
+    align-items: center;
+    gap: 7px;
+    cursor: pointer;
+    border-radius: 5px;
+    background: transparent;
+    color: #a6b2c1;
+    font-size: 9px;
+    text-align: left;
+}
+
+.guide-recent-item:hover {
+    color: #ffffff;
+}
+
+.guide-recent-type {
+    color: #6d7f94;
+}
+
+.guide-recent-arrow {
+    color: #72849a;
+}
+
+
+/* =========================================================
+   WORKSPACE HEADER
+========================================================= */
+
+.guide-workspace-header {
+    min-height: 46px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 10px;
+    padding: 0 12px;
+    border: 1px solid #152638;
+    border-radius: 10px 10px 0 0;
+    background: #071019;
+}
+
+.guide-workspace-header > div {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.guide-workspace-number {
+    width: 24px;
+    height: 24px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--guide-blue);
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: 900;
+}
+
+.guide-workspace-number.is-learn {
+    background: #2f6edc;
+}
+
+.guide-workspace-number.is-do {
+    background: #2a9f60;
+}
+
+.guide-workspace-number.is-fix {
+    background: #d97a20;
+}
+
+.guide-workspace-number.is-reference {
+    background: #7650d6;
+}
+
+.guide-workspace-header h2 {
+    font-size: 14px;
+    letter-spacing: 0.02em;
+}
+
+.guide-workspace-header span:last-child {
+    color: #77889e;
+    font-size: 10px;
+}
+
+
+/* =========================================================
+   SHARED WORKSPACE
+========================================================= */
+
+.guide-workspace {
+    border: 1px solid #152638;
+    border-top: 0;
+    border-radius: 0 0 10px 10px;
+    background: #061018;
+    box-shadow: 0 13px 32px rgba(0, 0, 0, 0.12);
+}
+
+.guide-learn-workspace {
+    display: grid;
+    grid-template-columns:
+        minmax(175px, 0.7fr)
+        minmax(0, 2.25fr)
+        minmax(190px, 0.8fr);
+}
+
+.guide-simple-workspace {
+    display: grid;
+    grid-template-columns:
+        minmax(180px, 0.75fr)
+        minmax(0, 2.1fr)
+        minmax(190px, 0.8fr);
+}
+
+.guide-workspace-navigation {
+    min-width: 0;
+    padding: 13px 10px;
+    border-right: 1px solid #142537;
+    background: #071019;
+}
+
+.guide-workspace-nav-title {
+    padding: 0 7px 8px;
+    color: #8291a3;
+    font-size: 9px;
+    font-weight: 900;
+}
+
+.guide-workspace-nav-list {
+    display: grid;
+    gap: 2px;
+}
+
+.guide-workspace-nav-button {
+    width: 100%;
+    min-height: 31px;
+    display: grid;
+    grid-template-columns: 23px minmax(0, 1fr) 16px;
+    align-items: center;
+    gap: 4px;
+    padding: 0 7px;
+    cursor: pointer;
+    border-radius: 6px;
+    background: transparent;
+    color: #9ba8b8;
+    font-size: 9px;
+    text-align: left;
+}
+
+.guide-workspace-nav-button:hover {
+    background: #0e1b29;
+    color: #ffffff;
+}
+
+.guide-workspace-nav-button.is-active {
+    background:
+        linear-gradient(
+            90deg,
+            #12366f,
+            #0e2547
+        );
+    color: #ffffff;
+}
+
+.guide-workspace-nav-index {
+    color: #687b90;
+}
+
+.guide-workspace-nav-state {
+    text-align: center;
+    color: #60748a;
+}
+
+.guide-workspace-nav-state.is-complete {
+    color: var(--guide-green);
+}
+
+.guide-content-heading {
+    margin-bottom: 13px;
+}
+
+.guide-content-kicker {
+    color: var(--guide-blue);
+    font-size: 9px;
+    font-weight: 850;
+    letter-spacing: 0.06em;
+}
+
+.guide-content-kicker.is-do {
+    color: var(--guide-purple);
+}
+
+.guide-content-kicker.is-fix {
+    color: var(--guide-orange);
+}
+
+.guide-content-kicker.is-reference {
+    color: var(--guide-reference);
+}
+
+.guide-content-heading h3,
+.guide-reference-heading h3 {
+    margin-top: 3px;
+    color: #f0f4f9;
+    font-size: clamp(19px, 3vw, 25px);
+    line-height: 1.08;
+    letter-spacing: -0.55px;
+}
+
+.guide-content-heading > p:not(.guide-content-kicker) {
+    max-width: 710px;
+    margin-top: 6px;
+    color: #8f9daf;
+    font-size: 10px;
+    line-height: 1.6;
+}
+
+.guide-step-progress-row {
+    display: grid;
+    grid-template-columns: auto minmax(80px, 1fr);
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.guide-step-progress-row > span {
+    color: #8191a3;
+    font-size: 9px;
+}
+
+.guide-step-progress-track {
+    height: 4px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: #172434;
+}
+
+.guide-step-progress-track span {
+    display: block;
+    width: 0%;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--guide-blue);
+    transition: width 220ms ease;
+}
+
+
+/* =========================================================
+   LEARN
+========================================================= */
+
+.guide-lesson-panel {
+    min-width: 0;
+    padding: 16px;
+}
+
+.guide-mobile-content-selector {
+    display: none;
+}
+
+.guide-lesson-content {
+    min-height: 245px;
+}
+
+.guide-step-card {
+    padding: 13px;
+    border: 1px solid #1a2d42;
+    border-radius: 9px;
+    background:
+        linear-gradient(
+            180deg,
+            #09141f,
+            #07111a
+        );
+}
+
+.guide-step-card + .guide-step-card {
+    margin-top: 10px;
+}
+
+.guide-step-label {
+    color: #7c8da1;
+    font-size: 9px;
+    font-weight: 850;
+}
+
+.guide-step-card h4 {
+    margin-top: 4px;
+    color: #edf3fa;
+    font-size: 13px;
+}
+
+.guide-step-card > p {
+    margin-top: 6px;
+    color: #8e9cad;
+    font-size: 10px;
+    line-height: 1.6;
+}
+
+.guide-code-block {
+    position: relative;
+    margin-top: 11px;
+    padding: 11px 72px 11px 12px;
+    border: 1px solid #21364d;
+    border-radius: 7px;
+    background: #050b11;
+    color: #d7e3ee;
+    font-family:
+        "SFMono-Regular",
+        Consolas,
+        "Liberation Mono",
+        monospace;
+    font-size: 10px;
+    line-height: 1.5;
+}
+
+.guide-code-block code {
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.guide-copy-button {
+    position: absolute;
+    top: 7px;
+    right: 7px;
+    min-width: 50px;
+    height: 25px;
+    cursor: pointer;
+    border: 1px solid #243b52;
+    border-radius: 5px;
+    background: #0c1722;
+    color: #93a5b9;
+    font-size: 8px;
+    font-weight: 800;
+}
+
+.guide-copy-button:hover {
+    background: #132334;
+    color: #ffffff;
+}
+
+.guide-expected-output {
+    margin-top: 8px;
+    padding: 9px 10px;
+    border: 1px solid #1c4b33;
+    border-radius: 7px;
+    background: #081a12;
+}
+
+.guide-expected-output small {
+    display: block;
+    color: #4cca82;
+    font-size: 8px;
+    font-weight: 850;
+}
+
+.guide-expected-output code {
+    display: block;
+    margin-top: 4px;
+    color: #48c97d;
+    font-family:
+        "SFMono-Regular",
+        Consolas,
+        monospace;
+    font-size: 9px;
+    word-break: break-word;
+}
+
+.guide-why-box {
+    margin-top: 10px;
+    padding: 10px;
+    border: 1px solid #1c3044;
+    border-radius: 7px;
+    background: #0a151f;
+}
+
+.guide-why-box strong {
+    color: #dfe7f0;
+    font-size: 9px;
+}
+
+.guide-why-box p {
+    margin-top: 4px;
+    color: #8191a3;
+    font-size: 9px;
+    line-height: 1.55;
+}
+
+.guide-content-footer {
+    display: grid;
+    grid-template-columns: auto minmax(130px, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.guide-content-footer .guide-success-button {
+    justify-self: center;
+    min-width: 145px;
+}
+
+.guide-lesson-aside {
+    padding: 13px 10px;
+    border-left: 1px solid #142537;
+    background: #071019;
+}
+
+.guide-lesson-outline-card,
+.guide-tip-card,
+.guide-result-card,
+.guide-resource-card,
+.guide-related-card,
+.guide-helpful-card {
+    padding: 11px;
+    border: 1px solid #182a3c;
+    border-radius: 8px;
+    background: #09131d;
+}
+
+.guide-lesson-outline-card ol {
+    list-style: none;
+    display: grid;
+    gap: 7px;
+    margin-top: 9px;
+}
+
+.guide-lesson-outline-card li {
+    display: grid;
+    grid-template-columns: 18px minmax(0, 1fr);
+    gap: 5px;
+    color: #7d8da0;
+    font-size: 8px;
+}
+
+.guide-lesson-outline-card li.is-current {
+    color: #7fa9ff;
+}
+
+.guide-lesson-outline-card li span {
+    width: 17px;
+    height: 17px;
+    display: grid;
+    place-items: center;
+    border: 1px solid #26394f;
+    border-radius: 50%;
+    font-size: 7px;
+}
+
+.guide-tip-card {
+    margin-top: 9px;
+}
+
+.guide-tip-card > span {
+    display: inline-grid;
+    place-items: center;
+    min-width: 28px;
+    height: 19px;
+    border: 1px solid #81531d;
+    border-radius: 5px;
+    background: #2c1b08;
+    color: #ffac44;
+    font-size: 8px;
+    font-weight: 900;
+}
+
+.guide-tip-card p {
+    margin-top: 7px;
+    color: #8494a6;
+    font-size: 8px;
+    line-height: 1.55;
+}
+
+
+/* =========================================================
+   DO
+========================================================= */
+
+.guide-simple-content-panel {
+    min-width: 0;
+    padding: 16px;
+}
+
+.guide-task-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: -4px;
+    margin-bottom: 12px;
+}
+
+.guide-task-meta span {
+    padding: 4px 7px;
+    border: 1px solid #375240;
+    border-radius: 5px;
+    background: #0d1e15;
+    color: #6dd496;
+    font-size: 8px;
+    font-weight: 850;
+}
+
+.guide-checklist {
+    display: grid;
+    gap: 6px;
+}
+
+.guide-checklist-item {
+    width: 100%;
+    min-height: 34px;
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr) 18px;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 7px;
+    cursor: pointer;
+    border: 1px solid #152a3d;
+    border-radius: 6px;
+    background: #09131d;
+    color: #a5b1c0;
+    font-size: 9px;
+    text-align: left;
+}
+
+.guide-checklist-item:hover {
+    border-color: #28553c;
+}
+
+.guide-checklist-item.is-complete {
+    border-color: #245037;
+    background: #0a1d14;
+    color: #b6e7ca;
+}
+
+.guide-checklist-index {
+    width: 21px;
+    height: 21px;
+    display: grid;
+    place-items: center;
+    border: 1px solid #283b50;
+    border-radius: 50%;
+    color: #8798aa;
+    font-size: 8px;
+}
+
+.guide-checklist-item.is-complete .guide-checklist-index {
+    border-color: #2d8053;
+    background: #1d6d43;
+    color: #ffffff;
+}
+
+.guide-checklist-state {
+    color: #66788d;
+    text-align: center;
+}
+
+.guide-checklist-item.is-complete .guide-checklist-state {
+    color: var(--guide-green);
+}
+
+.guide-do-primary {
+    min-width: 150px;
+    margin-top: 14px;
+    border-color: #4e2d70;
+    background: #6d41b3;
+}
+
+.guide-do-primary:hover {
+    background: #7a4fc1;
+}
+
+.guide-simple-aside {
+    padding: 13px 10px;
+    border-left: 1px solid #142537;
+    background: #071019;
+}
+
+.guide-result-card ul {
+    list-style: none;
+    display: grid;
+    gap: 7px;
+    margin-top: 9px;
+}
+
+.guide-result-card li {
+    position: relative;
+    padding-left: 18px;
+    color: #8fa0b2;
+    font-size: 8px;
+}
+
+.guide-result-card li::before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    top: -1px;
+    width: 13px;
+    height: 13px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: #1b7b49;
+    color: #ffffff;
+    font-size: 7px;
+}
+
+.guide-resource-card {
+    margin-top: 9px;
+}
+
+.guide-resource-card > div,
+.guide-related-card > div {
+    display: grid;
+    gap: 5px;
+    margin-top: 8px;
+}
+
+.guide-resource-link,
+.guide-related-link {
+    width: 100%;
+    min-height: 25px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    background: transparent;
+    color: #6f99e7;
+    font-size: 8px;
+    text-align: left;
+}
+
+.guide-resource-link:hover,
+.guide-related-link:hover {
+    color: #a8c7ff;
+}
+
+
+/* =========================================================
+   FIX
+========================================================= */
+
+.guide-fix-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 7px;
+}
+
+.guide-fix-tags span {
+    padding: 4px 7px;
+    border: 1px solid #6e471d;
+    border-radius: 5px;
+    background: #241508;
+    color: #ffad4e;
+    font-size: 8px;
+    font-weight: 800;
+}
+
+.guide-fix-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.guide-fix-summary-grid > div {
+    min-height: 70px;
+    padding: 10px;
+    border: 1px solid #182a3c;
+    border-radius: 8px;
+    background: #09131d;
+}
+
+.guide-fix-summary-grid small {
+    color: #ff9d37;
+    font-size: 8px;
+    font-weight: 850;
+}
+
+.guide-fix-summary-grid p {
+    margin-top: 5px;
+    color: #8d9bad;
+    font-size: 9px;
+    line-height: 1.55;
+}
+
+.guide-solution-card {
+    margin-top: 9px;
+    padding: 11px;
+    border: 1px solid #1b2d40;
+    border-radius: 8px;
+    background: #08121b;
+}
+
+.guide-solution-steps {
+    display: grid;
+    gap: 7px;
+    margin-top: 8px;
+}
+
+.guide-solution-step {
+    display: grid;
+    grid-template-columns: 22px minmax(0, 1fr);
+    gap: 7px;
+    padding: 8px;
+    border: 1px solid #17293a;
+    border-radius: 7px;
+    background: #09141e;
+}
+
+.guide-solution-step-index {
+    width: 20px;
+    height: 20px;
+    display: grid;
+    place-items: center;
+    border: 1px solid #8a551c;
+    border-radius: 50%;
+    color: #ffa443;
+    font-size: 8px;
+    font-weight: 900;
+}
+
+.guide-solution-step-copy strong {
+    display: block;
+    color: #b9c4d1;
+    font-size: 9px;
+}
+
+.guide-solution-step-copy p {
+    margin-top: 3px;
+    color: #74859a;
+    font-size: 8px;
+    line-height: 1.5;
+}
+
+.guide-solution-step-copy .guide-code-block {
+    margin-top: 7px;
+}
+
+.guide-helpful-card {
+    margin-top: 9px;
+}
+
+.guide-helpful-card p {
+    color: #8b9bad;
+    font-size: 8px;
+}
+
+.guide-helpful-card > div {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.guide-feedback-button {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    border: 1px solid #26394d;
+    border-radius: 8px;
+    background: #0c1722;
+    font-size: 14px;
+}
+
+.guide-feedback-button:hover,
+.guide-feedback-button.is-selected {
+    border-color: #3b5a7c;
+    background: #122235;
+}
+
+
+/* =========================================================
+   REFERENCE
+========================================================= */
+
+.guide-reference-workspace {
+    display: grid;
+    grid-template-columns:
+        minmax(190px, 0.75fr)
+        minmax(0, 2.75fr);
+}
+
+.guide-reference-panel {
+    min-width: 0;
+    padding: 14px;
+}
+
+.guide-reference-heading {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 11px;
+}
+
+.guide-reference-search {
+    position: relative;
+    width: min(100%, 260px);
+}
+
+.guide-reference-search svg {
+    position: absolute;
+    top: 50%;
+    left: 10px;
+    width: 15px;
+    height: 15px;
+    transform: translateY(-50%);
+    fill: none;
+    stroke: #6e7f93;
+    stroke-width: 1.7;
+}
+
+.guide-reference-search input {
+    width: 100%;
+    height: 31px;
+    padding: 0 9px 0 31px;
+    border: 1px solid #1c2e42;
+    outline: none;
+    border-radius: 6px;
+    background: #09131d;
+    color: #dbe5ef;
+    font-size: 9px;
+}
+
+.guide-reference-table-wrapper {
+    overflow-x: auto;
+    border: 1px solid #17293b;
+    border-radius: 7px;
+}
+
+.guide-reference-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 610px;
+    background: #07111a;
+}
+
+.guide-reference-table th,
+.guide-reference-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #132436;
+    color: #8797aa;
+    font-size: 8px;
+    text-align: left;
+}
+
+.guide-reference-table th {
+    background: #0a151f;
+    color: #aeb9c6;
+    font-weight: 850;
+}
+
+.guide-reference-table td:first-child,
+.guide-reference-table td:last-child {
+    color: #d5dee8;
+    font-family:
+        "SFMono-Regular",
+        Consolas,
+        monospace;
+}
+
+.guide-reference-table tr:last-child td {
+    border-bottom: 0;
+}
+
+.guide-reference-command-cell {
+    min-width: 110px;
+}
+
+.guide-reference-mobile-list {
+    display: none;
+}
+
+
+/* =========================================================
+   TOAST + MOBILE DRAWER
+========================================================= */
+
+.guide-toast {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    z-index: 3000;
+    max-width: min(340px, calc(100vw - 40px));
+    padding: 11px 13px;
+    border: 1px solid #29405a;
+    border-radius: 9px;
+    background: #0b1722;
+    color: #dce7f2;
+    box-shadow: var(--guide-shadow);
+    font-size: 10px;
+}
+
+.guide-mobile-drawer-shell {
+    position: fixed;
+    inset: 0;
+    z-index: 2300;
+}
+
+.guide-mobile-drawer-backdrop {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+    background: rgba(2, 6, 10, 0.7);
+    backdrop-filter: blur(7px);
+}
+
+.guide-mobile-drawer {
+    position: relative;
+    z-index: 1;
+    width: min(86vw, 330px);
+    height: 100dvh;
+    padding: 14px;
+    border-right: 1px solid #1e3044;
+    background: #071019;
+    box-shadow: 24px 0 60px rgba(0, 0, 0, 0.5);
+}
+
+.guide-mobile-drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.guide-mobile-drawer-links {
+    display: grid;
+    gap: 6px;
+    margin-top: 28px;
+}
+
+.guide-mobile-drawer-links a,
+.guide-mobile-drawer-links button {
+    min-height: 46px;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    cursor: pointer;
+    border-radius: 9px;
+    background: transparent;
+    color: #a4b1c1;
+    font-size: 12px;
+    font-weight: 700;
+    text-align: left;
+}
+
+.guide-mobile-drawer-links a:hover,
+.guide-mobile-drawer-links button:hover,
+.guide-mobile-drawer-links .is-active {
+    background: #10213a;
+    color: #ffffff;
+}
+
+.guide-mobile-bottom-nav {
+    display: none;
+}
+
+
+/* =========================================================
+   MEDIUM DESKTOP
+========================================================= */
+
+@media (max-width: 1100px) {
+
+    :root {
+        --guide-sidebar-width: 165px;
+    }
+
+    .guide-topbar {
+        grid-template-columns:
+            var(--guide-sidebar-width)
+            minmax(250px, 390px)
+            minmax(0, 1fr);
+        padding-inline: 18px;
+    }
+
+    .guide-home-top {
+        grid-template-columns:
+            minmax(0, 1.35fr)
+            minmax(250px, 0.7fr);
+    }
+
+    .guide-mode-card {
+        min-height: 175px;
+        padding: 14px;
+    }
+
+    .guide-learn-workspace,
+    .guide-simple-workspace {
+        grid-template-columns:
+            minmax(155px, 0.68fr)
+            minmax(0, 2fr)
+            minmax(165px, 0.72fr);
+    }
+}
+
+
+/* =========================================================
+   TABLET + PHONE
+========================================================= */
+
+@media (max-width: 900px) {
+
+    :root {
+        --guide-topbar-height: 60px;
+    }
+
+    body {
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .guide-topbar {
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 10px;
+        padding:
+            0
+            max(12px, env(safe-area-inset-right))
+            0
+            max(12px, env(safe-area-inset-left));
+    }
+
+    .guide-mobile-menu-button {
+        display: grid !important;
+    }
+
+    .guide-brand strong {
+        font-size: 16px;
+    }
+
+    .guide-global-search,
+    .guide-topbar-pill {
+        display: none;
+    }
+
+    .guide-topbar-actions {
+        gap: 6px;
+    }
+
+    .guide-sidebar {
+        display: none;
+    }
+
+    .guide-main {
+        width: 100%;
+        margin-left: 0;
+        padding:
+            calc(var(--guide-topbar-height) + 14px)
+            12px
+            calc(86px + env(safe-area-inset-bottom));
+    }
+
+    .guide-home {
+        border-radius: 12px;
+    }
+
+    .guide-home-top {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 13px;
+        padding: 15px;
+    }
+
+    .guide-back-link {
+        display: none;
+    }
+
+    .guide-app-heading {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 11px;
+        margin-top: 0;
+    }
+
+    .guide-app-icon-frame {
+        width: 66px;
+        height: 66px;
+        flex-basis: 66px;
+    }
+
+    .guide-app-heading-copy h1 {
+        font-size: 24px;
+    }
+
+    .guide-app-heading-copy > p {
+        font-size: 10px;
+    }
+
+    .guide-app-badges {
+        gap: 5px;
+        margin-top: 9px;
+    }
+
+    .guide-app-badges span {
+        min-height: 23px;
+        padding-inline: 7px;
+        font-size: 8px;
+    }
+
+    .guide-progress-card {
+        min-height: 110px;
+        grid-template-columns: 72px minmax(0, 1fr);
+        gap: 12px;
+        padding: 12px;
+    }
+
+    .guide-progress-ring {
+        width: 66px;
+        height: 66px;
+    }
+
+    .guide-progress-ring span {
+        font-size: 17px;
+    }
+
+    .guide-home-divider {
+        margin-inline: 15px;
+    }
+
+    .guide-home-question {
+        padding: 12px 15px 8px;
+        font-size: 9px;
+    }
+
+    .guide-mode-grid {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 7px;
+        padding: 0 15px;
+    }
+
+    .guide-mode-card {
+        min-height: 0;
+        display: grid;
+        grid-template-columns: 34px minmax(0, 1fr) auto;
+        grid-template-areas:
+            "icon title meta"
+            "icon copy meta";
+        align-items: center;
+        gap: 2px 9px;
+        padding: 10px;
+    }
+
+    .guide-mode-icon {
+        grid-area: icon;
+        width: 32px;
+        height: 32px;
+        margin: 0;
+    }
+
+    .guide-mode-icon svg {
+        width: 24px;
+        height: 24px;
+    }
+
+    .guide-mode-card > strong {
+        grid-area: title;
+        font-size: 11px;
+    }
+
+    .guide-mode-card > p {
+        grid-area: copy;
+        margin: 0;
+        font-size: 8px;
+    }
+
+    .guide-mode-meta {
+        grid-area: meta;
+        width: auto;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        white-space: nowrap;
+        font-size: 8px;
+    }
+
+    .guide-home-lower-grid {
+        grid-template-columns: minmax(0, 1fr);
+        padding: 10px 15px 14px;
+    }
+
+    .guide-resume-row {
+        grid-template-columns: 40px minmax(0, 1fr) auto;
+        gap: 8px;
+    }
+
+    .guide-resume-progress,
+    .guide-resume-row > strong {
+        display: none;
+    }
+
+    .guide-workspace-header {
+        margin-top: 9px;
+        padding-inline: 9px;
+    }
+
+    .guide-workspace-header h2 {
+        font-size: 12px;
+    }
+
+    .guide-workspace-header span:last-child {
+        display: none;
+    }
+
+    .guide-learn-workspace,
+    .guide-simple-workspace,
+    .guide-reference-workspace {
+        display: block;
+    }
+
+    .guide-workspace-navigation,
+    .guide-lesson-aside,
+    .guide-simple-aside {
+        display: none;
+    }
+
+    .guide-lesson-panel,
+    .guide-simple-content-panel,
+    .guide-reference-panel {
+        padding: 13px;
+    }
+
+    .guide-mobile-content-selector {
+        position: relative;
+        display: block;
+        margin-bottom: 11px;
+    }
+
+    .guide-mobile-content-selector > button {
+        width: 100%;
+        min-height: 39px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 10px;
+        cursor: pointer;
+        border: 1px solid #20344b;
+        border-radius: 8px;
+        background: #0a151f;
+        color: #b9c4d1;
+        font-size: 10px;
+    }
+
+    .guide-mobile-content-menu {
+        position: absolute;
+        top: calc(100% + 5px);
+        left: 0;
+        right: 0;
+        z-index: 50;
+        max-height: 300px;
+        overflow-y: auto;
+        padding: 6px;
+        border: 1px solid #20344b;
+        border-radius: 9px;
+        background: #09131d;
+        box-shadow: var(--guide-shadow);
+    }
+
+    .guide-mobile-content-menu button {
+        width: 100%;
+        min-height: 36px;
+        padding: 0 9px;
+        cursor: pointer;
+        border-radius: 6px;
+        background: transparent;
+        color: #a8b5c4;
+        font-size: 9px;
+        text-align: left;
+    }
+
+    .guide-mobile-content-menu button.is-active {
+        background: #123060;
+        color: #ffffff;
+    }
+
+    .guide-content-heading h3,
+    .guide-reference-heading h3 {
+        font-size: 20px;
+    }
+
+    .guide-lesson-content {
+        min-height: 230px;
+    }
+
+    .guide-step-card {
+        padding: 11px;
+    }
+
+    .guide-code-block {
+        padding-right: 64px;
+    }
+
+    .guide-content-footer {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .guide-content-footer .guide-success-button {
+        grid-column: 1 / -1;
+        grid-row: 1;
+        width: 100%;
+        justify-self: stretch;
+    }
+
+    .guide-content-footer .guide-secondary-button {
+        grid-column: 1;
+    }
+
+    .guide-content-footer .guide-primary-button {
+        grid-column: 2;
+    }
+
+    .guide-fix-summary-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .guide-reference-heading {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .guide-reference-search {
+        width: 100%;
+    }
+
+    .guide-reference-table-wrapper {
+        display: none;
+    }
+
+    .guide-reference-mobile-list {
+        display: grid;
+        gap: 6px;
+    }
+
+    .guide-reference-mobile-item {
+        width: 100%;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 20px;
+        gap: 8px;
+        padding: 9px 10px;
+        cursor: pointer;
+        border: 1px solid #172a3e;
+        border-radius: 7px;
+        background: #09131d;
+        color: #d2dce7;
+        text-align: left;
+    }
+
+    .guide-reference-mobile-item strong,
+    .guide-reference-mobile-item small {
+        display: block;
+    }
+
+    .guide-reference-mobile-item strong {
+        font-family:
+            "SFMono-Regular",
+            Consolas,
+            monospace;
+        font-size: 10px;
+    }
+
+    .guide-reference-mobile-item small {
+        margin-top: 3px;
+        color: #77889c;
+        font-size: 8px;
+    }
+
+    .guide-reference-mobile-item span {
+        color: #71859c;
+    }
+
+    .guide-mobile-bottom-nav {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1200;
+        min-height: calc(64px + env(safe-area-inset-bottom));
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        padding:
+            4px
+            max(8px, env(safe-area-inset-right))
+            env(safe-area-inset-bottom)
+            max(8px, env(safe-area-inset-left));
+        border-top: 1px solid #18283a;
+        background: rgba(6, 12, 18, 0.96);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+    }
+
+    .guide-mobile-bottom-nav a,
+    .guide-mobile-bottom-nav button {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        cursor: pointer;
+        background: transparent;
+        color: #65768a;
+        font-size: 8px;
+        font-weight: 700;
+    }
+
+    .guide-mobile-bottom-nav .is-active {
+        color: var(--guide-blue);
+    }
+
+    .guide-mobile-bottom-nav svg {
+        width: 19px;
+        height: 19px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.7;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+
+    .guide-toast {
+        right: 12px;
+        bottom: calc(76px + env(safe-area-inset-bottom));
+    }
+
+    .guide-account-menu {
+        top: 51px;
+        right: 12px;
+        width: min(250px, calc(100vw - 24px));
+    }
+}
+
+
+/* =========================================================
+   SMALL PHONES
+========================================================= */
+
+@media (max-width: 420px) {
+
+    .guide-auth-gate {
+        padding: 14px;
+    }
+
+    .guide-auth-card {
+        padding: 24px 18px;
+        border-radius: 18px;
+    }
+
+    .guide-auth-benefits {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .guide-topbar {
+        padding-inline: 9px;
+    }
+
+    .guide-topbar-leading {
+        gap: 7px;
+    }
+
+    .guide-brand-symbol {
+        width: 23px;
+        height: 23px;
+    }
+
+    .guide-brand strong {
+        font-size: 15px;
+    }
+
+    .guide-icon-button,
+    .guide-account-button {
+        width: 36px;
+        height: 36px;
+    }
+
+    .guide-notification-button {
+        display: none;
+    }
+
+    .guide-main {
+        padding-inline: 9px;
+    }
+
+    .guide-app-heading-copy h1 {
+        font-size: 22px;
+    }
+
+    .guide-progress-card {
+        grid-template-columns: 64px minmax(0, 1fr);
+    }
+
+    .guide-progress-ring {
+        width: 60px;
+        height: 60px;
+    }
+
+    .guide-resume-card,
+    .guide-recent-card {
+        padding: 11px;
+    }
+
+    .guide-resume-row {
+        grid-template-columns: 36px minmax(0, 1fr) auto;
+    }
+
+    .guide-resume-number {
+        width: 34px;
+        height: 34px;
+    }
+
+    .guide-resume-row .guide-secondary-button {
+        padding-inline: 9px;
+    }
+
+    .guide-content-footer {
+        gap: 6px;
+    }
+
+    .guide-primary-button,
+    .guide-secondary-button,
+    .guide-success-button {
+        min-height: 36px;
+        padding-inline: 9px;
+        font-size: 9px;
+    }
+}
+
+
+/* =========================================================
+   LARGE DESKTOP
+========================================================= */
+
+@media (min-width: 1400px) {
+
+    :root {
+        --guide-sidebar-width: 210px;
+        --guide-topbar-height: 68px;
+    }
+
+    .guide-topbar {
+        grid-template-columns:
+            var(--guide-sidebar-width)
+            minmax(330px, 480px)
+            minmax(0, 1fr);
+        padding-inline: 30px;
+    }
+
+    .guide-main {
+        padding-left: 30px;
+        padding-right: 30px;
+    }
+
+    .guide-home,
+    .guide-workspace-header,
+    .guide-workspace {
+        width: min(100%, 1380px);
+    }
+
+    .guide-home-top {
+        padding: 27px;
+    }
+
+    .guide-mode-grid {
+        gap: 15px;
+        padding-inline: 27px;
+    }
+
+    .guide-home-lower-grid {
+        padding-inline: 27px;
+    }
+
+    .guide-mode-card {
+        min-height: 182px;
+        padding: 19px;
+    }
+
+    .guide-mode-card > p {
+        font-size: 11px;
+    }
+
+    .guide-workspace-nav-button {
+        min-height: 34px;
+        font-size: 10px;
+    }
+
+    .guide-content-heading > p:not(.guide-content-kicker),
+    .guide-step-card > p {
+        font-size: 11px;
+    }
+}
+
+
+/* =========================================================
+   REDUCED MOTION
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+    }
+}
