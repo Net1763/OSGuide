@@ -2,204 +2,676 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <meta
-        name="description"
-        content="Practical application guides and tutorials from OSGuide."
-    >
-
-    <title>App Guide | OSGuide</title>
-
-    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="description" content="Practical, step-by-step learning guides for open-source Android applications on OSGuide.">
+    <meta name="theme-color" content="#060b12">
+    <title>Guide | OSGuide</title>
+    <link rel="stylesheet" href="guide.css">
 </head>
 
 <body class="guide-page">
 
-    <header class="guide-header">
-        <button
-            type="button"
-            id="guide-back-button"
-            class="guide-back-button"
-            aria-label="Go back"
-        >
-            <svg
-                width="22"
-                height="22"
-                viewBox="0 0 24 24"
-                fill="none"
-                aria-hidden="true"
-            >
-                <path
-                    d="M15 18L9 12L15 6"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                />
-            </svg>
-        </button>
-
-        <a href="index.html" class="guide-brand">
-            OSGuide
-        </a>
-    </header>
-
-    <main id="guide-main" class="guide-main">
-
-        <section class="guide-app-summary">
-            <div class="guide-app-icon-wrapper">
-                <img
-                    id="guide-app-icon"
-                    class="guide-app-icon"
-                    src=""
-                    alt=""
-                >
-            </div>
-
-            <div class="guide-app-information">
-                <p id="guide-app-category" class="guide-app-category">
-                    Application Guide
-                </p>
-
-                <h1 id="guide-app-name" class="guide-app-name">
-                    App Guide
-                </h1>
-
-                <p id="guide-app-version" class="guide-app-version">
-                    Version information
-                </p>
-            </div>
-
-            <a
-                id="guide-download-button"
-                class="guide-download-button"
-                href="#"
-                target="_blank"
-                rel="noopener noreferrer"
-            >
-                Download APK
+    <section id="guide-auth-gate" class="guide-auth-gate" aria-labelledby="guide-auth-title">
+        <div class="guide-auth-card">
+            <a class="guide-auth-brand" href="index.html" aria-label="OSGuide home">
+                <span class="guide-auth-brand-mark" aria-hidden="true"></span>
+                <strong>OS<span>Guide</span></strong>
             </a>
-        </section>
 
-        <section class="guide-progress-section">
-            <div class="guide-progress-header">
-                <span>Guide progress</span>
-
-                <span id="guide-progress-value">
-                    0%
-                </span>
+            <div class="guide-auth-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                    <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H18a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6.5A2.5 2.5 0 0 1 4 18.5v-13Z"/>
+                    <path d="M8 7h8M8 11h8M8 15h5"/>
+                </svg>
             </div>
 
-            <div
-                class="guide-progress-track"
-                role="progressbar"
-                aria-label="Guide progress"
-                aria-valuemin="0"
-                aria-valuemax="100"
-                aria-valuenow="0"
+            <p class="guide-auth-eyebrow">OSGUIDE GUIDES</p>
+            <h1 id="guide-auth-title">Learn apps beyond the download.</h1>
+
+            <p class="guide-auth-copy">
+                Sign in to open practical lessons, tasks, troubleshooting,
+                references and saved learning progress.
+            </p>
+
+            <button type="button" id="guide-google-login" class="guide-google-login">
+                <span class="guide-google-mark" aria-hidden="true">G</span>
+                <span>Continue with Google</span>
+            </button>
+
+            <p id="guide-auth-status" class="guide-auth-status" role="status"></p>
+
+            <div class="guide-auth-benefits">
+                <span>Step-by-step lessons</span>
+                <span>Practical tasks</span>
+                <span>Problem solving</span>
+                <span>Quick reference</span>
+            </div>
+
+            <p class="guide-auth-note">
+                Downloads remain public. An account is required only for Guides.
+            </p>
+
+            <a class="guide-auth-back" href="index.html">← Back to OSGuide</a>
+        </div>
+    </section>
+
+    <div id="guide-app-shell" class="guide-app-shell" hidden>
+
+        <header class="guide-topbar">
+            <div class="guide-topbar-leading">
+                <button
+                    type="button"
+                    id="guide-mobile-menu-button"
+                    class="guide-icon-button guide-mobile-menu-button"
+                    aria-label="Open navigation"
+                    aria-expanded="false"
+                >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M4 7h16M4 12h16M4 17h16"/>
+                    </svg>
+                </button>
+
+                <a href="index.html" class="guide-brand" aria-label="OSGuide home">
+                    <span class="guide-brand-symbol" aria-hidden="true"><span></span></span>
+                    <strong>OS<span>Guide</span></strong>
+                </a>
+            </div>
+
+            <div class="guide-global-search">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="11" cy="11" r="6.5"/>
+                    <path d="m16 16 4 4"/>
+                </svg>
+
+                <input
+                    id="guide-global-search-input"
+                    type="search"
+                    autocomplete="off"
+                    placeholder="Search lessons, tasks, fixes, commands..."
+                    aria-label="Search this guide"
+                >
+
+                <kbd>/</kbd>
+
+                <div id="guide-search-results" class="guide-search-results" hidden></div>
+            </div>
+
+            <div class="guide-topbar-actions">
+                <button type="button" class="guide-topbar-pill is-active" data-mode-jump="learn">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M4 5.5c2.7-.8 5.3-.5 8 1v12c-2.7-1.5-5.3-1.8-8-1V5.5Zm16 0c-2.7-.8-5.3-.5-8 1v12c2.7-1.5 5.3-1.8 8-1V5.5Z"/>
+                    </svg>
+                    <span>Guides</span>
+                </button>
+
+                <button type="button" class="guide-icon-button guide-notification-button" aria-label="Notifications">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M6 9a6 6 0 0 1 12 0c0 7 2.5 7 2.5 7h-17S6 16 6 9Z"/>
+                        <path d="M9.8 20h4.4"/>
+                    </svg>
+                    <span class="guide-notification-dot" aria-hidden="true"></span>
+                </button>
+
+                <button
+                    type="button"
+                    id="guide-account-button"
+                    class="guide-account-button"
+                    aria-label="Account"
+                    aria-expanded="false"
+                >
+                    <span id="guide-account-avatar" class="guide-account-avatar">U</span>
+                </button>
+            </div>
+
+            <div id="guide-account-menu" class="guide-account-menu" hidden>
+                <div class="guide-account-menu-user">
+                    <strong id="guide-account-name">OSGuide user</strong>
+                    <small id="guide-account-email"></small>
+                </div>
+                <button type="button" id="guide-sign-out-button">Sign out</button>
+            </div>
+        </header>
+
+        <div id="guide-mobile-drawer-shell" class="guide-mobile-drawer-shell" hidden>
+            <button
+                type="button"
+                id="guide-mobile-drawer-backdrop"
+                class="guide-mobile-drawer-backdrop"
+                aria-label="Close navigation"
+            ></button>
+
+            <aside class="guide-mobile-drawer">
+                <div class="guide-mobile-drawer-header">
+                    <a href="index.html" class="guide-brand">
+                        <span class="guide-brand-symbol" aria-hidden="true"><span></span></span>
+                        <strong>OS<span>Guide</span></strong>
+                    </a>
+
+                    <button
+                        type="button"
+                        id="guide-mobile-drawer-close"
+                        class="guide-icon-button"
+                        aria-label="Close navigation"
+                    >
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M6 6l12 12M18 6 6 18"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <nav class="guide-mobile-drawer-links">
+                    <a href="index.html"><span>Home</span></a>
+                    <a href="index.html#categories"><span>Categories</span></a>
+                    <a href="index.html#applications"><span>Apps</span></a>
+                    <button type="button" class="is-active" data-mode-jump="learn"><span>Guides</span></button>
+                    <button type="button" data-mode-jump="reference"><span>Reference</span></button>
+                </nav>
+            </aside>
+        </div>
+
+        <aside class="guide-sidebar">
+            <nav class="guide-sidebar-nav">
+
+                <a class="guide-sidebar-item" href="index.html">
+                    <span class="guide-sidebar-icon">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="m3 11 9-8 9 8"/>
+                            <path d="M5 10v10h14V10M9 20v-6h6v6"/>
+                        </svg>
+                    </span>
+                    <span>Home</span>
+                </a>
+
+                <a class="guide-sidebar-item" href="index.html#categories">
+                    <span class="guide-sidebar-icon">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <rect x="4" y="4" width="6" height="6" rx="1"/>
+                            <rect x="14" y="4" width="6" height="6" rx="1"/>
+                            <rect x="4" y="14" width="6" height="6" rx="1"/>
+                            <rect x="14" y="14" width="6" height="6" rx="1"/>
+                        </svg>
+                    </span>
+                    <span>Categories</span>
+                </a>
+
+                <a class="guide-sidebar-item" href="index.html#applications">
+                    <span class="guide-sidebar-icon">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <rect x="4" y="4" width="6" height="6" rx="1.5"/>
+                            <rect x="14" y="4" width="6" height="6" rx="1.5"/>
+                            <rect x="4" y="14" width="6" height="6" rx="1.5"/>
+                            <path d="M14 17h6M17 14v6"/>
+                        </svg>
+                    </span>
+                    <span>Apps</span>
+                </a>
+
+                <button type="button" class="guide-sidebar-item is-active" data-mode-jump="learn">
+                    <span class="guide-sidebar-icon">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M4 5.5c2.7-.8 5.3-.5 8 1v12c-2.7-1.5-5.3-1.8-8-1V5.5Zm16 0c-2.7-.8-5.3-.5-8 1v12c2.7-1.5 5.3-1.8 8-1V5.5Z"/>
+                        </svg>
+                    </span>
+                    <span>Guides</span>
+                </button>
+
+                <button type="button" class="guide-sidebar-item" data-sidebar-placeholder="favorites">
+                    <span class="guide-sidebar-icon">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.8 1-6.1-4.4-4.3 6.1-.9L12 3Z"/>
+                        </svg>
+                    </span>
+                    <span>Favorites</span>
+                </button>
+
+                <p class="guide-sidebar-label">MORE</p>
+
+                <button type="button" class="guide-sidebar-item" data-sidebar-placeholder="about">
+                    <span class="guide-sidebar-icon">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <circle cx="12" cy="12" r="9"/>
+                            <path d="M12 11v6M12 7.5v.1"/>
+                        </svg>
+                    </span>
+                    <span>About</span>
+                </button>
+
+                <button type="button" class="guide-sidebar-item" data-sidebar-placeholder="settings">
+                    <span class="guide-sidebar-icon">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M12 2v3M12 19v3M4.9 4.9 7 7M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1"/>
+                        </svg>
+                    </span>
+                    <span>Settings</span>
+                </button>
+            </nav>
+
+            <div class="guide-sidebar-source">
+                <span class="guide-source-dot"></span>
+                <span id="guide-sidebar-source">Source: F-Droid</span>
+            </div>
+        </aside>
+
+        <main id="guide-main" class="guide-main">
+
+            <section class="guide-home">
+                <div class="guide-home-top">
+
+                    <div class="guide-app-overview">
+                        <a href="index.html" class="guide-back-link">← Back to Guides</a>
+
+                        <div class="guide-app-heading">
+                            <div class="guide-app-icon-frame">
+                                <img id="guide-app-icon" src="" alt="">
+                            </div>
+
+                            <div class="guide-app-heading-copy">
+                                <h1 id="guide-app-name">App Guide</h1>
+
+                                <p id="guide-app-description">
+                                    Practical learning guide for this application.
+                                </p>
+
+                                <div class="guide-app-badges">
+                                    <span id="guide-level-badge">Beginner to Advanced</span>
+                                    <span class="is-learn"><strong id="guide-lessons-count">0</strong> Lessons</span>
+                                    <span class="is-do"><strong id="guide-tasks-count">0</strong> Tasks</span>
+                                    <span class="is-fix"><strong id="guide-fixes-count">0</strong> Fixes</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <aside class="guide-progress-card">
+                        <div class="guide-progress-ring" id="guide-progress-ring">
+                            <span id="guide-progress-percent">0%</span>
+                        </div>
+
+                        <div class="guide-progress-card-copy">
+                            <small>Your progress</small>
+                            <strong id="guide-progress-title">Start learning</strong>
+                            <span id="guide-progress-subtitle">0 of 0 lessons completed</span>
+
+                            <button
+                                type="button"
+                                id="guide-continue-button"
+                                class="guide-primary-button"
+                            >
+                                Continue Learning
+                            </button>
+                        </div>
+                    </aside>
+                </div>
+
+                <div class="guide-home-divider"></div>
+                <p class="guide-home-question">How do you want to use this guide?</p>
+
+                <div class="guide-mode-grid">
+
+                    <button type="button" class="guide-mode-card guide-mode-learn" data-guide-mode="learn">
+                        <span class="guide-mode-icon">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M4 5.5c2.7-.8 5.3-.5 8 1v12c-2.7-1.5-5.3-1.8-8-1V5.5Zm16 0c-2.7-.8-5.3-.5-8 1v12c2.7-1.5 5.3-1.8 8-1V5.5Z"/>
+                            </svg>
+                        </span>
+                        <strong>LEARN</strong>
+                        <p>Step-by-step lessons to build a strong foundation.</p>
+                        <span class="guide-mode-meta"><b id="guide-mode-lessons-count">0</b> lessons →</span>
+                    </button>
+
+                    <button type="button" class="guide-mode-card guide-mode-do" data-guide-mode="do">
+                        <span class="guide-mode-icon">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="m13 2-2 8 5 2-7 10 2-8-5-2 7-10Z"/>
+                            </svg>
+                        </span>
+                        <strong>DO</strong>
+                        <p>Practical tasks and projects that produce a real result.</p>
+                        <span class="guide-mode-meta"><b id="guide-mode-tasks-count">0</b> tasks →</span>
+                    </button>
+
+                    <button type="button" class="guide-mode-card guide-mode-fix" data-guide-mode="fix">
+                        <span class="guide-mode-icon">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M14.5 5.5 18.5 1.5l4 4-4 4"/>
+                                <path d="M13 7 4 16l-2 6 6-2 9-9"/>
+                            </svg>
+                        </span>
+                        <strong>FIX</strong>
+                        <p>Find causes, solutions and alternative troubleshooting steps.</p>
+                        <span class="guide-mode-meta"><b id="guide-mode-fixes-count">0</b> solutions →</span>
+                    </button>
+
+                    <button type="button" class="guide-mode-card guide-mode-reference" data-guide-mode="reference">
+                        <span class="guide-mode-icon">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M6 3h9l3 3v15H6V3Z"/>
+                                <path d="M15 3v4h4M9 11h6M9 15h6"/>
+                            </svg>
+                        </span>
+                        <strong>REFERENCE</strong>
+                        <p>Quick answers, commands, options and important information.</p>
+                        <span class="guide-mode-meta">Open reference →</span>
+                    </button>
+                </div>
+
+                <div class="guide-home-lower-grid">
+                    <section class="guide-resume-card">
+                        <p class="guide-small-label">Continue where you left off</p>
+
+                        <div class="guide-resume-row">
+                            <span id="guide-resume-number" class="guide-resume-number">01.</span>
+
+                            <div class="guide-resume-copy">
+                                <strong id="guide-resume-title">Introduction</strong>
+                                <small id="guide-resume-section">Learn › Foundations</small>
+                            </div>
+
+                            <div class="guide-resume-progress">
+                                <span id="guide-resume-progress-bar"></span>
+                            </div>
+
+                            <strong id="guide-resume-percent">0%</strong>
+
+                            <button type="button" id="guide-resume-button" class="guide-secondary-button">
+                                Continue
+                            </button>
+                        </div>
+                    </section>
+
+                    <section class="guide-recent-card">
+                        <p class="guide-small-label">Recently viewed</p>
+                        <div id="guide-recent-list" class="guide-recent-list"></div>
+                    </section>
+                </div>
+            </section>
+
+            <section class="guide-workspace-header">
+                <div>
+                    <span id="guide-workspace-number" class="guide-workspace-number is-learn">1</span>
+                    <h2 id="guide-workspace-title">LEARN</h2>
+                    <span id="guide-workspace-subtitle">Step-by-step learning</span>
+                </div>
+
+                <button
+                    type="button"
+                    id="guide-workspace-top-button"
+                    class="guide-icon-button"
+                    aria-label="Scroll to top"
+                >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="m6 15 6-6 6 6"/>
+                    </svg>
+                </button>
+            </section>
+
+            <section id="guide-learn-workspace" class="guide-workspace guide-learn-workspace">
+                <aside class="guide-workspace-navigation">
+                    <p class="guide-workspace-nav-title">FOUNDATIONS</p>
+                    <div id="guide-lessons-navigation" class="guide-workspace-nav-list"></div>
+                </aside>
+
+                <article class="guide-lesson-panel">
+
+                    <div class="guide-mobile-content-selector">
+                        <button type="button" id="guide-mobile-lessons-button">
+                            <span id="guide-mobile-lesson-label">Lesson list</span>
+                            <span>⌄</span>
+                        </button>
+
+                        <div
+                            id="guide-mobile-lessons-menu"
+                            class="guide-mobile-content-menu"
+                            hidden
+                        ></div>
+                    </div>
+
+                    <header class="guide-content-heading">
+                        <p id="guide-lesson-kicker" class="guide-content-kicker">FOUNDATIONS</p>
+                        <h3 id="guide-lesson-title">Lesson</h3>
+                        <p id="guide-lesson-summary"></p>
+
+                        <div class="guide-step-progress-row">
+                            <span id="guide-step-progress-label">Step 1 of 1</span>
+                            <div class="guide-step-progress-track">
+                                <span id="guide-step-progress-bar"></span>
+                            </div>
+                        </div>
+                    </header>
+
+                    <div id="guide-lesson-content" class="guide-lesson-content"></div>
+
+                    <footer class="guide-content-footer">
+                        <button type="button" id="guide-lesson-previous" class="guide-secondary-button">
+                            ← Previous
+                        </button>
+
+                        <button type="button" id="guide-mark-step-done" class="guide-success-button">
+                            Mark as done ✓
+                        </button>
+
+                        <button type="button" id="guide-lesson-next" class="guide-primary-button">
+                            Next →
+                        </button>
+                    </footer>
+                </article>
+
+                <aside class="guide-lesson-aside">
+                    <div class="guide-lesson-outline-card">
+                        <p class="guide-small-label">In this lesson</p>
+                        <ol id="guide-lesson-outline"></ol>
+                    </div>
+
+                    <div class="guide-tip-card">
+                        <span>TIP</span>
+                        <p id="guide-lesson-tip">
+                            Complete each step in order for the clearest learning path.
+                        </p>
+                    </div>
+                </aside>
+            </section>
+
+            <section
+                id="guide-do-workspace"
+                class="guide-workspace guide-simple-workspace"
+                hidden
             >
-                <div
-                    id="guide-progress-bar"
-                    class="guide-progress-bar"
-                ></div>
-            </div>
-        </section>
+                <aside class="guide-workspace-navigation">
+                    <p class="guide-workspace-nav-title">ALL TASKS</p>
+                    <div id="guide-tasks-navigation" class="guide-workspace-nav-list"></div>
+                </aside>
 
-        <section id="guide-sections" class="guide-sections">
+                <article class="guide-simple-content-panel">
+                    <header class="guide-content-heading">
+                        <p class="guide-content-kicker is-do">PRACTICAL TASK</p>
+                        <h3 id="guide-task-title">Task</h3>
+                        <p id="guide-task-summary"></p>
+                    </header>
 
-            <article class="guide-accordion">
-                <button type="button" class="guide-accordion-button" aria-expanded="false">
-                    <span>What is this app?</span>
-                    <span class="guide-accordion-arrow"></span>
-                </button>
-                <div class="guide-accordion-content" hidden>
-                    <div id="guide-about-content">
-                        Guide content will be added here.
+                    <div class="guide-task-meta">
+                        <span id="guide-task-level">Beginner</span>
+                        <span id="guide-task-time">~10 min</span>
                     </div>
-                </div>
-            </article>
 
-            <article class="guide-accordion">
-                <button type="button" class="guide-accordion-button" aria-expanded="false">
-                    <span>Installation</span>
-                    <span class="guide-accordion-arrow"></span>
-                </button>
-                <div class="guide-accordion-content" hidden>
-                    <div id="guide-installation-content">
-                        Installation instructions will be added here.
+                    <div id="guide-task-steps" class="guide-checklist"></div>
+
+                    <button
+                        type="button"
+                        id="guide-task-start-button"
+                        class="guide-primary-button guide-do-primary"
+                    >
+                        Start Task
+                    </button>
+                </article>
+
+                <aside class="guide-simple-aside">
+                    <div class="guide-result-card">
+                        <p class="guide-small-label">What you'll get</p>
+                        <ul id="guide-task-results"></ul>
                     </div>
-                </div>
-            </article>
 
-            <article class="guide-accordion">
-                <button type="button" class="guide-accordion-button" aria-expanded="false">
-                    <span>First Steps</span>
-                    <span class="guide-accordion-arrow"></span>
-                </button>
-                <div class="guide-accordion-content" hidden>
-                    <div id="guide-first-steps-content">
-                        First steps will be added here.
+                    <div class="guide-resource-card">
+                        <p class="guide-small-label">Resources</p>
+                        <div id="guide-task-resources"></div>
                     </div>
-                </div>
-            </article>
+                </aside>
+            </section>
 
-            <article class="guide-accordion">
-                <button type="button" class="guide-accordion-button" aria-expanded="false">
-                    <span>Tutorials</span>
-                    <span class="guide-accordion-arrow"></span>
-                </button>
-                <div class="guide-accordion-content" hidden>
-                    <div id="guide-tutorials-content" class="guide-tutorials-grid">
-                        Tutorials will be added here.
+            <section
+                id="guide-fix-workspace"
+                class="guide-workspace guide-simple-workspace"
+                hidden
+            >
+                <aside class="guide-workspace-navigation">
+                    <p class="guide-workspace-nav-title">ALL PROBLEMS</p>
+                    <div id="guide-fixes-navigation" class="guide-workspace-nav-list"></div>
+                </aside>
+
+                <article class="guide-simple-content-panel">
+                    <header class="guide-content-heading">
+                        <p class="guide-content-kicker is-fix">TROUBLESHOOTING</p>
+                        <h3 id="guide-fix-title">Problem</h3>
+                        <div id="guide-fix-tags" class="guide-fix-tags"></div>
+                    </header>
+
+                    <div class="guide-fix-summary-grid">
+                        <div>
+                            <small>Problem</small>
+                            <p id="guide-fix-problem"></p>
+                        </div>
+
+                        <div>
+                            <small>Cause</small>
+                            <p id="guide-fix-cause"></p>
+                        </div>
                     </div>
-                </div>
-            </article>
 
-            <article class="guide-accordion">
-                <button type="button" class="guide-accordion-button" aria-expanded="false">
-                    <span>Tips &amp; Tricks</span>
-                    <span class="guide-accordion-arrow"></span>
-                </button>
-                <div class="guide-accordion-content" hidden>
-                    <div id="guide-tips-content">
-                        Tips will be added here.
+                    <div class="guide-solution-card">
+                        <p class="guide-small-label">Solution</p>
+                        <div id="guide-fix-steps" class="guide-solution-steps"></div>
                     </div>
-                </div>
-            </article>
+                </article>
 
-            <article class="guide-accordion">
-                <button type="button" class="guide-accordion-button" aria-expanded="false">
-                    <span>FAQ</span>
-                    <span class="guide-accordion-arrow"></span>
-                </button>
-                <div class="guide-accordion-content" hidden>
-                    <div id="guide-faq-content">
-                        Frequently asked questions will be added here.
+                <aside class="guide-simple-aside">
+                    <div class="guide-related-card">
+                        <p class="guide-small-label">Related</p>
+                        <div id="guide-fix-related"></div>
                     </div>
-                </div>
-            </article>
 
-            <article class="guide-accordion">
-                <button type="button" class="guide-accordion-button" aria-expanded="false">
-                    <span>Related Apps</span>
-                    <span class="guide-accordion-arrow"></span>
-                </button>
-                <div class="guide-accordion-content" hidden>
-                    <div id="guide-related-apps" class="guide-related-apps">
-                        Related applications will appear here.
+                    <div class="guide-helpful-card">
+                        <p>Was this solution helpful?</p>
+
+                        <div>
+                            <button
+                                type="button"
+                                class="guide-feedback-button"
+                                data-feedback="yes"
+                                aria-label="Helpful"
+                            >👍</button>
+
+                            <button
+                                type="button"
+                                class="guide-feedback-button"
+                                data-feedback="no"
+                                aria-label="Not helpful"
+                            >👎</button>
+                        </div>
                     </div>
-                </div>
-            </article>
+                </aside>
+            </section>
 
-        </section>
+            <section
+                id="guide-reference-workspace"
+                class="guide-workspace guide-reference-workspace"
+                hidden
+            >
+                <aside class="guide-workspace-navigation">
+                    <p class="guide-workspace-nav-title">REFERENCE</p>
+                    <div id="guide-reference-navigation" class="guide-workspace-nav-list"></div>
+                </aside>
 
-    </main>
+                <article class="guide-reference-panel">
+                    <header class="guide-reference-heading">
+                        <div>
+                            <p class="guide-content-kicker is-reference">QUICK REFERENCE</p>
+                            <h3 id="guide-reference-title">Essential Commands</h3>
+                        </div>
 
-    <script src="guide.js"></script>
+                        <div class="guide-reference-search">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <circle cx="11" cy="11" r="6.5"/>
+                                <path d="m16 16 4 4"/>
+                            </svg>
+
+                            <input
+                                type="search"
+                                id="guide-reference-search-input"
+                                placeholder="Search command..."
+                                aria-label="Search reference"
+                            >
+                        </div>
+                    </header>
+
+                    <div class="guide-reference-table-wrapper">
+                        <table class="guide-reference-table">
+                            <thead>
+                                <tr>
+                                    <th>Command</th>
+                                    <th>Description</th>
+                                    <th>Example</th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="guide-reference-table-body"></tbody>
+                        </table>
+                    </div>
+
+                    <div id="guide-reference-mobile-list" class="guide-reference-mobile-list"></div>
+                </article>
+            </section>
+
+            <nav class="guide-mobile-bottom-nav" aria-label="Guide navigation">
+                <a href="index.html">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="m3 11 9-8 9 8"/>
+                        <path d="M5 10v10h14V10M9 20v-6h6v6"/>
+                    </svg>
+                    <span>Home</span>
+                </a>
+
+                <a href="index.html#applications">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <rect x="4" y="4" width="6" height="6" rx="1"/>
+                        <rect x="14" y="4" width="6" height="6" rx="1"/>
+                        <rect x="4" y="14" width="6" height="6" rx="1"/>
+                        <rect x="14" y="14" width="6" height="6" rx="1"/>
+                    </svg>
+                    <span>Apps</span>
+                </a>
+
+                <button type="button" class="is-active" data-mode-jump="learn">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M4 5.5c2.7-.8 5.3-.5 8 1v12c-2.7-1.5-5.3-1.8-8-1V5.5Zm16 0c-2.7-.8-5.3-.5-8 1v12c2.7-1.5 5.3-1.8 8-1V5.5Z"/>
+                    </svg>
+                    <span>Guides</span>
+                </button>
+
+                <button type="button" data-mode-jump="reference">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <circle cx="12" cy="5" r="1"/>
+                        <circle cx="12" cy="12" r="1"/>
+                        <circle cx="12" cy="19" r="1"/>
+                    </svg>
+                    <span>More</span>
+                </button>
+            </nav>
+
+        </main>
+
+        <div id="guide-toast" class="guide-toast" role="status" aria-live="polite" hidden></div>
+    </div>
+
+    <script type="module" src="guide.js"></script>
 </body>
 </html>
