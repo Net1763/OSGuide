@@ -1779,9 +1779,35 @@ document.addEventListener('DOMContentLoaded', async () => {
        16. Guide Modal
     ===================================================== */
 
+    const guideUrl =
+        new URL('guide.html', window.location.href).href;
+
+    async function openGuide() {
+        try {
+            const { data, error } =
+                await supabaseClient.auth.getSession();
+
+            if (error) {
+                throw error;
+            }
+
+            if (data && data.session) {
+                window.location.href = guideUrl;
+                return;
+            }
+        } catch (error) {
+            console.error(
+                'OSGuide could not check the current login session.',
+                error
+            );
+        }
+
+        openModal(guideModal);
+    }
+
     if (guideButton) {
         guideButton.addEventListener('click', () => {
-            openModal(guideModal);
+            openGuide();
         });
     }
 
@@ -1803,9 +1829,36 @@ document.addEventListener('DOMContentLoaded', async () => {
             guideModal.querySelectorAll('.login-option');
 
         loginButtons.forEach(button => {
-            button.addEventListener('click', () => {
+            button.addEventListener('click', async () => {
                 const providerName =
                     button.textContent.trim();
+
+                if (/google/i.test(providerName)) {
+                    try {
+                        const { error } =
+                            await supabaseClient.auth.signInWithOAuth({
+                                provider: 'google',
+                                options: {
+                                    redirectTo: guideUrl
+                                }
+                            });
+
+                        if (error) {
+                            throw error;
+                        }
+                    } catch (error) {
+                        console.error(
+                            'OSGuide Google sign-in failed.',
+                            error
+                        );
+
+                        alert(
+                            'Google sign-in could not be started. Please try again.'
+                        );
+                    }
+
+                    return;
+                }
 
                 showLoginMessage(providerName);
             });
@@ -3293,7 +3346,7 @@ try {
                     break;
 
                 case 'guide':
-                    openModal(guideModal);
+                    openGuide();
                     break;
 
                 case 'fdroid':
@@ -3322,7 +3375,7 @@ try {
         if (accountCard) {
             accountCard.addEventListener('click', () => {
                 closeSideNavigation();
-                window.setTimeout(() => openModal(guideModal), 120);
+                window.setTimeout(() => openGuide(), 120);
             });
         }
 
