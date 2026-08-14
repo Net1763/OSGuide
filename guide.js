@@ -309,6 +309,13 @@ const appSlug =
         .trim()
         .toLowerCase();
 
+const guideLibraryView =
+    String(
+        params.get('view') || 'apps'
+    )
+        .trim()
+        .toLowerCase();
+
 
 /* =========================================================
    4. State
@@ -1891,84 +1898,80 @@ async function renderGuidesLibrary() {
     const applications =
         await loadGuidesLibrary();
 
-    state.application =
-        null;
-
-    state.guide =
-        null;
+    state.application = null;
+    state.guide = null;
 
     const sidebar =
         document.querySelector('.guide-sidebar');
 
     if (sidebar) {
-        sidebar.hidden =
-            true;
+        sidebar.hidden = false;
+    }
+
+    const isCategoriesView =
+        guideLibraryView === 'categories';
+
+    const categories =
+        [...new Set(
+            applications
+                .map(application =>
+                    String(application.category || 'Other').trim()
+                )
+                .filter(Boolean)
+        )].sort((a, b) => a.localeCompare(b));
+
+    let libraryContent = '';
+
+    if (isCategoriesView) {
+        libraryContent =
+            categories.map(category => {
+                const categoryApplications =
+                    applications.filter(application =>
+                        String(application.category || 'Other').trim() === category
+                    );
+
+                return `
+                    <section style="margin:0 0 30px;">
+                        <div style="display:flex;justify-content:space-between;align-items:end;gap:14px;margin-bottom:12px;">
+                            <h2 style="margin:0;font-size:22px;">${escapeGuideLibraryHtml(category)}</h2>
+                            <span style="color:#8ea1b5;font-size:12px;font-weight:800;">
+                                ${categoryApplications.length} ${categoryApplications.length === 1 ? 'app' : 'apps'}
+                            </span>
+                        </div>
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:14px;">
+                            ${categoryApplications.map(createGuideLibraryCard).join('')}
+                        </div>
+                    </section>
+                `;
+            }).join('');
+    } else {
+        libraryContent = `
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:14px;">
+                ${applications.map(createGuideLibraryCard).join('')}
+            </div>
+        `;
     }
 
     if (guideMain) {
         guideMain.innerHTML = `
-            <section
-                style="
-                    width:min(100%,1120px);
-                    margin:0 auto;
-                    padding:34px 20px 60px;
-                "
-            >
+            <section style="width:min(100%,1120px);margin:0 auto;padding:34px 20px 60px;">
                 <div style="margin-bottom:28px;">
-                    <p
-                        style="
-                            margin:0 0 8px;
-                            color:#69a7ff;
-                            font-size:11px;
-                            font-weight:900;
-                            letter-spacing:.08em;
-                        "
-                    >OSGUIDE GUIDES</p>
-
-                    <h1
-                        style="
-                            margin:0;
-                            font-size:clamp(30px,6vw,48px);
-                            line-height:1.08;
-                        "
-                    >Learn every published app.</h1>
-
-                    <p
-                        style="
-                            margin:14px 0 0;
-                            max-width:720px;
-                            color:#9fb0c3;
-                            line-height:1.7;
-                        "
-                    >
+                    <p style="margin:0 0 8px;color:#69a7ff;font-size:11px;font-weight:900;letter-spacing:.08em;">OSGUIDE GUIDES</p>
+                    <h1 style="margin:0;font-size:clamp(30px,6vw,48px);line-height:1.08;">
+                        ${isCategoriesView ? 'Browse guides by category.' : 'Learn every published app.'}
+                    </h1>
+                    <p style="margin:14px 0 0;max-width:720px;color:#9fb0c3;line-height:1.7;">
                         ${applications.length} ${applications.length === 1 ? 'application' : 'applications'}
                         available from the same OSGuide catalog.
                         New published applications appear here automatically.
                     </p>
                 </div>
-
                 ${
                     applications.length
-                        ? `<div
-                                style="
-                                    display:grid;
-                                    grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));
-                                    gap:14px;
-                                "
-                           >
-                                ${applications
-                                    .map(createGuideLibraryCard)
-                                    .join('')}
+                        ? libraryContent
+                        : `<div style="padding:24px;border:1px solid #26384c;border-radius:16px;background:#0a131d;color:#9fb0c3;">
+                               No published applications are available yet.
                            </div>`
-                        : `<div
-                                style="
-                                    padding:24px;
-                                    border:1px solid #26384c;
-                                    border-radius:16px;
-                                    background:#0a131d;
-                                    color:#9fb0c3;
-                                "
-                           >No published applications are available yet.</div>`
                 }
             </section>
         `;
