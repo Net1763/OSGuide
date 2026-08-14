@@ -1720,6 +1720,263 @@ function createGenericGuide(application) {
 }
 
 
+
+/* =========================================================
+   7B. Guides Library
+   No slug/id = show every published application.
+   A slug/id = open that application's existing guide.
+========================================================= */
+
+function getGuideApplicationUrl(application) {
+    const value =
+        String(application?.slug || application?.id || '')
+            .trim();
+
+    const key =
+        application?.slug
+            ? 'slug'
+            : 'id';
+
+    const url =
+        new URL('guide.html', window.location.href);
+
+    url.searchParams.set(
+        key,
+        value
+    );
+
+    return url.href;
+}
+
+function escapeGuideLibraryHtml(value) {
+    return String(value || '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+}
+
+function createGuideLibraryCard(application) {
+    const safeName =
+        escapeGuideLibraryHtml(application.name);
+
+    const safeDescription =
+        escapeGuideLibraryHtml(
+            application.description ||
+            'Practical guide for this application.'
+        );
+
+    const safeCategory =
+        escapeGuideLibraryHtml(
+            application.category ||
+            'Application'
+        );
+
+    const safeImageUrl =
+        escapeGuideLibraryHtml(
+            application.imageUrl || ''
+        );
+
+    const guideUrl =
+        escapeGuideLibraryHtml(
+            getGuideApplicationUrl(application)
+        );
+
+    const iconMarkup =
+        safeImageUrl
+            ? `<img
+                    src="${safeImageUrl}"
+                    alt="${safeName} logo"
+                    loading="lazy"
+                    decoding="async"
+                    referrerpolicy="no-referrer"
+                    style="width:58px;height:58px;border-radius:14px;object-fit:cover;background:#111b26;"
+               >`
+            : `<div
+                    aria-hidden="true"
+                    style="
+                        width:58px;
+                        height:58px;
+                        border-radius:14px;
+                        display:grid;
+                        place-items:center;
+                        background:#111b26;
+                        border:1px solid #26384c;
+                        font-size:22px;
+                        font-weight:900;
+                    "
+               >${escapeGuideLibraryHtml(safeName.charAt(0).toUpperCase())}</div>`;
+
+    return `
+        <a
+            href="${guideUrl}"
+            style="
+                display:block;
+                padding:18px;
+                border:1px solid #26384c;
+                border-radius:16px;
+                background:#0a131d;
+                color:inherit;
+                text-decoration:none;
+            "
+        >
+            <div style="display:flex;gap:14px;align-items:center;">
+                ${iconMarkup}
+
+                <div style="min-width:0;">
+                    <p
+                        style="
+                            margin:0 0 5px;
+                            color:#69a7ff;
+                            font-size:11px;
+                            font-weight:850;
+                            letter-spacing:.05em;
+                            text-transform:uppercase;
+                        "
+                    >${safeCategory}</p>
+
+                    <h2
+                        style="
+                            margin:0;
+                            font-size:18px;
+                            line-height:1.25;
+                        "
+                    >${safeName}</h2>
+                </div>
+            </div>
+
+            <p
+                style="
+                    margin:14px 0 0;
+                    color:#9fb0c3;
+                    line-height:1.65;
+                    font-size:14px;
+                "
+            >${safeDescription}</p>
+
+            <div
+                style="
+                    margin-top:16px;
+                    color:#d9e8f8;
+                    font-size:13px;
+                    font-weight:800;
+                "
+            >Open Guide →</div>
+        </a>
+    `;
+}
+
+async function loadGuidesLibrary() {
+    const {
+        data,
+        error
+    } =
+        await supabase
+            .from('applications')
+            .select('*')
+            .eq('is_published', true)
+            .order('added', { ascending: false });
+
+    if (error) {
+        throw error;
+    }
+
+    return Array.isArray(data)
+        ? data.map(normalizeApplication)
+        : [];
+}
+
+async function renderGuidesLibrary() {
+    const applications =
+        await loadGuidesLibrary();
+
+    state.application =
+        null;
+
+    state.guide =
+        null;
+
+    const sidebar =
+        document.querySelector('.guide-sidebar');
+
+    if (sidebar) {
+        sidebar.hidden =
+            true;
+    }
+
+    if (guideMain) {
+        guideMain.innerHTML = `
+            <section
+                style="
+                    width:min(100%,1120px);
+                    margin:0 auto;
+                    padding:34px 20px 60px;
+                "
+            >
+                <div style="margin-bottom:28px;">
+                    <p
+                        style="
+                            margin:0 0 8px;
+                            color:#69a7ff;
+                            font-size:11px;
+                            font-weight:900;
+                            letter-spacing:.08em;
+                        "
+                    >OSGUIDE GUIDES</p>
+
+                    <h1
+                        style="
+                            margin:0;
+                            font-size:clamp(30px,6vw,48px);
+                            line-height:1.08;
+                        "
+                    >Learn every published app.</h1>
+
+                    <p
+                        style="
+                            margin:14px 0 0;
+                            max-width:720px;
+                            color:#9fb0c3;
+                            line-height:1.7;
+                        "
+                    >
+                        ${applications.length} ${applications.length === 1 ? 'application' : 'applications'}
+                        available from the same OSGuide catalog.
+                        New published applications appear here automatically.
+                    </p>
+                </div>
+
+                ${
+                    applications.length
+                        ? `<div
+                                style="
+                                    display:grid;
+                                    grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));
+                                    gap:14px;
+                                "
+                           >
+                                ${applications
+                                    .map(createGuideLibraryCard)
+                                    .join('')}
+                           </div>`
+                        : `<div
+                                style="
+                                    padding:24px;
+                                    border:1px solid #26384c;
+                                    border-radius:16px;
+                                    background:#0a131d;
+                                    color:#9fb0c3;
+                                "
+                           >No published applications are available yet.</div>`
+                }
+            </section>
+        `;
+    }
+
+    showAppShell();
+}
+
 /* =========================================================
    8. Application Loading
 ========================================================= */
@@ -4550,6 +4807,11 @@ async function initializeAuthenticatedGuide(
     );
 
     try {
+        if (!appSlug) {
+            await renderGuidesLibrary();
+            return;
+        }
+
         await loadApplication();
 
         loadProgress();
@@ -4647,7 +4909,7 @@ async function initialize() {
                     session.user
                 );
 
-                if (!state.application) {
+                if (!state.application || !appSlug) {
                     await initializeAuthenticatedGuide(
                         session.user
                     );
