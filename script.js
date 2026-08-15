@@ -64,6 +64,27 @@ document.addEventListener('DOMContentLoaded', async () => {
     const newestButton =
         document.getElementById('newest-button');
 
+    const categoryFilter =
+        document.getElementById('category-filter');
+
+    const sourceFilter =
+        document.getElementById('source-filter');
+
+    const ratingFilter =
+        document.getElementById('rating-filter');
+
+    const resetFiltersButton =
+        document.getElementById('reset-filters-button');
+
+    const applicationsListViewButton =
+        document.getElementById('applications-list-view');
+
+    const applicationsGridViewButton =
+        document.getElementById('applications-grid-view');
+
+    const viewAllApplicationsButton =
+        document.getElementById('view-all-applications');
+
     const themeButton =
         document.getElementById('theme-button');
 
@@ -135,7 +156,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         true;
 
     let activeCategory = '';
+    let activeSource = '';
+    let minimumRating = '';
     let browseMode = 'home';
+    let applicationViewMode = 'grid';
+    let showAllApplicationsExpanded = false;
 
     let applicationsPageIndex = 0;
     let applicationsPageSize = 6;
@@ -331,6 +356,157 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
+
+    /* =====================================================
+       5B. Directory Card State
+    ===================================================== */
+
+    const favoriteApplicationIds = new Set();
+
+    function loadFavoriteApplications() {
+        try {
+            const savedFavorites =
+                JSON.parse(
+                    localStorage.getItem('osguide-favorites') || '[]'
+                );
+
+            if (!Array.isArray(savedFavorites)) {
+                return;
+            }
+
+            favoriteApplicationIds.clear();
+
+            savedFavorites.forEach(applicationId => {
+                const normalizedId =
+                    String(applicationId || '').trim();
+
+                if (normalizedId) {
+                    favoriteApplicationIds.add(normalizedId);
+                }
+            });
+        } catch (error) {
+            console.warn(
+                'OSGuide could not load favorites.',
+                error
+            );
+        }
+    }
+
+    function saveFavoriteApplications() {
+        try {
+            localStorage.setItem(
+                'osguide-favorites',
+                JSON.stringify(
+                    Array.from(favoriteApplicationIds)
+                )
+            );
+        } catch (error) {
+            console.warn(
+                'OSGuide could not save favorites.',
+                error
+            );
+        }
+    }
+
+    function isApplicationFavorite(applicationId) {
+        return favoriteApplicationIds.has(
+            String(applicationId || '')
+        );
+    }
+
+    function toggleApplicationFavorite(applicationId) {
+        const normalizedId =
+            String(applicationId || '').trim();
+
+        if (!normalizedId) {
+            return false;
+        }
+
+        if (favoriteApplicationIds.has(normalizedId)) {
+            favoriteApplicationIds.delete(normalizedId);
+        } else {
+            favoriteApplicationIds.add(normalizedId);
+        }
+
+        saveFavoriteApplications();
+
+        return favoriteApplicationIds.has(normalizedId);
+    }
+
+    function getApplicationRating(application) {
+        const rating =
+            Number(application?.rating);
+
+        if (
+            Number.isFinite(rating) &&
+            rating > 0 &&
+            rating <= 5
+        ) {
+            return rating;
+        }
+
+        return null;
+    }
+
+    function getApplicationRatingCount(application) {
+        const ratingCount =
+            Number(application?.ratingCount);
+
+        if (
+            Number.isFinite(ratingCount) &&
+            ratingCount > 0
+        ) {
+            return Math.floor(ratingCount);
+        }
+
+        return 0;
+    }
+
+    function formatRatingCount(ratingCount) {
+        if (ratingCount >= 1000) {
+            const compact =
+                ratingCount >= 10000
+                    ? Math.round(ratingCount / 1000)
+                    : Math.round(ratingCount / 100) / 10;
+
+            return `${compact}K`;
+        }
+
+        return String(ratingCount);
+    }
+
+    function createApplicationRatingMarkup(application) {
+        const rating =
+            getApplicationRating(application);
+
+        const ratingCount =
+            getApplicationRatingCount(application);
+
+        if (!rating) {
+            return `
+                <div
+                    class="application-rating is-unrated"
+                    aria-label="This application has not been rated yet"
+                >
+                    <span class="application-rating-star">★</span>
+                    <strong>—</strong>
+                    <span>(0)</span>
+                </div>
+            `;
+        }
+
+        return `
+            <div
+                class="application-rating"
+                aria-label="${rating.toFixed(1)} out of 5 from ${ratingCount} ratings"
+            >
+                <span class="application-rating-star">★</span>
+                <strong>${rating.toFixed(1)}</strong>
+                <span>(${formatRatingCount(ratingCount)})</span>
+            </div>
+        `;
+    }
+
     /* =====================================================
        6. Application Card Template
     ===================================================== */
@@ -357,31 +533,54 @@ document.addEventListener('DOMContentLoaded', async () => {
         const safeAdded =
             escapeHTML(application.added);
 
+        const favorite =
+            isApplicationFavorite(application.id);
+
         return `
             <article
                 class="application-card"
                 data-app-name="${safeName}"
                 data-added="${safeAdded}"
+                data-application-id="${safeId}"
             >
+                <button
+                    class="application-favorite-button${favorite ? ' is-favorite' : ''}"
+                    type="button"
+                    data-favorite-app="${safeId}"
+                    aria-label="${favorite ? 'Remove' : 'Add'} ${safeName} ${favorite ? 'from' : 'to'} favorites"
+                    aria-pressed="${favorite ? 'true' : 'false'}"
+                    title="${favorite ? 'Remove from favorites' : 'Add to favorites'}"
+                >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M6 4.5H18V20L12 16.3L6 20V4.5Z"></path>
+                    </svg>
+                </button>
+
                 <button
                     class="application-main"
                     type="button"
                     data-open-app="${safeId}"
                     aria-label="View ${safeName} information"
                 >
-                    ${createApplicationIcon(application.iconType, application.imageUrl, application.name)}
+                    ${createApplicationIcon(
+                        application.iconType,
+                        application.imageUrl,
+                        application.name
+                    )}
 
                     <div class="application-summary">
                         <h3>${safeName}</h3>
 
                         <p>${safeDescription}</p>
-
-                        <div class="application-meta">
-                            <span>${safeVersion}</span>
-                            <span>${safeSize}</span>
-                        </div>
                     </div>
                 </button>
+
+                ${createApplicationRatingMarkup(application)}
+
+                <div class="application-meta">
+                    <span>${safeVersion}</span>
+                    <span>${safeSize}</span>
+                </div>
 
                 <div class="application-footer">
                     <span class="source-label">
@@ -412,6 +611,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 stroke-linecap="round"
                             ></path>
                         </svg>
+
+                        <span>Download</span>
                     </button>
                 </div>
             </article>
@@ -421,17 +622,36 @@ document.addEventListener('DOMContentLoaded', async () => {
     ===================================================== */
 
     function getApplicationsPageSize() {
+        if (showAllApplicationsExpanded) {
+            return Math.max(
+                displayedApplications.length,
+                1
+            );
+        }
+
         const viewportWidth =
             window.innerWidth ||
             document.documentElement.clientWidth ||
             0;
 
+        if (applicationViewMode === 'list') {
+            if (viewportWidth >= 980) {
+                return 9;
+            }
+
+            if (viewportWidth >= 620) {
+                return 6;
+            }
+
+            return 4;
+        }
+
         if (viewportWidth >= 980) {
-            return 12;
+            return 9;
         }
 
         if (viewportWidth >= 620) {
-            return 4;
+            return 6;
         }
 
         return 4;
@@ -1104,6 +1324,64 @@ document.addEventListener('DOMContentLoaded', async () => {
         );
     }
 
+    function filterApplicationsBySource(applicationList) {
+        if (!activeSource) {
+            return [...applicationList];
+        }
+
+        const normalizedSource =
+            normalizeText(activeSource);
+
+        return applicationList.filter(application =>
+            normalizeText(application.source) ===
+            normalizedSource
+        );
+    }
+
+    function filterApplicationsByRating(applicationList) {
+        if (!minimumRating) {
+            return [...applicationList];
+        }
+
+        if (minimumRating === 'rated') {
+            return applicationList.filter(application =>
+                getApplicationRating(application) !== null
+            );
+        }
+
+        const minimum =
+            Number(minimumRating);
+
+        if (!Number.isFinite(minimum)) {
+            return [...applicationList];
+        }
+
+        return applicationList.filter(application => {
+            const rating =
+                getApplicationRating(application);
+
+            return rating !== null &&
+                rating >= minimum;
+        });
+    }
+
+    function syncDirectoryFilterControls() {
+        if (categoryFilter) {
+            categoryFilter.value =
+                activeCategory;
+        }
+
+        if (sourceFilter) {
+            sourceFilter.value =
+                activeSource;
+        }
+
+        if (ratingFilter) {
+            ratingFilter.value =
+                minimumRating;
+        }
+    }
+
     function updateDisplayedApplications() {
         const searchValue =
             searchInput ? searchInput.value : '';
@@ -1116,8 +1394,20 @@ document.addEventListener('DOMContentLoaded', async () => {
                 searchFilteredApplications
             );
 
+        const sourceFilteredApplications =
+            filterApplicationsBySource(
+                categoryFilteredApplications
+            );
+
+        const ratingFilteredApplications =
+            filterApplicationsByRating(
+                sourceFilteredApplications
+            );
+
         displayedApplications =
-            sortApplications(categoryFilteredApplications);
+            sortApplications(
+                ratingFilteredApplications
+            );
 
         renderApplications(displayedApplications);
 
@@ -1125,6 +1415,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             searchValue,
             displayedApplications
         );
+
+        syncDirectoryFilterControls();
     }
 
     function updateClearSearchButton() {
@@ -1351,7 +1643,188 @@ document.addEventListener('DOMContentLoaded', async () => {
             updateSortButtonState();
             updateDisplayedApplications();
         });
-    }    /* =====================================================
+    }
+
+    function resetDirectoryFilters() {
+        activeCategory = '';
+        activeSource = '';
+        minimumRating = '';
+        newestFirst = true;
+        showAllApplicationsExpanded = false;
+
+        if (searchInput) {
+            searchInput.value = '';
+        }
+
+        updateClearSearchButton();
+        hideSearchSuggestions();
+        updateSortButtonState();
+        updateDisplayedApplications();
+
+        if (viewAllApplicationsButton) {
+            viewAllApplicationsButton.classList.remove(
+                'is-expanded'
+            );
+
+            const label =
+                viewAllApplicationsButton.querySelector(
+                    'span'
+                );
+
+            if (label) {
+                label.textContent =
+                    'View all applications';
+            }
+        }
+    }
+
+    categoryFilter?.addEventListener(
+        'change',
+        () => {
+            activeCategory =
+                String(
+                    categoryFilter.value || ''
+                ).trim();
+
+            showAllApplicationsExpanded = false;
+            updateDisplayedApplications();
+        }
+    );
+
+    sourceFilter?.addEventListener(
+        'change',
+        () => {
+            activeSource =
+                String(
+                    sourceFilter.value || ''
+                ).trim();
+
+            showAllApplicationsExpanded = false;
+            updateDisplayedApplications();
+        }
+    );
+
+    ratingFilter?.addEventListener(
+        'change',
+        () => {
+            minimumRating =
+                String(
+                    ratingFilter.value || ''
+                ).trim();
+
+            showAllApplicationsExpanded = false;
+            updateDisplayedApplications();
+        }
+    );
+
+    resetFiltersButton?.addEventListener(
+        'click',
+        resetDirectoryFilters
+    );
+
+    function setApplicationViewMode(mode) {
+        const nextMode =
+            mode === 'list'
+                ? 'list'
+                : 'grid';
+
+        applicationViewMode =
+            nextMode;
+
+        applicationsGrid?.classList.toggle(
+            'is-list-view',
+            nextMode === 'list'
+        );
+
+        applicationsGridViewButton?.classList.toggle(
+            'is-active',
+            nextMode === 'grid'
+        );
+
+        applicationsListViewButton?.classList.toggle(
+            'is-active',
+            nextMode === 'list'
+        );
+
+        applicationsGridViewButton?.setAttribute(
+            'aria-pressed',
+            String(
+                nextMode === 'grid'
+            )
+        );
+
+        applicationsListViewButton?.setAttribute(
+            'aria-pressed',
+            String(
+                nextMode === 'list'
+            )
+        );
+
+        showAllApplicationsExpanded = false;
+        renderApplications(
+            displayedApplications
+        );
+    }
+
+    applicationsGridViewButton?.addEventListener(
+        'click',
+        () => {
+            setApplicationViewMode(
+                'grid'
+            );
+        }
+    );
+
+    applicationsListViewButton?.addEventListener(
+        'click',
+        () => {
+            setApplicationViewMode(
+                'list'
+            );
+        }
+    );
+
+    viewAllApplicationsButton?.addEventListener(
+        'click',
+        () => {
+            showAllApplicationsExpanded =
+                !showAllApplicationsExpanded;
+
+            viewAllApplicationsButton.classList.toggle(
+                'is-expanded',
+                showAllApplicationsExpanded
+            );
+
+            const label =
+                viewAllApplicationsButton.querySelector(
+                    'span'
+                );
+
+            if (label) {
+                label.textContent =
+                    showAllApplicationsExpanded
+                        ? 'Show fewer applications'
+                        : 'View all applications';
+            }
+
+            renderApplications(
+                displayedApplications
+            );
+        }
+    );
+
+    document.addEventListener(
+        'keydown',
+        event => {
+            if (
+                (event.ctrlKey || event.metaKey) &&
+                event.key.toLowerCase() === 'k'
+            ) {
+                event.preventDefault();
+                searchInput?.focus();
+            }
+        }
+    );    /* =====================================================
        12. Theme System
     ===================================================== */
 
@@ -2170,6 +2643,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         const downloadApplicationButtons =
             document.querySelectorAll('[data-download-app]');
 
+        const favoriteApplicationButtons =
+            document.querySelectorAll('[data-favorite-app]');
+
         openApplicationButtons.forEach(button => {
             button.addEventListener('click', () => {
                 const applicationId =
@@ -2188,6 +2664,58 @@ document.addEventListener('DOMContentLoaded', async () => {
                     button.dataset.downloadApp;
 
                 openDownloadPage(applicationId);
+            });
+        });
+
+        favoriteApplicationButtons.forEach(button => {
+            button.addEventListener('click', event => {
+                event.preventDefault();
+                event.stopPropagation();
+
+                const applicationId =
+                    button.dataset.favoriteApp;
+
+                const favorite =
+                    toggleApplicationFavorite(
+                        applicationId
+                    );
+
+                button.classList.toggle(
+                    'is-favorite',
+                    favorite
+                );
+
+                button.setAttribute(
+                    'aria-pressed',
+                    String(favorite)
+                );
+
+                const application =
+                    getApplicationById(
+                        applicationId
+                    );
+
+                const applicationName =
+                    application?.name ||
+                    'Application';
+
+                button.setAttribute(
+                    'aria-label',
+                    `${favorite ? 'Remove' : 'Add'} ${applicationName} ${favorite ? 'from' : 'to'} favorites`
+                );
+
+                button.setAttribute(
+                    'title',
+                    favorite
+                        ? 'Remove from favorites'
+                        : 'Add to favorites'
+                );
+
+                showNotification(
+                    favorite
+                        ? `${applicationName} added to favorites.`
+                        : `${applicationName} removed from favorites.`
+                );
             });
         });
     };
@@ -2843,8 +3371,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             link.addEventListener(
                 'click',
                 event => {
-                    const linkName =
-                        link.textContent.trim();
+                    const action =
+                        link.dataset.footerAction ||
+                        '';
 
                     const href =
                         link.getAttribute('href');
@@ -2857,6 +3386,19 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
 
                     event.preventDefault();
+
+                    if (action === 'guide') {
+                        openGuide();
+                        return;
+                    }
+
+                    if (action === 'fdroid') {
+                        openModal(fdroidModal);
+                        return;
+                    }
+
+                    const linkName =
+                        link.textContent.trim();
 
                     showNotification(
                         `${linkName} page will be added in a later development stage.`
@@ -3071,9 +3613,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     const renderApplicationsWithGridState =
         renderApplications;
 
-    renderApplications = function (applicationList) {
+    renderApplications = function (
+        applicationList,
+        options = {}
+    ) {
         renderApplicationsWithGridState(
-            applicationList
+            applicationList,
+            options
         );
 
         updateGridState();
@@ -3151,6 +3697,7 @@ try {
     const supabaseApplications = Array.isArray(data)
         ? data.map((app) => ({
             id: String(app.id),
+            slug: app.slug || '',
             name: app.name || '',
             description: app.description || '',
             longDescription: app.long_description || app.description || '',
@@ -3163,7 +3710,16 @@ try {
             added: app.added || '',
             downloadUrl: app.download_url || '',
             iconType: app.icon_type || 'default',
-            imageUrl: app.image_url || ''
+            imageUrl: app.image_url || '',
+            rating:
+                app.rating ??
+                app.average_rating ??
+                null,
+            ratingCount:
+                app.rating_count ??
+                app.ratings_count ??
+                app.reviews_count ??
+                0
         }))
         : [];
 
@@ -3290,8 +3846,11 @@ try {
 
     function showAllApplications(activeButton = null) {
         activeCategory = '';
+        activeSource = '';
+        minimumRating = '';
         browseMode = 'home';
         newestFirst = true;
+        showAllApplicationsExpanded = false;
 
         clearApplicationSearchForBrowse();
         updateSortButtonState();
@@ -3300,9 +3859,12 @@ try {
     }
 
     function showCategoryApplications(category, activeButton = null) {
-        activeCategory = String(category || '').trim();
+        activeCategory =
+            String(category || '').trim();
+
         browseMode = 'category';
         newestFirst = true;
+        showAllApplicationsExpanded = false;
 
         clearApplicationSearchForBrowse();
         updateSortButtonState();
@@ -3315,6 +3877,7 @@ try {
         activeCategory = '';
         browseMode = 'new';
         newestFirst = true;
+        showAllApplicationsExpanded = false;
 
         clearApplicationSearchForBrowse();
         updateSortButtonState();
@@ -3490,6 +4053,66 @@ try {
         });
     }
 
+
+    function renderCategoryCounts() {
+        document
+            .querySelectorAll(
+                '[data-category-count]'
+            )
+            .forEach(element => {
+                const category =
+                    String(
+                        element.dataset.categoryCount ||
+                        ''
+                    ).trim();
+
+                const count =
+                    applications.filter(
+                        application =>
+                            normalizeText(
+                                application.category
+                            ) ===
+                            normalizeText(
+                                category
+                            )
+                    ).length;
+
+                element.textContent =
+                    `${count} ${count === 1 ? 'app' : 'apps'}`;
+            });
+    }
+
+    function attachSupportEvents() {
+        document
+            .querySelectorAll(
+                '[data-support-method]'
+            )
+            .forEach(button => {
+                button.addEventListener(
+                    'click',
+                    event => {
+                        const method =
+                            button.dataset.supportMethod ||
+                            'Support';
+
+                        if (
+                            button.tagName === 'A' &&
+                            button.getAttribute('href') &&
+                            button.getAttribute('href') !== '#'
+                        ) {
+                            return;
+                        }
+
+                        event.preventDefault();
+
+                        showNotification(
+                            `${method} support details will be connected after the official support address is added.`
+                        );
+                    }
+                );
+            });
+    }
+
     /* =====================================================
        48. Final Initialization
     ===================================================== */
@@ -3516,9 +4139,12 @@ try {
 
             createEmptyStateResetButton();
             updateCopyrightYear();
+            loadFavoriteApplications();
+            renderCategoryCounts();
             attachBrandHomeEvent();
             attachGuideLoginEvents();
             attachFooterLinkEvents();
+            attachSupportEvents();
             attachSideNavigationEvents();
             attachFeaturedApplicationEvent();
             attachApplicationsPagingEvents();
@@ -3530,13 +4156,21 @@ try {
             );
 
             displayedApplications =
-                sortApplications(
-                    filterApplications(
-                        searchInput
-                            ? searchInput.value
-                            : ''
+                filterApplicationsByRating(
+                    filterApplicationsBySource(
+                        filterApplicationsByCategory(
+                            sortApplications(
+                                filterApplications(
+                                    searchInput
+                                        ? searchInput.value
+                                        : ''
+                                )
+                            )
+                        )
                     )
                 );
+
+            syncDirectoryFilterControls();
 
             renderApplications(
                 displayedApplications
