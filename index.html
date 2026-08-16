@@ -19,7 +19,7 @@
 
     <link
         rel="stylesheet"
-        href="style.css?v=20260815-directory-reference1"
+        href="style.css?v=20260816-bybit-usdt1"
     >
 
     <!-- Google Analytics -->
@@ -915,8 +915,14 @@
 
                 <div class="support-links" aria-label="Support OSGuide">
                     <span>Support OSGuide</span>
-                    <button type="button" data-support-method="PayPal">PayPal</button>
-                    <button type="button" data-support-method="Wallet">Wallet</button>
+                    <button
+                        type="button"
+                        data-support-method="Wallet"
+                        aria-haspopup="dialog"
+                        aria-controls="wallet-support-modal"
+                    >
+                        Wallet
+                    </button>
                 </div>
             </div>
 
@@ -1034,6 +1040,98 @@
 
 
     <!-- =====================================================
+         OSGuide Support — Bybit / USDT ERC20
+    ====================================================== -->
+    <div
+        class="modal"
+        id="wallet-support-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="wallet-support-modal-title"
+        hidden
+    >
+        <div
+            class="modal-backdrop"
+            data-close-modal
+        ></div>
+
+        <section class="modal-panel wallet-support-panel">
+            <button
+                class="modal-close-button"
+                type="button"
+                data-close-modal
+                aria-label="Close wallet support information"
+            >
+                <svg viewBox="0 0 24 24">
+                    <path d="M7 7L17 17"></path>
+                    <path d="M17 7L7 17"></path>
+                </svg>
+            </button>
+
+            <p class="modal-eyebrow">
+                Support OSGuide
+            </p>
+
+            <h2 id="wallet-support-modal-title">
+                Support with USDT
+            </h2>
+
+            <p>
+                If you would like to support OSGuide, you can send USDT to the
+                wallet address below.
+            </p>
+
+            <div class="wallet-support-network">
+                <span>Asset</span>
+                <strong>USDT</strong>
+            </div>
+
+            <div class="wallet-support-network">
+                <span>Network</span>
+                <strong>Ethereum (ERC20)</strong>
+            </div>
+
+            <div class="wallet-address-block">
+                <span class="wallet-address-label">Wallet address</span>
+                <code id="wallet-support-address">0xe74c140d827d2e4f5a1a0eba58176ab507cbdeab</code>
+
+                <button
+                    class="wallet-copy-button"
+                    id="wallet-copy-button"
+                    type="button"
+                    data-wallet-address="0xe74c140d827d2e4f5a1a0eba58176ab507cbdeab"
+                >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <rect x="8" y="8" width="11" height="11" rx="2"></rect>
+                        <path d="M16 8V6C16 4.9 15.1 4 14 4H6C4.9 4 4 4.9 4 6V14C4 15.1 4.9 16 6 16H8"></path>
+                    </svg>
+                    <span>Copy address</span>
+                </button>
+            </div>
+
+            <div class="wallet-network-warning" role="note">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 3L21 20H3L12 3Z"></path>
+                    <path d="M12 9V14"></path>
+                    <circle cx="12" cy="17" r="0.8"></circle>
+                </svg>
+
+                <p>
+                    Send only <strong>USDT</strong> using the
+                    <strong>Ethereum (ERC20)</strong> network. Using another
+                    asset or network may result in permanent loss of funds.
+                </p>
+            </div>
+
+            <p class="wallet-support-note">
+                Support is completely optional. OSGuide remains available
+                whether or not you contribute.
+            </p>
+        </section>
+    </div>
+
+
+    <!-- =====================================================
          Guide Login Modal
     ====================================================== -->
     <div
@@ -1101,7 +1199,7 @@
          Scripts
     ====================================================== -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="script.js?v=20260815-directory-reference1"></script>
+    <script src="script.js?v=20260816-bybit-usdt1"></script>
 
 </body>
 </html>
