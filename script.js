@@ -103,6 +103,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const guideModal =
         document.getElementById('guide-modal');
 
+    const walletSupportModal =
+        document.getElementById('wallet-support-modal');
+
+    const walletCopyButton =
+        document.getElementById('wallet-copy-button');
+
     const menuButton =
         document.getElementById('menu-button');
 
@@ -142,7 +148,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const modals = [
         applicationModal,
         fdroidModal,
-        guideModal
+        guideModal,
+        walletSupportModal
     ].filter(Boolean);
 
     /* =====================================================
@@ -4095,6 +4102,12 @@ try {
                             button.dataset.supportMethod ||
                             'Support';
 
+                        if (method === 'Wallet') {
+                            event.preventDefault();
+                            openModal(walletSupportModal);
+                            return;
+                        }
+
                         if (
                             button.tagName === 'A' &&
                             button.getAttribute('href') &&
@@ -4106,11 +4119,66 @@ try {
                         event.preventDefault();
 
                         showNotification(
-                            `${method} support details will be connected after the official support address is added.`
+                            `${method} support is not available yet.`
                         );
                     }
                 );
             });
+
+        if (walletCopyButton) {
+            walletCopyButton.addEventListener(
+                'click',
+                async () => {
+                    const walletAddress =
+                        walletCopyButton.dataset.walletAddress ||
+                        '0xe74c140d827d2e4f5a1a0eba58176ab507cbdeab';
+
+                    try {
+                        await navigator.clipboard.writeText(
+                            walletAddress
+                        );
+
+                        walletCopyButton.classList.add(
+                            'is-copied'
+                        );
+
+                        const label =
+                            walletCopyButton.querySelector(
+                                'span'
+                            );
+
+                        if (label) {
+                            label.textContent =
+                                'Copied';
+                        }
+
+                        showNotification(
+                            'USDT ERC20 wallet address copied.'
+                        );
+
+                        window.setTimeout(() => {
+                            walletCopyButton.classList.remove(
+                                'is-copied'
+                            );
+
+                            if (label) {
+                                label.textContent =
+                                    'Copy address';
+                            }
+                        }, 1800);
+                    } catch (error) {
+                        console.warn(
+                            'OSGuide could not copy the wallet address.',
+                            error
+                        );
+
+                        showNotification(
+                            'Copy failed. Press and hold the wallet address to copy it manually.'
+                        );
+                    }
+                }
+            );
+        }
     }
 
     /* =====================================================
