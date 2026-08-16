@@ -3853,3 +3853,177 @@ body::before {
         flex-wrap: wrap;
     }
 }
+
+
+/* =========================================================
+   OSGuide Support — Bybit / USDT ERC20
+   Isolated wallet support modal styles
+========================================================= */
+
+.wallet-support-panel {
+    width: min(100%, 540px);
+}
+
+.wallet-support-network {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    margin-top: 14px;
+    padding: 13px 15px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: #0b121b;
+}
+
+.wallet-support-network span {
+    color: var(--text-faint);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.wallet-support-network strong {
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 850;
+    text-align: right;
+}
+
+.wallet-address-block {
+    margin-top: 14px;
+    padding: 15px;
+    border: 1px solid rgba(91, 156, 255, 0.30);
+    border-radius: 14px;
+    background:
+        linear-gradient(
+            145deg,
+            rgba(20, 35, 60, 0.72),
+            rgba(10, 17, 25, 0.96)
+        );
+}
+
+.wallet-address-label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--text-faint);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.wallet-address-block code {
+    display: block;
+    overflow-wrap: anywhere;
+    color: #d9e8ff;
+    font-family:
+        "SFMono-Regular",
+        Consolas,
+        "Liberation Mono",
+        monospace;
+    font-size: 13px;
+    line-height: 1.65;
+    user-select: all;
+    -webkit-user-select: all;
+}
+
+.wallet-copy-button {
+    width: 100%;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    margin-top: 13px;
+    padding: 0 15px;
+    cursor: pointer;
+    border: 1px solid rgba(91, 156, 255, 0.42);
+    border-radius: 11px;
+    background: var(--primary-strong);
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 850;
+    transition:
+        transform var(--transition),
+        background var(--transition),
+        border-color var(--transition);
+}
+
+.wallet-copy-button:hover {
+    background: #3d82f0;
+    border-color: rgba(130, 181, 255, 0.68);
+}
+
+.wallet-copy-button:active {
+    transform: scale(0.985);
+}
+
+.wallet-copy-button.is-copied {
+    border-color: rgba(22, 166, 106, 0.70);
+    background: var(--download);
+}
+
+.wallet-copy-button svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.wallet-network-warning {
+    display: flex;
+    align-items: flex-start;
+    gap: 11px;
+    margin-top: 14px;
+    padding: 13px 14px;
+    border: 1px solid rgba(245, 158, 11, 0.28);
+    border-radius: 12px;
+    background: rgba(120, 72, 8, 0.12);
+}
+
+.wallet-network-warning svg {
+    width: 20px;
+    height: 20px;
+    flex: 0 0 20px;
+    margin-top: 1px;
+    fill: none;
+    stroke: #f2b84b;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.wallet-network-warning p {
+    margin: 0;
+    color: #c8b993;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.wallet-network-warning strong {
+    color: #f1d79a;
+}
+
+.wallet-support-note {
+    margin-top: 14px !important;
+    color: var(--text-faint) !important;
+    font-size: 11px !important;
+    text-align: center;
+}
+
+@media (max-width: 520px) {
+    .wallet-support-network {
+        align-items: flex-start;
+    }
+
+    .wallet-support-network strong {
+        max-width: 62%;
+    }
+
+    .wallet-address-block code {
+        font-size: 12px;
+    }
+}
