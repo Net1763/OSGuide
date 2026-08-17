@@ -19,7 +19,7 @@
 
     <link
         rel="stylesheet"
-        href="style.css?v=20260816-bybit-usdt1"
+        href="style.css?v=20260817-why-modals1"
     >
 
     <!-- Google Analytics -->
@@ -841,7 +841,7 @@
             </div>
 
             <div class="why-grid">
-                <article class="why-card">
+                <article class="why-card" data-why-topic="trusted" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="why-info-modal">
                     <span class="why-icon">
                         <svg viewBox="0 0 24 24">
                             <path d="M12 3L20 7V12C20 17 16.5 20.5 12 22C7.5 20.5 4 17 4 12V7L12 3Z"></path>
@@ -852,7 +852,7 @@
                     <p>Application information comes from trusted open-source sources such as F-Droid.</p>
                 </article>
 
-                <article class="why-card">
+                <article class="why-card" data-why-topic="guides" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="why-info-modal">
                     <span class="why-icon">
                         <svg viewBox="0 0 24 24">
                             <path d="M4 5.5C7 4.8 9.7 5.2 12 6.5V20C9.7 18.7 7 18.3 4 19V5.5Z"></path>
@@ -863,7 +863,7 @@
                     <p>Learn what an application does before deciding whether it is right for you.</p>
                 </article>
 
-                <article class="why-card">
+                <article class="why-card" data-why-topic="downloads" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="why-info-modal">
                     <span class="why-icon">
                         <svg viewBox="0 0 24 24">
                             <path d="M12 3V15"></path>
@@ -875,7 +875,7 @@
                     <p>Direct and safe download links to get the app quickly and easily.</p>
                 </article>
 
-                <article class="why-card">
+                <article class="why-card" data-why-topic="updates" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="why-info-modal">
                     <span class="why-icon">
                         <svg viewBox="0 0 24 24">
                             <circle cx="12" cy="12" r="9"></circle>
@@ -1040,6 +1040,86 @@
 
 
     <!-- =====================================================
+         Why OSGuide — Detail Window
+         Reusable panel for the four Why OSGuide cards.
+    ====================================================== -->
+    <div
+        class="modal why-info-modal"
+        id="why-info-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="why-info-modal-title"
+        aria-describedby="why-info-modal-description"
+        hidden
+    >
+        <div
+            class="modal-backdrop why-info-backdrop"
+            data-close-modal
+        ></div>
+
+        <section class="modal-panel why-info-panel">
+            <button
+                class="modal-close-button why-info-close"
+                type="button"
+                data-close-modal
+                aria-label="Close Why OSGuide information"
+            >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M7 7L17 17"></path>
+                    <path d="M17 7L7 17"></path>
+                </svg>
+            </button>
+
+            <header class="why-info-header">
+                <span
+                    class="why-info-header-icon"
+                    id="why-info-modal-icon"
+                    aria-hidden="true"
+                ></span>
+
+                <div class="why-info-heading-copy">
+                    <p class="why-info-eyebrow">Why OSGuide</p>
+                    <h2 id="why-info-modal-title">Trusted sources</h2>
+                    <p
+                        class="why-info-description"
+                        id="why-info-modal-description"
+                    ></p>
+                </div>
+            </header>
+
+            <div
+                class="why-info-content"
+                id="why-info-modal-content"
+            ></div>
+
+            <footer class="why-info-footer">
+                <button
+                    class="why-info-secondary-button"
+                    id="why-info-secondary-button"
+                    type="button"
+                    hidden
+                >
+                    <span id="why-info-secondary-label">Learn more</span>
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M8 12H16"></path>
+                        <path d="M13 9L16 12L13 15"></path>
+                    </svg>
+                </button>
+
+                <button
+                    class="why-info-primary-button"
+                    id="why-info-primary-button"
+                    type="button"
+                    data-close-modal
+                >
+                    Got it
+                </button>
+            </footer>
+        </section>
+    </div>
+
+
+    <!-- =====================================================
          OSGuide Support — Bybit / USDT ERC20
     ====================================================== -->
     <div
@@ -1199,7 +1279,7 @@
          Scripts
     ====================================================== -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="script.js?v=20260816-bybit-usdt1"></script>
+    <script src="script.js?v=20260817-why-modals1"></script>
 
 </body>
 </html>
