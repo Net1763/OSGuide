@@ -4533,3 +4533,44 @@ body::before {
         min-height: 38px;
     }
 }
+
+/* =========================================================
+   Why OSGuide — Final polish
+   2026-08-17
+   Keeps the existing design intact while hiding the inner
+   scrollbar and improving modal viewport behavior.
+========================================================= */
+
+.why-info-panel {
+    max-height: min(720px, calc(100dvh - 48px));
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.why-info-panel::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+}
+
+@media (max-width: 619px) {
+    .why-info-modal {
+        place-items: center;
+        padding: 12px;
+    }
+
+    .why-info-panel {
+        width: min(100%, 560px);
+        max-height: calc(100dvh - 24px);
+        overscroll-behavior: contain;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .why-info-panel::-webkit-scrollbar {
+        width: 0;
+        height: 0;
+        display: none;
+    }
+}
