@@ -106,6 +106,27 @@ document.addEventListener('DOMContentLoaded', async () => {
     const walletSupportModal =
         document.getElementById('wallet-support-modal');
 
+    const whyInfoModal =
+        document.getElementById('why-info-modal');
+
+    const whyInfoModalIcon =
+        document.getElementById('why-info-modal-icon');
+
+    const whyInfoModalTitle =
+        document.getElementById('why-info-modal-title');
+
+    const whyInfoModalDescription =
+        document.getElementById('why-info-modal-description');
+
+    const whyInfoModalContent =
+        document.getElementById('why-info-modal-content');
+
+    const whyInfoSecondaryButton =
+        document.getElementById('why-info-secondary-button');
+
+    const whyInfoSecondaryLabel =
+        document.getElementById('why-info-secondary-label');
+
     const walletCopyButton =
         document.getElementById('wallet-copy-button');
 
@@ -149,7 +170,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         applicationModal,
         fdroidModal,
         guideModal,
-        walletSupportModal
+        walletSupportModal,
+        whyInfoModal
     ].filter(Boolean);
 
     /* =====================================================
@@ -4089,6 +4111,459 @@ try {
             });
     }
 
+    /* =====================================================
+       47B. Why OSGuide Detail Windows
+       The four existing cards keep their visible design. This block only
+       controls the information window that appears after interaction.
+    ===================================================== */
+
+    const whyOSGuideTopics = {
+        trusted: {
+            title: 'Trusted sources',
+            description:
+                'OSGuide lists applications from trusted open-source sources. We believe transparency is the foundation of trust.',
+            secondaryLabel: 'Learn about F-Droid',
+            secondaryAction: 'fdroid',
+            content: `
+                <div class="why-info-column">
+                    <section class="why-info-section">
+                        <h3>Where does the information come from?</h3>
+
+                        <div class="why-info-list">
+                            <div class="why-info-list-item">
+                                <span class="why-info-mini-icon">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M6 7.5H18V19H6V7.5Z"></path>
+                                        <path d="M8 7.5L9.5 4.5M16 7.5L14.5 4.5"></path>
+                                        <circle cx="9.5" cy="12" r="1"></circle>
+                                        <circle cx="14.5" cy="12" r="1"></circle>
+                                    </svg>
+                                </span>
+                                <div>
+                                    <strong>F-Droid</strong>
+                                    <p>A trusted open-source app repository with transparent project information.</p>
+                                </div>
+                            </div>
+
+                            <div class="why-info-list-item">
+                                <span class="why-info-mini-icon">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M12 3.5A8.5 8.5 0 0 0 9.3 20.1"></path>
+                                        <path d="M12 3.5A8.5 8.5 0 0 1 14.7 20.1"></path>
+                                        <path d="M5 8.5H19M4 14.5H20"></path>
+                                    </svg>
+                                </span>
+                                <div>
+                                    <strong>GitHub</strong>
+                                    <p>Official project repositories maintained by developers and open-source teams.</p>
+                                </div>
+                            </div>
+
+                            <div class="why-info-list-item">
+                                <span class="why-info-mini-icon">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <circle cx="12" cy="12" r="8.5"></circle>
+                                        <path d="M8.5 12L11 14.5L16 9.5"></path>
+                                    </svg>
+                                </span>
+                                <div>
+                                    <strong>Other official sources</strong>
+                                    <p>When available, OSGuide may use an official website or another reputable project source.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <div class="why-info-column">
+                    <section class="why-info-section">
+                        <h3>What we verify</h3>
+
+                        <ul class="why-info-check-list">
+                            <li>Application identity and Package ID</li>
+                            <li>Source link points to the intended project</li>
+                            <li>License information when it is available</li>
+                            <li>We do not modify application files</li>
+                        </ul>
+                    </section>
+
+                    <aside class="why-info-warning" role="note">
+                        <span class="why-info-warning-icon">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M12 3L21 20H3L12 3Z"></path>
+                                <path d="M12 9V14"></path>
+                                <circle cx="12" cy="17" r="0.8"></circle>
+                            </svg>
+                        </span>
+                        <div>
+                            <strong>What this does not mean</strong>
+                            <p>We do not review every line of code or guarantee that every APK is safe. Always review the source and decide what you trust before installing an application.</p>
+                        </div>
+                    </aside>
+                </div>
+            `
+        },
+
+        downloads: {
+            title: 'Simple downloads',
+            description:
+                'We make the download process clear and straightforward. No confusing redirects. No deceptive buttons.',
+            secondaryLabel: 'Learn more about sources',
+            secondaryAction: 'trusted',
+            content: `
+                <div class="why-info-column">
+                    <section class="why-info-section">
+                        <h3>How downloading works</h3>
+
+                        <div class="why-info-steps">
+                            <div class="why-info-step">
+                                <span>1</span>
+                                <div>
+                                    <strong>Choose an application</strong>
+                                    <p>Browse or search OSGuide until you find the app you want.</p>
+                                </div>
+                            </div>
+
+                            <div class="why-info-step">
+                                <span>2</span>
+                                <div>
+                                    <strong>Review details &amp; source</strong>
+                                    <p>Check version, size, license and the source before downloading.</p>
+                                </div>
+                            </div>
+
+                            <div class="why-info-step">
+                                <span>3</span>
+                                <div>
+                                    <strong>Download the file</strong>
+                                    <p>OSGuide takes you to the resolved APK link or the verified source route.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <div class="why-info-column">
+                    <section class="why-info-section">
+                        <h3>What OSGuide does</h3>
+
+                        <ul class="why-info-check-list">
+                            <li>Provides download links resolved from the original or known project source</li>
+                            <li>Shows version, size and source clearly</li>
+                            <li>Avoids deceptive download buttons and unnecessary redirects</li>
+                            <li>Reduces confusion while keeping the source visible</li>
+                        </ul>
+                    </section>
+
+                    <aside class="why-info-warning" role="note">
+                        <span class="why-info-warning-icon">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M12 3L21 20H3L12 3Z"></path>
+                                <path d="M12 9V14"></path>
+                                <circle cx="12" cy="17" r="0.8"></circle>
+                            </svg>
+                        </span>
+                        <div>
+                            <strong>What you should check</strong>
+                            <ul>
+                                <li>Verify the source shown</li>
+                                <li>Check the application name and Package ID</li>
+                                <li>Install apps only from sources you trust</li>
+                            </ul>
+                        </div>
+                    </aside>
+                </div>
+            `
+        },
+
+        guides: {
+            title: 'Practical guides',
+            description:
+                'OSGuide Guides help you understand applications before you decide to download them.',
+            secondaryLabel: 'Explore Guides',
+            secondaryAction: 'guide',
+            content: `
+                <div class="why-info-column">
+                    <div class="why-info-list why-info-guide-list">
+                        <div class="why-info-list-item">
+                            <span class="why-info-mini-icon">
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                    <circle cx="11" cy="11" r="6"></circle>
+                                    <path d="M15.5 15.5L20 20"></path>
+                                </svg>
+                            </span>
+                            <div>
+                                <strong>Understand the app</strong>
+                                <p>Learn what the application does and its main features.</p>
+                            </div>
+                        </div>
+
+                        <div class="why-info-list-item">
+                            <span class="why-info-mini-icon">
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M12 3L19 6.5V11.5C19 16 16 19.3 12 21C8 19.3 5 16 5 11.5V6.5L12 3Z"></path>
+                                    <path d="M9 12L11 14L15 10"></path>
+                                </svg>
+                            </span>
+                            <div>
+                                <strong>Discover use cases</strong>
+                                <p>See real-world scenarios and understand how the app can help you.</p>
+                            </div>
+                        </div>
+
+                        <div class="why-info-list-item">
+                            <span class="why-info-mini-icon">
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M5 5H19V19H5V5Z"></path>
+                                    <path d="M9 9H15M9 13H15M9 17H13"></path>
+                                </svg>
+                            </span>
+                            <div>
+                                <strong>Learn step by step</strong>
+                                <p>Follow clear explanations and simple guides at your own pace.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="why-info-column">
+                    <section class="why-info-feature-box">
+                        <div class="why-info-feature-heading">
+                            <span class="why-info-mini-icon">
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M5 4.5H15.5L19 8V19.5H5V4.5Z"></path>
+                                    <path d="M15.5 4.5V8H19"></path>
+                                </svg>
+                            </span>
+                            <div>
+                                <strong>Available in the Guide section</strong>
+                                <p>Access detailed guides, tips and best practices in the Guide section.</p>
+                            </div>
+                        </div>
+
+                        <ul class="why-info-check-list why-info-compact-checks">
+                            <li>No download required to learn</li>
+                            <li>Helpful for beginners and advanced users</li>
+                            <li>Guides grow with the catalog</li>
+                        </ul>
+                    </section>
+                </div>
+            `
+        },
+
+        updates: {
+            title: 'Continuously updated',
+            description:
+                'OSGuide is a living catalog. We keep improving, adding and updating information over time.',
+            secondaryLabel: '',
+            secondaryAction: '',
+            content: `
+                <div class="why-info-column">
+                    <div class="why-info-list">
+                        <div class="why-info-list-item">
+                            <span class="why-info-mini-icon">
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M12 3L20 7V12C20 17 16.5 20.5 12 22C7.5 20.5 4 17 4 12V7L12 3Z"></path>
+                                </svg>
+                            </span>
+                            <div>
+                                <strong>New applications</strong>
+                                <p>We add new open-source applications as they are reviewed for the catalog.</p>
+                            </div>
+                        </div>
+
+                        <div class="why-info-list-item">
+                            <span class="why-info-mini-icon">
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M20 7V12H15"></path>
+                                    <path d="M18.5 8.5A7.5 7.5 0 1 0 19 15"></path>
+                                </svg>
+                            </span>
+                            <div>
+                                <strong>Updated information</strong>
+                                <p>App details such as version, size, source and description can be refreshed when changes occur.</p>
+                            </div>
+                        </div>
+
+                        <div class="why-info-list-item">
+                            <span class="why-info-mini-icon">
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M4 5.5C7 4.8 9.7 5.2 12 6.5V20C9.7 18.7 7 18.3 4 19V5.5Z"></path>
+                                    <path d="M20 5.5C17 4.8 14.3 5.2 12 6.5V20C14.3 18.7 17 18.3 20 19V5.5Z"></path>
+                                </svg>
+                            </span>
+                            <div>
+                                <strong>Guides grow with the catalog</strong>
+                                <p>More applications can bring more practical guides and helpful content over time.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="why-info-column">
+                    <section class="why-info-feature-box">
+                        <div class="why-info-feature-heading">
+                            <span class="why-info-mini-icon">
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                    <circle cx="12" cy="12" r="8.5"></circle>
+                                    <path d="M12 7V12L15 14"></path>
+                                </svg>
+                            </span>
+                            <div>
+                                <strong>How it works</strong>
+                                <p>Our admin system helps update and publish application metadata. This keeps the catalog organized while changes are reviewed.</p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <aside class="why-info-note" role="note">
+                        <span class="why-info-note-icon">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <circle cx="12" cy="12" r="8.5"></circle>
+                                <path d="M12 10.5V16"></path>
+                                <circle cx="12" cy="7.5" r="0.8"></circle>
+                            </svg>
+                        </span>
+                        <div>
+                            <strong>Note</strong>
+                            <p>We aim to keep information up to date, but there may be some delay after changes at the original source.</p>
+                        </div>
+                    </aside>
+                </div>
+            `
+        }
+    };
+
+    function populateWhyOSGuideModal(topicKey, triggerCard = null) {
+        const topic =
+            whyOSGuideTopics[topicKey];
+
+        if (
+            !topic ||
+            !whyInfoModal ||
+            !whyInfoModalTitle ||
+            !whyInfoModalDescription ||
+            !whyInfoModalContent
+        ) {
+            return false;
+        }
+
+        whyInfoModal.dataset.whyTopic = topicKey;
+        whyInfoModalTitle.textContent = topic.title;
+        whyInfoModalDescription.textContent = topic.description;
+        whyInfoModalContent.innerHTML = topic.content;
+
+        if (whyInfoModalIcon) {
+            const sourceIcon =
+                triggerCard?.querySelector('.why-icon svg');
+
+            whyInfoModalIcon.innerHTML =
+                sourceIcon
+                    ? sourceIcon.outerHTML
+                    : '';
+        }
+
+        if (
+            whyInfoSecondaryButton &&
+            whyInfoSecondaryLabel
+        ) {
+            const hasSecondaryAction =
+                Boolean(
+                    topic.secondaryLabel &&
+                    topic.secondaryAction
+                );
+
+            whyInfoSecondaryButton.hidden =
+                !hasSecondaryAction;
+
+            whyInfoSecondaryButton.dataset.whyAction =
+                topic.secondaryAction || '';
+
+            whyInfoSecondaryLabel.textContent =
+                topic.secondaryLabel || '';
+        }
+
+        return true;
+    }
+
+    function openWhyOSGuideTopic(topicKey, triggerCard = null) {
+        if (
+            populateWhyOSGuideModal(
+                topicKey,
+                triggerCard
+            )
+        ) {
+            openModal(whyInfoModal);
+        }
+    }
+
+    function attachWhyOSGuideEvents() {
+        document
+            .querySelectorAll('[data-why-topic]')
+            .forEach(card => {
+                const openCard = () => {
+                    openWhyOSGuideTopic(
+                        card.dataset.whyTopic,
+                        card
+                    );
+                };
+
+                card.addEventListener(
+                    'click',
+                    openCard
+                );
+
+                card.addEventListener(
+                    'keydown',
+                    event => {
+                        if (
+                            event.key !== 'Enter' &&
+                            event.key !== ' '
+                        ) {
+                            return;
+                        }
+
+                        event.preventDefault();
+                        openCard();
+                    }
+                );
+            });
+
+        if (whyInfoSecondaryButton) {
+            whyInfoSecondaryButton.addEventListener(
+                'click',
+                () => {
+                    const action =
+                        whyInfoSecondaryButton.dataset.whyAction || '';
+
+                    if (action === 'fdroid') {
+                        closeModal(whyInfoModal);
+                        openModal(fdroidModal);
+                        return;
+                    }
+
+                    if (action === 'guide') {
+                        closeModal(whyInfoModal);
+                        openModal(guideModal);
+                        return;
+                    }
+
+                    if (action === 'trusted') {
+                        const trustedCard =
+                            document.querySelector(
+                                '[data-why-topic="trusted"]'
+                            );
+
+                        populateWhyOSGuideModal(
+                            'trusted',
+                            trustedCard
+                        );
+                    }
+                }
+            );
+        }
+    }
+
     function attachSupportEvents() {
         document
             .querySelectorAll(
@@ -4212,6 +4687,7 @@ try {
             attachBrandHomeEvent();
             attachGuideLoginEvents();
             attachFooterLinkEvents();
+            attachWhyOSGuideEvents();
             attachSupportEvents();
             attachSideNavigationEvents();
             attachFeaturedApplicationEvent();
