@@ -4027,3 +4027,509 @@ body::before {
         font-size: 12px;
     }
 }
+
+
+/* =========================================================
+   Why OSGuide — Interactive detail windows
+   Added 2026-08-17. Existing Why cards keep their visual design.
+========================================================= */
+
+.why-card[data-why-topic] {
+    cursor: pointer;
+}
+
+/* Keep the four existing Why OSGuide cards visually unchanged. */
+.why-card[data-why-topic]:focus-visible {
+    outline: 3px solid rgba(76, 145, 255, 0.24);
+    outline-offset: 3px;
+    border-color: #4c91ff;
+}
+
+.why-info-modal {
+    z-index: 2200;
+}
+
+.why-info-backdrop {
+    background: rgba(3, 7, 12, 0.76);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.why-info-panel {
+    width: min(100%, 780px);
+    max-height: min(720px, calc(100vh - 48px));
+    padding: 22px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    border: 1px solid #31445b;
+    border-radius: 16px;
+    background:
+        radial-gradient(
+            circle at 6% 0%,
+            rgba(52, 112, 196, 0.08),
+            transparent 34%
+        ),
+        linear-gradient(
+            150deg,
+            #0d1621,
+            #0a1119 58%,
+            #091018
+        );
+    box-shadow:
+        0 30px 90px rgba(0, 0, 0, 0.62),
+        0 0 0 1px rgba(255, 255, 255, 0.015) inset;
+}
+
+.why-info-close {
+    top: 12px;
+    right: 12px;
+    width: 34px;
+    height: 34px;
+    border-color: #26374a;
+    border-radius: 9px;
+    background: #0d1721;
+}
+
+.why-info-close svg {
+    width: 16px;
+    height: 16px;
+}
+
+.why-info-header {
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr);
+    align-items: start;
+    gap: 14px;
+    padding-right: 44px;
+    padding-bottom: 17px;
+    border-bottom: 1px solid #1f2d3d;
+}
+
+.why-info-header-icon {
+    width: 46px;
+    height: 46px;
+    display: grid;
+    place-items: center;
+    border: 1px solid #234a79;
+    border-radius: 11px;
+    background:
+        linear-gradient(
+            145deg,
+            #0d2745,
+            #0a1b30
+        );
+    color: #4c91ff;
+    box-shadow: 0 10px 26px rgba(17, 78, 151, 0.16);
+}
+
+.why-info-header-icon svg {
+    width: 24px;
+    height: 24px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.75;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.why-info-heading-copy {
+    min-width: 0;
+}
+
+.why-info-eyebrow {
+    margin: 0 0 3px;
+    color: #5a98f5;
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: 0.13em;
+    line-height: 1.3;
+    text-transform: uppercase;
+}
+
+.why-info-panel .why-info-heading-copy h2 {
+    padding: 0;
+    color: #f4f7fb;
+    font-size: clamp(20px, 4vw, 27px);
+    line-height: 1.12;
+    letter-spacing: -0.55px;
+}
+
+.why-info-description {
+    max-width: 660px;
+    margin-top: 6px;
+    color: #8998aa;
+    font-size: 11px;
+    line-height: 1.55;
+}
+
+.why-info-content {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    padding: 17px 0;
+}
+
+.why-info-column {
+    min-width: 0;
+}
+
+.why-info-section,
+.why-info-feature-box {
+    height: 100%;
+    padding: 14px;
+    border: 1px solid #223247;
+    border-radius: 11px;
+    background: rgba(9, 17, 26, 0.72);
+}
+
+.why-info-section h3 {
+    margin-bottom: 11px;
+    color: #82aee9;
+    font-size: 10px;
+    font-weight: 850;
+    line-height: 1.3;
+}
+
+.why-info-list {
+    display: grid;
+    gap: 8px;
+}
+
+.why-info-list-item {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr);
+    align-items: start;
+    gap: 10px;
+    padding: 9px;
+    border: 1px solid rgba(38, 54, 73, 0.72);
+    border-radius: 9px;
+    background: rgba(11, 20, 30, 0.82);
+}
+
+.why-info-mini-icon {
+    width: 32px;
+    height: 32px;
+    display: grid;
+    place-items: center;
+    border: 1px solid #21446e;
+    border-radius: 8px;
+    background: #0a2039;
+    color: #4c91ff;
+}
+
+.why-info-mini-icon svg {
+    width: 17px;
+    height: 17px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.why-info-list-item strong,
+.why-info-feature-heading strong {
+    display: block;
+    color: #edf2f7;
+    font-size: 11px;
+    font-weight: 820;
+    line-height: 1.35;
+}
+
+.why-info-list-item p,
+.why-info-feature-heading p {
+    margin-top: 3px;
+    color: #7f8da0;
+    font-size: 9px;
+    line-height: 1.55;
+}
+
+.why-info-check-list {
+    display: grid;
+    gap: 8px;
+    list-style: none;
+}
+
+.why-info-check-list li {
+    position: relative;
+    min-height: 22px;
+    padding: 4px 5px 4px 25px;
+    color: #9ca9b9;
+    font-size: 9.5px;
+    line-height: 1.5;
+}
+
+.why-info-check-list li::before {
+    content: '✓';
+    position: absolute;
+    top: 2px;
+    left: 0;
+    width: 18px;
+    height: 18px;
+    display: grid;
+    place-items: center;
+    border: 1px solid #244a78;
+    border-radius: 50%;
+    background: #0b213b;
+    color: #5d9df7;
+    font-size: 10px;
+    font-weight: 900;
+}
+
+.why-info-warning,
+.why-info-note {
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: 10px;
+    margin-top: 10px;
+    padding: 11px;
+    border-radius: 9px;
+}
+
+.why-info-warning {
+    border: 1px solid rgba(210, 146, 48, 0.27);
+    background: rgba(92, 61, 13, 0.16);
+}
+
+.why-info-note {
+    border: 1px solid #22364d;
+    background: rgba(10, 25, 39, 0.78);
+}
+
+.why-info-warning-icon,
+.why-info-note-icon {
+    width: 27px;
+    height: 27px;
+    display: grid;
+    place-items: center;
+    border-radius: 7px;
+}
+
+.why-info-warning-icon {
+    color: #e3a83e;
+    background: rgba(138, 88, 9, 0.16);
+}
+
+.why-info-note-icon {
+    color: #5e9bf0;
+    background: #0a2139;
+}
+
+.why-info-warning-icon svg,
+.why-info-note-icon svg {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.75;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.why-info-warning strong,
+.why-info-note strong {
+    display: block;
+    font-size: 9.5px;
+    font-weight: 850;
+}
+
+.why-info-warning strong {
+    color: #d7b976;
+}
+
+.why-info-note strong {
+    color: #a7c4ec;
+}
+
+.why-info-warning p,
+.why-info-note p,
+.why-info-warning li {
+    margin-top: 3px;
+    color: #8e98a5;
+    font-size: 8.5px;
+    line-height: 1.55;
+}
+
+.why-info-warning ul {
+    margin: 4px 0 0 13px;
+}
+
+.why-info-steps {
+    display: grid;
+    gap: 8px;
+}
+
+.why-info-step {
+    display: grid;
+    grid-template-columns: 30px minmax(0, 1fr);
+    align-items: start;
+    gap: 10px;
+    padding: 9px;
+    border: 1px solid rgba(38, 54, 73, 0.72);
+    border-radius: 9px;
+    background: rgba(11, 20, 30, 0.82);
+}
+
+.why-info-step > span {
+    width: 28px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    border: 1px solid #214a7b;
+    border-radius: 8px;
+    background: #0a2039;
+    color: #5c9cf6;
+    font-size: 10px;
+    font-weight: 900;
+}
+
+.why-info-step strong {
+    display: block;
+    color: #edf2f7;
+    font-size: 10.5px;
+    font-weight: 820;
+}
+
+.why-info-step p {
+    margin-top: 3px;
+    color: #7f8da0;
+    font-size: 8.8px;
+    line-height: 1.5;
+}
+
+.why-info-feature-heading {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr);
+    align-items: start;
+    gap: 10px;
+}
+
+.why-info-compact-checks {
+    margin-top: 13px;
+    padding-top: 12px;
+    border-top: 1px solid #1e2d3d;
+}
+
+.why-info-footer {
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #1f2d3d;
+}
+
+.why-info-footer:has(.why-info-secondary-button[hidden]) {
+    justify-content: flex-end;
+}
+
+.why-info-secondary-button,
+.why-info-primary-button {
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 0 14px;
+    cursor: pointer;
+    border-radius: 8px;
+    font-size: 10px;
+    font-weight: 850;
+    transition:
+        transform var(--transition),
+        background var(--transition),
+        border-color var(--transition);
+}
+
+.why-info-secondary-button {
+    border: 1px solid #2b4565;
+    background: #0c1825;
+    color: #8eb8ef;
+}
+
+.why-info-secondary-button:hover {
+    border-color: #3e6593;
+    background: #102236;
+}
+
+.why-info-secondary-button svg {
+    width: 15px;
+    height: 15px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.why-info-primary-button {
+    min-width: 92px;
+    border: 1px solid #3f82ee;
+    background: #2375ed;
+    color: #ffffff;
+    box-shadow: 0 8px 20px rgba(31, 110, 226, 0.18);
+}
+
+.why-info-primary-button:hover {
+    border-color: #66a0f3;
+    background: #2d80f4;
+}
+
+.why-info-secondary-button:active,
+.why-info-primary-button:active {
+    transform: scale(0.98);
+}
+
+@media (max-width: 619px) {
+    .why-info-panel {
+        width: min(100%, 560px);
+        max-height: calc(100vh - 24px);
+        padding: 18px 16px 16px;
+        border-radius: 18px 18px 12px 12px;
+    }
+
+    .why-info-header {
+        grid-template-columns: 42px minmax(0, 1fr);
+        gap: 11px;
+        padding-right: 36px;
+        padding-bottom: 14px;
+    }
+
+    .why-info-header-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+    }
+
+    .why-info-header-icon svg {
+        width: 21px;
+        height: 21px;
+    }
+
+    .why-info-content {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 10px;
+        padding: 13px 0;
+    }
+
+    .why-info-section,
+    .why-info-feature-box {
+        padding: 12px;
+    }
+
+    .why-info-footer {
+        position: sticky;
+        bottom: -16px;
+        margin: 0 -16px -16px;
+        padding: 10px 16px 12px;
+        background: rgba(9, 16, 24, 0.96);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+    }
+
+    .why-info-secondary-button,
+    .why-info-primary-button {
+        min-height: 38px;
+    }
+}
