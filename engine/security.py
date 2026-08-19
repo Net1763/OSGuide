@@ -2786,12 +2786,16 @@ def find_secret_named_fields(
 SUSPICIOUS_ASSIGNMENT_RE: Final[re.Pattern[str]] = re.compile(
     r"""(?ix)
     \b(
-        api[_-]?key|
-        secret|
-        token|
-        password|
-        service[_-]?role|
-        authorization
+        [A-Za-z_][A-Za-z0-9_-]*
+        (?:
+            api[_-]?key|
+            secret|
+            token|
+            password|
+            service[_-]?role|
+            authorization
+        )
+        [A-Za-z0-9_-]*
     )\b
     \s*[:=]\s*
     ["']
