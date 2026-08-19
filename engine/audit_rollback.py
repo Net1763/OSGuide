@@ -67,7 +67,7 @@ import json
 import os
 import re
 import tempfile
-from dataclasses import asdict, dataclass, field, is_dataclass
+from dataclasses import asdict, dataclass, field, is_dataclass, replace
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
@@ -1472,13 +1472,11 @@ class EngineAuditor:
             previous_event_id=self._last_event_id,
         )
 
-        final_event = AuditEvent(
-            **{
-                **event.__dict__,
-                "fingerprint": audit_event_fingerprint(
-                    event
-                ),
-            }
+        final_event = replace(
+            event,
+            fingerprint=audit_event_fingerprint(
+                event
+            ),
         )
 
         try:
