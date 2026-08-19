@@ -1,8 +1,54 @@
+# ============================================================
+# OSGuide Engine
+# Discover & Publish Workflow
+# ============================================================
+#
+# Purpose
+# -------
+# Manual GitHub Actions controller for the OSGuide discovery engine.
+#
+# Design rules preserved here:
+# - Manual execution only.
+# - No cron / schedule trigger.
+# - No automatic background loop.
+# - Operator controls runtime and candidate limit.
+# - Dry-run is the default.
+# - Publish mode does NOT automatically grant write permission.
+# - Repository permissions remain least-privilege.
+# - Secrets are supplied through GitHub Actions Secrets only.
+# - Engine can be cancelled manually from GitHub Actions.
+# - Python syntax is checked before execution.
+# - One workflow run cannot silently overlap another discovery run.
+# - Existing GitHub Pages workflow is independent and untouched.
+#
+# IMPORTANT
+# ---------
+# This workflow currently runs the engine with Publisher disabled.
+# Real Supabase publishing will be connected only when the Publisher
+# module is implemented and its secrets/policies are intentionally
+# enabled.
+#
+# File:
+#   .github/workflows/osguide-discover.yml
+#
+
 name: OSGuide — Discover & Publish
+
+run-name: >-
+  OSGuide Discover —
+  ${{ inputs.run_mode }} —
+  ${{ inputs.max_apps }} app(s) —
+  ${{ inputs.runtime_minutes }} min
+
+
+# ============================================================
+# Trigger
+# ============================================================
 
 on:
   workflow_dispatch:
     inputs:
+
       run_mode:
         description: "Run mode"
         required: true
@@ -22,6 +68,7 @@ on:
           - "5"
           - "10"
           - "15"
+          - "30"
 
       max_apps:
         description: "Maximum applications to process"
@@ -34,29 +81,214 @@ on:
           - "5"
           - "10"
           - "20"
+          - "50"
+          - "100"
+
+      debug:
+        description: "Enable safe debug logging"
+        required: true
+        default: false
+        type: boolean
+
+      extended_diagnostics:
+        description: "Run extended local diagnostics before engine"
+        required: true
+        default: false
+        type: boolean
+
+
+# ============================================================
+# Concurrency
+# ============================================================
+#
+# Only one discovery engine run should operate at a time.
+#
+# cancel-in-progress is false because starting a second run should
+# not silently kill an existing run. The operator may cancel a run
+# explicitly from GitHub Actions when desired.
+#
 
 concurrency:
   group: osguide-discovery-engine
   cancel-in-progress: false
 
+
+# ============================================================
+# Default permissions
+# ============================================================
+#
+# The workflow currently needs repository contents only for checkout.
+#
+# No write permission is granted here.
+# Supabase publishing will use a dedicated secret and controlled
+# Publisher module rather than broad GitHub repository permissions.
+#
+
 permissions:
   contents: read
 
+
+# ============================================================
+# Global environment
+# ============================================================
+
+env:
+
+  # ----------------------------------------------------------
+  # Core runtime inputs
+  # ----------------------------------------------------------
+
+  OSGUIDE_RUN_MODE: ${{ inputs.run_mode }}
+
+  OSGUIDE_RUNTIME_MINUTES: ${{ inputs.runtime_minutes }}
+
+  OSGUIDE_MAX_APPS: ${{ inputs.max_apps }}
+
+  OSGUIDE_DEBUG: ${{ inputs.debug }}
+
+
+  # ----------------------------------------------------------
+  # Master engine control
+  # ----------------------------------------------------------
+
+  OSGUIDE_ENGINE_ENABLED: "true"
+
+  OSGUIDE_KILL_SWITCH: "false"
+
+
+  # ----------------------------------------------------------
+  # Module controls
+  # ----------------------------------------------------------
+  #
+  # Discovery is active.
+  #
+  # Other modules are represented in config.py but remain
+  # disconnected until their implementation files are added.
+  #
+
+  OSGUIDE_DISCOVERY_ENABLED: "true"
+
+  OSGUIDE_RESOLVER_ENABLED: "true"
+
+  OSGUIDE_APK_ENABLED: "true"
+
+  OSGUIDE_CONTENT_ENABLED: "true"
+
+  OSGUIDE_AI_ENABLED: "true"
+
+  OSGUIDE_MEMORY_ENABLED: "true"
+
+  OSGUIDE_AUDIT_ENABLED: "true"
+
+  OSGUIDE_ROLLBACK_ENABLED: "true"
+
+  OSGUIDE_REVIEW_ENABLED: "true"
+
+
+  # ----------------------------------------------------------
+  # Publishing safety lock
+  # ----------------------------------------------------------
+  #
+  # DO NOT change this to true merely because run_mode=publish.
+  #
+  # The real Publisher module will control this later after:
+  # - Supabase secret configuration
+  # - Admin authority enforcement
+  # - before/after snapshots
+  # - audit
+  # - rollback protection
+  # - decision gates
+  #
+  # Until then publish mode remains non-destructive.
+  #
+
+  OSGUIDE_PUBLISH_ENABLED: "false"
+
+
+  # ----------------------------------------------------------
+  # Time budgets
+  # ----------------------------------------------------------
+
+  OSGUIDE_PER_APP_BUDGET_SECONDS: "20"
+
+  OSGUIDE_PER_SOURCE_BUDGET_SECONDS: "8"
+
+
+  # ----------------------------------------------------------
+  # Network defaults
+  # ----------------------------------------------------------
+
+  OSGUIDE_HTTP_TIMEOUT_SECONDS: "8"
+
+  OSGUIDE_CONNECT_TIMEOUT_SECONDS: "4"
+
+  OSGUIDE_READ_TIMEOUT_SECONDS: "8"
+
+  OSGUIDE_HTTP_RETRIES: "2"
+
+  OSGUIDE_HTTP_BACKOFF_SECONDS: "0.75"
+
+
+  # ----------------------------------------------------------
+  # AI defaults
+  # ----------------------------------------------------------
+  #
+  # AI is architecturally enabled, but provider=none means the
+  # deterministic non-AI fallback remains active until an AI
+  # provider secret is intentionally configured.
+  #
+
+  OSGUIDE_AI_PROVIDER: "none"
+
+  OSGUIDE_AI_MODEL: ""
+
+
+# ============================================================
+# Jobs
+# ============================================================
+
 jobs:
+
   discover:
+
     name: OSGuide Discovery Engine
+
     runs-on: ubuntu-latest
 
-    timeout-minutes: 20
+    # --------------------------------------------------------
+    # Outer GitHub Actions safety limit
+    # --------------------------------------------------------
+    #
+    # The Python engine has its own smaller internal runtime
+    # budget. This outer limit exists as a final containment layer.
+    #
 
-    env:
-      OSGUIDE_RUN_MODE: ${{ inputs.run_mode }}
-      OSGUIDE_RUNTIME_MINUTES: ${{ inputs.runtime_minutes }}
-      OSGUIDE_MAX_APPS: ${{ inputs.max_apps }}
+    timeout-minutes: 35
+
+
+    # --------------------------------------------------------
+    # Environment
+    # --------------------------------------------------------
+
+    environment: production
+
 
     steps:
+
+      # ======================================================
+      # Checkout
+      # ======================================================
+
       - name: Checkout OSGuide
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+
+      # ======================================================
+      # Python
+      # ======================================================
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -65,23 +297,302 @@ jobs:
           cache: "pip"
           cache-dependency-path: engine/requirements.txt
 
-      - name: Install engine dependencies
+
+      # ======================================================
+      # Runtime identity
+      # ======================================================
+
+      - name: Show runtime identity
+        shell: bash
         run: |
-          python -m pip install --upgrade pip
-          if [ -s engine/requirements.txt ]; then
-            pip install -r engine/requirements.txt
+          set -euo pipefail
+
+          echo "=============================================="
+          echo " OSGuide Engine — Runtime Identity"
+          echo "=============================================="
+          echo "Repository: $GITHUB_REPOSITORY"
+          echo "Ref: $GITHUB_REF"
+          echo "SHA: $GITHUB_SHA"
+          echo "Actor: $GITHUB_ACTOR"
+          echo "Run ID: $GITHUB_RUN_ID"
+          echo "Run attempt: $GITHUB_RUN_ATTEMPT"
+          echo "Python:"
+          python --version
+          echo "=============================================="
+
+
+      # ======================================================
+      # Validate expected repository layout
+      # ======================================================
+
+      - name: Validate engine layout
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          required_files=(
+            "engine/main.py"
+            "engine/config.py"
+            "engine/discovery.py"
+            "engine/requirements.txt"
+          )
+
+          for file in "${required_files[@]}"; do
+            if [[ ! -f "$file" ]]; then
+              echo "::error title=OSGuide engine file missing::$file"
+              exit 1
+            fi
+
+            echo "Found: $file"
+          done
+
+
+      # ======================================================
+      # Syntax validation
+      # ======================================================
+
+      - name: Validate Python syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          python -m py_compile \
+            engine/main.py \
+            engine/config.py \
+            engine/discovery.py
+
+          echo "Python syntax validation passed."
+
+
+      # ======================================================
+      # Dependency installation
+      # ======================================================
+
+      - name: Upgrade pip
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          python -m pip install \
+            --disable-pip-version-check \
+            --upgrade \
+            pip
+
+
+      - name: Install engine dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if grep -Eq '^[[:space:]]*[^#[:space:]]' engine/requirements.txt; then
+
+            echo "Installing declared OSGuide dependencies..."
+
+            python -m pip install \
+              --disable-pip-version-check \
+              --requirement engine/requirements.txt
+
+          else
+
+            echo "No third-party runtime dependencies declared."
+            echo "Current engine phase uses Python standard library only."
+
           fi
 
+
+      # ======================================================
+      # Configuration summary
+      # ======================================================
+
       - name: Show engine configuration
+        shell: bash
         run: |
-          echo "======================================"
+          set -euo pipefail
+
+          echo "=============================================="
           echo " OSGuide Discovery Engine"
-          echo "======================================"
-          echo "Mode: $OSGUIDE_RUN_MODE"
-          echo "Runtime: $OSGUIDE_RUNTIME_MINUTES minutes"
+          echo "=============================================="
+          echo "Run mode: $OSGUIDE_RUN_MODE"
+          echo "Runtime: $OSGUIDE_RUNTIME_MINUTES minute(s)"
           echo "Maximum apps: $OSGUIDE_MAX_APPS"
-          echo "======================================"
+          echo "Debug: $OSGUIDE_DEBUG"
+          echo "Publishing feature: $OSGUIDE_PUBLISH_ENABLED"
+          echo "=============================================="
+
+
+      # ======================================================
+      # Configuration validation
+      # ======================================================
+
+      - name: Validate engine configuration
+        working-directory: engine
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          python - <<'PY'
+          from config import load_config, describe_config
+
+          config = load_config()
+
+          print(describe_config(config))
+          print()
+          print("Configuration validation passed.")
+          PY
+
+
+      # ======================================================
+      # Default local Discovery diagnostic
+      # ======================================================
+
+      - name: Run Discovery diagnostic
+        working-directory: engine
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          python - <<'PY'
+          from discovery import run_discovery_diagnostic
+
+          report = run_discovery_diagnostic(max_apps=5)
+
+          print("Discovery diagnostic")
+          print("--------------------")
+          print(f"Sources succeeded: {report.sources_succeeded}")
+          print(f"Sources failed: {report.sources_failed}")
+          print(f"Sources skipped: {report.sources_skipped}")
+          print(f"Raw candidates: {report.raw_candidates_seen}")
+          print(f"Accepted candidates: {report.accepted_candidates}")
+          print(f"Duplicates removed: {report.duplicates_removed}")
+          print(
+              "Invalid candidates removed: "
+              f"{report.invalid_candidates_removed}"
+          )
+
+          if report.sources_failed:
+              raise SystemExit(
+                  "Default Discovery diagnostic unexpectedly failed."
+              )
+
+          if not report.candidates:
+              raise SystemExit(
+                  "Default Discovery diagnostic returned no candidate."
+              )
+
+          print()
+          print("Default Discovery diagnostic passed.")
+          PY
+
+
+      # ======================================================
+      # Optional extended diagnostics
+      # ======================================================
+      #
+      # This intentionally includes:
+      # - a successful source
+      # - a duplicate candidate
+      # - an invalid candidate
+      # - a deliberately failing source
+      #
+      # The expected result is that the pipeline continues despite
+      # those failures. It validates failure isolation.
+      #
+
+      - name: Run extended Discovery diagnostics
+        if: ${{ inputs.extended_diagnostics }}
+        working-directory: engine
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          python - <<'PY'
+          from discovery import run_extended_discovery_diagnostic
+
+          report = run_extended_discovery_diagnostic(max_apps=10)
+
+          print("Extended Discovery diagnostic")
+          print("-----------------------------")
+          print(f"Sources succeeded: {report.sources_succeeded}")
+          print(f"Sources failed: {report.sources_failed}")
+          print(f"Sources skipped: {report.sources_skipped}")
+          print(f"Raw candidates: {report.raw_candidates_seen}")
+          print(f"Accepted candidates: {report.accepted_candidates}")
+          print(f"Duplicates removed: {report.duplicates_removed}")
+          print(
+              "Invalid candidates removed: "
+              f"{report.invalid_candidates_removed}"
+          )
+
+          if report.sources_succeeded < 1:
+              raise SystemExit(
+                  "Failure-isolation diagnostic has no successful source."
+              )
+
+          if report.sources_failed < 1:
+              raise SystemExit(
+                  "Failure-isolation diagnostic did not exercise failure."
+              )
+
+          print()
+          print("Extended failure-isolation diagnostic passed.")
+          PY
+
+
+      # ======================================================
+      # Run OSGuide Engine
+      # ======================================================
 
       - name: Run OSGuide Engine
         working-directory: engine
-        run: python main.py
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          python main.py
+
+
+      # ======================================================
+      # Final status
+      # ======================================================
+
+      - name: Confirm workflow completion
+        if: ${{ success() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          echo "=============================================="
+          echo " OSGuide Discovery Engine completed safely."
+          echo "=============================================="
+          echo "Run mode: $OSGUIDE_RUN_MODE"
+          echo "Publishing feature enabled: $OSGUIDE_PUBLISH_ENABLED"
+          echo ""
+          echo "If publish mode was selected, this phase still"
+          echo "remains non-destructive because the Publisher"
+          echo "safety lock is disabled."
+          echo "=============================================="
+
+
+      # ======================================================
+      # Failure annotation
+      # ======================================================
+
+      - name: Report workflow failure
+        if: ${{ failure() }}
+        shell: bash
+        run: |
+          echo "::error title=OSGuide Engine::The discovery workflow failed. Review the failed step logs."
+          echo "No automatic retry is performed by the workflow."
+          echo "The operator remains in control."
+
+
+      # ======================================================
+      # Cancellation note
+      # ======================================================
+
+      - name: Cancellation note
+        if: ${{ cancelled() }}
+        shell: bash
+        run: |
+          echo "OSGuide workflow was cancelled by the operator or platform."
+          echo "No additional work will be started."
