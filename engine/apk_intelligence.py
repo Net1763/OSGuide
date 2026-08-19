@@ -66,13 +66,16 @@ APK intelligence core.
 from __future__ import annotations
 
 import hashlib
+import json
 import re
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 from typing import Final, Iterable, Protocol, Sequence
-from urllib.parse import urlparse
+from urllib.error import HTTPError, URLError
+from urllib.parse import quote, urlparse
+from urllib.request import Request, urlopen
 
 from discovery import (
     SourceType,
@@ -1345,6 +1348,21 @@ class DiagnosticFailingApkProvider(BaseApkProvider):
 # Diagnostic registries
 # ============================================================
 
+def build_live_apk_registry() -> ApkProviderRegistry:
+    """
+    Build the normal read-only APK provider registry used by the engine.
+
+    Diagnostic providers are deliberately excluded.
+    """
+    registry = ApkProviderRegistry()
+
+    registry.register(
+        FutureFdroidApkProvider()
+    )
+
+    return registry
+
+
 def build_default_apk_registry() -> ApkProviderRegistry:
     registry = ApkProviderRegistry()
 
@@ -1373,6 +1391,48 @@ def build_extended_apk_registry() -> ApkProviderRegistry:
 # ============================================================
 # Public diagnostics
 # ============================================================
+
+def run_live_apk_intelligence(
+    *,
+    package_id: str,
+    repository_url: str | None = None,
+    source_url: str | None = None,
+    version_hint: str | None = None,
+) -> ApkSelectionReport:
+    """
+    Run real read-only APK selection for one resolved application.
+    """
+    registry = build_live_apk_registry()
+
+    policy = ApkPolicy(
+        require_https=True,
+        require_trusted_host=True,
+        allow_prerelease=False,
+        allow_unknown_channel=True,
+        prefer_universal=True,
+        allow_arch_specific=True,
+        require_apk_extension=True,
+        reject_bundle_formats=True,
+        require_latest_stable=True,
+        verify_url_alive=False,
+        verify_content_type=False,
+        verify_package_identity=False,
+        verify_version_consistency=False,
+        max_artifacts=20,
+        probe_timeout_seconds=8.0,
+        max_redirects=5,
+        max_probe_bytes=1_000_000,
+    )
+
+    return analyze_apks(
+        registry.providers,
+        package_id=package_id,
+        repository_url=repository_url,
+        source_url=source_url,
+        version_hint=version_hint,
+        policy=policy,
+    )
+
 
 def run_apk_diagnostic(
     *,
@@ -1534,8 +1594,157 @@ class FutureGithubApkProvider(BaseApkProvider):
 
 
 class FutureFdroidApkProvider(BaseApkProvider):
+    """
+    Read-only APK provider backed by the official F-Droid repository index.
+
+    The provider does not download APK bodies.  It reads repository metadata,
+    selects matching package records, and returns direct F-Droid APK URLs as
+    untrusted candidate artifacts for the existing validation/ranking layer.
+    """
+
     name = "fdroid-apk"
     source_type = SourceType.FDROID
+
+    INDEX_URL: Final[str] = "https://f-droid.org/repo/index-v1.json"
+    REPO_BASE_URL: Final[str] = "https://f-droid.org/repo/"
+    USER_AGENT: Final[str] = "OSGuide-APK-Intelligence/0.3 (+https://github.com/)"
+
+    # Bound metadata ingestion.  APK files themselves are never downloaded here.
+    MAX_INDEX_BYTES: Final[int] = 64 * 1024 * 1024
+
+    def __init__(self) -> None:
+        self._packages_cache: dict[str, list[dict[str, object]]] | None = None
+
+    @staticmethod
+    def _version_code(value: object) -> int | None:
+        if isinstance(value, bool):
+            return None
+
+        if isinstance(value, int):
+            return value
+
+        if isinstance(value, str):
+            stripped = value.strip()
+
+            if stripped.isdigit():
+                try:
+                    return int(stripped)
+                except ValueError:
+                    return None
+
+        return None
+
+    @staticmethod
+    def _safe_apk_name(value: object) -> str | None:
+        if not isinstance(value, str):
+            return None
+
+        value = value.strip()
+
+        if not value or len(value) > MAX_FILENAME_LENGTH:
+            return None
+
+        if "/" in value or "\\" in value or ".." in value:
+            return None
+
+        if not value.lower().endswith(".apk"):
+            return None
+
+        return value
+
+    def _load_packages(
+        self,
+        *,
+        timeout_seconds: float,
+    ) -> dict[str, list[dict[str, object]]]:
+        if self._packages_cache is not None:
+            return self._packages_cache
+
+        request = Request(
+            self.INDEX_URL,
+            headers={
+                "Accept": "application/json",
+                "User-Agent": self.USER_AGENT,
+            },
+            method="GET",
+        )
+
+        try:
+            with urlopen(
+                request,
+                timeout=timeout_seconds,
+            ) as response:
+                status = getattr(response, "status", 200)
+
+                if status != 200:
+                    raise RuntimeError(
+                        f"F-Droid index returned HTTP {status}."
+                    )
+
+                raw = response.read(
+                    self.MAX_INDEX_BYTES + 1
+                )
+
+        except HTTPError as exc:
+            raise RuntimeError(
+                f"F-Droid index returned HTTP {exc.code}."
+            ) from exc
+        except URLError as exc:
+            reason = sanitize_text(
+                str(getattr(exc, "reason", "network error")),
+                max_length=300,
+            )
+            raise RuntimeError(
+                f"F-Droid index network error: {reason}"
+            ) from exc
+
+        if len(raw) > self.MAX_INDEX_BYTES:
+            raise RuntimeError(
+                "F-Droid index exceeded the APK provider size limit."
+            )
+
+        try:
+            payload = json.loads(
+                raw.decode("utf-8")
+            )
+        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+            raise RuntimeError(
+                "F-Droid index returned invalid JSON."
+            ) from exc
+
+        if not isinstance(payload, dict):
+            raise RuntimeError(
+                "F-Droid index root must be an object."
+            )
+
+        raw_packages = payload.get("packages")
+
+        if not isinstance(raw_packages, dict):
+            raise RuntimeError(
+                "F-Droid index does not contain a packages mapping."
+            )
+
+        packages: dict[str, list[dict[str, object]]] = {}
+
+        for package_name, raw_items in raw_packages.items():
+            if not isinstance(package_name, str):
+                continue
+
+            if not isinstance(raw_items, list):
+                continue
+
+            clean_items: list[dict[str, object]] = []
+
+            for raw_item in raw_items:
+                if isinstance(raw_item, dict):
+                    clean_items.append(raw_item)
+
+            if clean_items:
+                packages[package_name] = clean_items
+
+        self._packages_cache = packages
+
+        return packages
 
     def find_apks(
         self,
@@ -1547,16 +1756,132 @@ class FutureFdroidApkProvider(BaseApkProvider):
         limit: int,
         timeout_seconds: float,
     ) -> list[ApkArtifact]:
-        del package_id
         del repository_url
-        del source_url
-        del version_hint
-        del limit
-        del timeout_seconds
 
-        raise NotImplementedError(
-            "Live F-Droid APK provider is not connected yet."
+        if not package_id:
+            return []
+
+        if limit < 1:
+            return []
+
+        packages = self._load_packages(
+            timeout_seconds=timeout_seconds
         )
+
+        records = packages.get(
+            package_id,
+            [],
+        )
+
+        if not records:
+            return []
+
+        # F-Droid normally exposes newest records first, but sorting by
+        # versionCode makes the provider deterministic if order changes.
+        records = sorted(
+            records,
+            key=lambda item: (
+                self._version_code(
+                    item.get("versionCode")
+                )
+                or -1
+            ),
+            reverse=True,
+        )
+
+        artifacts: list[ApkArtifact] = []
+
+        for record in records:
+            if len(artifacts) >= limit:
+                break
+
+            apk_name = self._safe_apk_name(
+                record.get("apkName")
+            )
+
+            if not apk_name:
+                continue
+
+            version = record.get("versionName")
+
+            if not isinstance(version, str):
+                version = None
+            else:
+                version = version.strip() or None
+
+            # Prefer an exact version hint when it exists, while still allowing
+            # the intelligence layer to inspect other stable releases.
+            if (
+                version_hint
+                and version
+                and version != version_hint
+                and any(
+                    isinstance(item.get("versionName"), str)
+                    and item.get("versionName") == version_hint
+                    for item in records
+                )
+            ):
+                continue
+
+            apk_url = (
+                self.REPO_BASE_URL
+                + quote(
+                    apk_name,
+                    safe="._+-",
+                )
+            )
+
+            size_bytes = record.get("size")
+
+            if not isinstance(size_bytes, int):
+                size_bytes = None
+
+            artifact = ApkArtifact(
+                url=apk_url,
+                source_type=self.source_type,
+                provider_name=self.name,
+                version=version,
+                filename=apk_name,
+                architecture=detect_architecture(
+                    apk_name
+                ),
+                channel=detect_release_channel(
+                    version=version,
+                    filename=apk_name,
+                ),
+                package_id_hint=package_id,
+                size_bytes=size_bytes,
+                evidence_confidence=0.99,
+            )
+
+            artifact.add_evidence(
+                ApkEvidence(
+                    provider_name=self.name,
+                    source_type=self.source_type,
+                    source_url=(
+                        source_url
+                        if (
+                            isinstance(source_url, str)
+                            and is_valid_http_url(
+                                source_url,
+                                require_https=True,
+                            )
+                        )
+                        else self.INDEX_URL
+                    ),
+                    confidence=0.99,
+                    note=(
+                        "APK artifact read from the official "
+                        "F-Droid repository index."
+                    ),
+                )
+            )
+
+            artifacts.append(
+                artifact
+            )
+
+        return artifacts
 
 
 class FutureOfficialApkProvider(BaseApkProvider):
@@ -1623,6 +1948,7 @@ __all__: Final[tuple[str, ...]] = (
     "artifact_sort_key",
     "artifact_summary",
     "build_default_apk_registry",
+    "build_live_apk_registry",
     "build_extended_apk_registry",
     "choose_latest_version_group",
     "compare_versions",
@@ -1636,6 +1962,7 @@ __all__: Final[tuple[str, ...]] = (
     "merge_artifacts",
     "normalize_artifact",
     "run_apk_diagnostic",
+    "run_live_apk_intelligence",
     "run_apk_provider",
     "run_extended_apk_diagnostic",
     "select_best_artifact",
