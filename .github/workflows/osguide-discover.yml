@@ -18,6 +18,7 @@
 # - Secrets are supplied through GitHub Actions Secrets only.
 # - Engine can be cancelled manually from GitHub Actions.
 # - Python syntax is checked before execution.
+# - Comprehensive engine tests must pass before main.py executes.
 # - One workflow run cannot silently overlap another discovery run.
 # - Existing GitHub Pages workflow is independent and untouched.
 #
@@ -280,7 +281,7 @@ jobs:
       # ======================================================
 
       - name: Checkout OSGuide
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
           fetch-depth: 1
@@ -291,7 +292,7 @@ jobs:
       # ======================================================
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: "pip"
@@ -334,6 +335,16 @@ jobs:
             "engine/main.py"
             "engine/config.py"
             "engine/discovery.py"
+            "engine/resolver.py"
+            "engine/apk_intelligence.py"
+            "engine/content_intelligence.py"
+            "engine/decision_engine.py"
+            "engine/publisher.py"
+            "engine/memory.py"
+            "engine/observability.py"
+            "engine/audit_rollback.py"
+            "engine/security.py"
+            "engine/tests.py"
             "engine/requirements.txt"
           )
 
@@ -359,9 +370,19 @@ jobs:
           python -m py_compile \
             engine/main.py \
             engine/config.py \
-            engine/discovery.py
+            engine/discovery.py \
+            engine/resolver.py \
+            engine/apk_intelligence.py \
+            engine/content_intelligence.py \
+            engine/decision_engine.py \
+            engine/publisher.py \
+            engine/memory.py \
+            engine/observability.py \
+            engine/audit_rollback.py \
+            engine/security.py \
+            engine/tests.py
 
-          echo "Python syntax validation passed."
+          echo "Python syntax validation passed for all engine modules."
 
 
       # ======================================================
@@ -439,6 +460,37 @@ jobs:
           print()
           print("Configuration validation passed.")
           PY
+
+
+      # ======================================================
+      # Comprehensive engine test gate
+      # ======================================================
+      #
+      # This must pass before Discovery diagnostics or main.py run.
+      #
+      # The suite uses local diagnostic providers and keeps:
+      # - Supabase publication disabled
+      # - APK downloads disabled
+      # - live AI calls disabled
+      # - automatic deletion disabled
+      # - dry-run safety rules active
+      #
+      # A failing test stops the workflow immediately.
+      #
+
+      - name: Run comprehensive engine tests
+        working-directory: engine
+        shell: bash
+        env:
+          OSGUIDE_RUN_MODE: "dry-run"
+          OSGUIDE_RUNTIME_MINUTES: "2"
+          OSGUIDE_MAX_APPS: "1"
+          OSGUIDE_PUBLISH_ENABLED: "false"
+          OSGUIDE_AI_PROVIDER: "none"
+        run: |
+          set -euo pipefail
+
+          python tests.py --verbose
 
 
       # ======================================================
@@ -581,7 +633,7 @@ jobs:
         if: ${{ failure() }}
         shell: bash
         run: |
-          echo "::error title=OSGuide Engine::The discovery workflow failed. Review the failed step logs."
+          echo "::error title=OSGuide Engine::The engine workflow failed. Review the failed test or execution step logs."
           echo "No automatic retry is performed by the workflow."
           echo "The operator remains in control."
 
