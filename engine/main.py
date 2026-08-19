@@ -53,7 +53,7 @@ from discovery import (
     AppCandidate,
     DiscoveryReport,
     DiscoverySourceResult,
-    run_discovery_diagnostic,
+    run_default_discovery,
 )
 
 
@@ -508,9 +508,9 @@ def run_discovery_phase(
     """
     Execute the current safe discovery phase.
 
-    This phase intentionally uses the diagnostic discovery source.
-    Real F-Droid/GitHub/other trusted source providers will be
-    connected in later files without replacing this controller.
+    Execute the connected default discovery registry safely.
+    Trusted discovery providers are selected by discovery.py while
+    this controller preserves runtime and dry-run safety.
     """
 
     phase = begin_phase(
@@ -556,10 +556,10 @@ def run_discovery_phase(
                 log_warning(warning)
 
         log_info(
-            "Starting safe discovery diagnostic."
+            "Starting default discovery pipeline."
         )
 
-        report = run_discovery_diagnostic(
+        report = run_default_discovery(
             max_apps=config.max_apps,
         )
 
