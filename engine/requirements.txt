@@ -1,1 +1,93 @@
-# OSGuide Engine Dependencies
+# ============================================================
+# OSGuide Engine
+# Python dependencies
+# ============================================================
+#
+# This file is intentionally small.
+#
+# Unlike Python source files, a requirements file should NOT be
+# inflated with unnecessary packages. Every third-party package:
+# - increases supply-chain risk,
+# - increases install time,
+# - increases attack surface,
+# - can introduce dependency conflicts,
+# - can break reproducibility later.
+#
+# Therefore OSGuide follows this rule:
+#
+#   Add a dependency only when a committed engine module
+#   genuinely imports and needs it.
+#
+# Current engine files:
+# - main.py
+# - config.py
+# - discovery.py
+#
+# currently use the Python standard library only.
+#
+# Real network/source modules, Supabase publishing, APK inspection,
+# AI adapters and structured parsing will add their dependencies
+# here when those files are introduced.
+#
+# ------------------------------------------------------------
+# Dependency policy for future modules
+# ------------------------------------------------------------
+#
+# 1. Avoid unbounded dependency growth.
+# 2. Prefer mature libraries with narrow purposes.
+# 3. Prefer standard library when it is safe and maintainable.
+# 4. Do not add packages only to save a few lines of code.
+# 5. Avoid packages that execute downloaded code.
+# 6. Avoid packages requiring shell execution for normal operation.
+# 7. Keep external HTML/XML parsing defensive.
+# 8. Keep network clients timeout-aware.
+# 9. Keep AI provider SDKs optional where possible.
+# 10. Prefer generic HTTP adapters over one SDK per AI provider.
+# 11. Never place API keys or secrets in this file.
+# 12. Never install packages directly from arbitrary Git URLs.
+# 13. Never install packages from untrusted indexes.
+# 14. Never use editable installs in GitHub Actions production runs.
+# 15. Review transitive dependencies before enabling a new package.
+#
+# ------------------------------------------------------------
+# Planned dependency groups
+# ------------------------------------------------------------
+#
+# These are architectural notes only. They are NOT installed yet.
+#
+# Network layer:
+#   httpx
+#
+# Version comparison / release normalization:
+#   packaging
+#
+# Defensive XML parsing if required by a future source:
+#   defusedxml
+#
+# HTML parsing only if a trusted source has no structured API/feed:
+#   beautifulsoup4
+#
+# APK metadata:
+#   Prefer a constrained implementation or a carefully reviewed
+#   library when APK Intelligence is implemented. Do not add one
+#   pre-emptively.
+#
+# Supabase:
+#   Prefer the engine's controlled HTTP publisher layer rather than
+#   pulling a large client SDK unless the SDK provides a concrete
+#   security/maintenance advantage.
+#
+# AI:
+#   Prefer one generic OpenAI-compatible HTTP adapter plus dedicated
+#   adapters only where API semantics genuinely differ.
+#
+# ------------------------------------------------------------
+# Current install set
+# ------------------------------------------------------------
+#
+# No third-party runtime dependency is required in the current phase.
+#
+# Keep at least this comment block so GitHub Actions can cache against
+# a stable dependency file while the engine remains standard-library
+# only.
+#
