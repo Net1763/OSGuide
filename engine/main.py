@@ -62,6 +62,11 @@ from resolver import (
     run_live_resolver,
 )
 
+from apk_intelligence import (
+    ApkSelectionStatus,
+    run_live_apk_intelligence,
+)
+
 
 # ============================================================
 # Exit codes
@@ -649,6 +654,101 @@ def run_discovery_phase(
                         "Candidate completed the live read-only "
                         "Resolver path."
                     )
+
+                    # --------------------------------------------
+                    # Phase 4: live read-only APK Intelligence.
+                    # Structural/trusted-source APK selection only.
+                    # No APK body download or external write occurs.
+                    # --------------------------------------------
+                    package_result = resolved.field_result(
+                        MetadataField.PACKAGE_ID
+                    )
+                    version_result = resolved.field_result(
+                        MetadataField.VERSION
+                    )
+                    repository_result = resolved.field_result(
+                        MetadataField.REPOSITORY_URL
+                    )
+                    source_result = resolved.field_result(
+                        MetadataField.SOURCE_URL
+                    )
+
+                    package_id = (
+                        package_result.value
+                        if package_result.resolved
+                        else candidate.package_id
+                    )
+
+                    if package_id:
+                        apk_report = run_live_apk_intelligence(
+                            package_id=package_id,
+                            repository_url=(
+                                repository_result.value
+                                if repository_result.resolved
+                                else candidate.repository_url
+                            ),
+                            source_url=(
+                                source_result.value
+                                if source_result.resolved
+                                else candidate.source_url
+                            ),
+                            version_hint=(
+                                version_result.value
+                                if version_result.resolved
+                                else None
+                            ),
+                        )
+
+                        log_info(
+                            "APK Intelligence status: "
+                            f"{apk_report.status.value}; "
+                            f"artifacts seen: {apk_report.artifacts_seen}; "
+                            f"accepted: {apk_report.artifacts_accepted}; "
+                            f"rejected: {apk_report.artifacts_rejected}."
+                        )
+
+                        if apk_report.selected is not None:
+                            log_info(
+                                "Selected APK: "
+                                f"{safe_text(apk_report.selected.url, max_length=300)}"
+                            )
+                            if apk_report.selected.version:
+                                log_info(
+                                    "Selected APK version: "
+                                    f"{safe_text(apk_report.selected.version, max_length=120)}"
+                                )
+                            log_info(
+                                "Candidate completed the live read-only "
+                                "APK Intelligence path."
+                            )
+                        else:
+                            stats.skipped += 1
+                            log_warning(
+                                "APK Intelligence did not select a trusted "
+                                "APK artifact; candidate remains skipped."
+                            )
+
+                        for warning in apk_report.warnings:
+                            bounded_warning = safe_text(
+                                warning,
+                                max_length=300,
+                            )
+                            stats.warnings.append(bounded_warning)
+                            log_warning(bounded_warning)
+
+                        for provider_error in apk_report.provider_errors:
+                            bounded_error = safe_text(
+                                provider_error,
+                                max_length=300,
+                            )
+                            stats.warnings.append(bounded_error)
+                            log_warning(bounded_error)
+                    else:
+                        stats.skipped += 1
+                        log_warning(
+                            "APK Intelligence skipped because no resolved "
+                            "Package ID is available."
+                        )
                 else:
                     stats.skipped += 1
                     log_warning(
