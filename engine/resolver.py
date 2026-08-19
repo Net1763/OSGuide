@@ -59,6 +59,7 @@ stable orchestration layer.
 from __future__ import annotations
 
 import hashlib
+import json
 import re
 import time
 from dataclasses import dataclass, field
@@ -71,7 +72,9 @@ from typing import (
     Protocol,
     Sequence,
 )
-from urllib.parse import urlparse
+from urllib.error import HTTPError, URLError
+from urllib.parse import quote, urlparse
+from urllib.request import Request, urlopen
 
 from discovery import (
     AppCandidate,
@@ -1474,6 +1477,21 @@ def build_default_resolver_registry() -> ResolverRegistry:
     return registry
 
 
+def build_live_resolver_registry() -> ResolverRegistry:
+    """
+    Build the normal read-only resolver registry used by the engine.
+
+    Diagnostic providers are intentionally excluded.
+    """
+    registry = ResolverRegistry()
+
+    registry.register(
+        FutureFdroidResolverProvider()
+    )
+
+    return registry
+
+
 def build_extended_resolver_registry() -> ResolverRegistry:
     registry = ResolverRegistry()
 
@@ -1491,6 +1509,33 @@ def build_extended_resolver_registry() -> ResolverRegistry:
 # ============================================================
 # Public diagnostics
 # ============================================================
+
+def run_live_resolver(
+    candidate: AppCandidate,
+) -> ResolvedApplication:
+    """
+    Resolve one real candidate using approved read-only providers.
+    """
+    registry = build_live_resolver_registry()
+
+    policy = ResolverPolicy(
+        max_attempts_per_field=4,
+        provider_timeout_seconds=8.0,
+        total_budget_seconds=20.0,
+        minimum_accept_confidence=0.60,
+        strong_accept_confidence=0.85,
+        allow_partial=True,
+        preserve_conflicts=True,
+        stop_field_on_strong_evidence=True,
+        skip_difficult_candidate_on_budget_exhaustion=True,
+    )
+
+    return resolve_candidate(
+        candidate,
+        registry.providers,
+        policy=policy,
+    )
+
 
 def run_resolver_diagnostic(
     candidate: AppCandidate,
@@ -1582,8 +1627,279 @@ def resolution_summary(
 # ============================================================
 
 class FutureFdroidResolverProvider(BaseResolverProvider):
+    """
+    Read-only resolver backed by the official F-Droid repository index.
+
+    The provider never publishes, deletes, or mutates external data.  It
+    only turns metadata that F-Droid already exposes into FieldEvidence.
+
+    The JSON index is cached inside the provider instance so a batch of
+    candidates does not download the same repository index repeatedly.
+    """
+
     name = "fdroid-resolver"
     source_type = SourceType.FDROID
+
+    INDEX_URL: Final[str] = "https://f-droid.org/repo/index-v1.json"
+    REPO_BASE_URL: Final[str] = "https://f-droid.org/repo/"
+    USER_AGENT: Final[str] = "OSGuide-Resolver/0.3 (+https://github.com/)"
+
+    MAX_INDEX_BYTES: Final[int] = 64 * 1024 * 1024
+
+    def __init__(self) -> None:
+        self._index_cache: Mapping[str, object] | None = None
+        self._apps_by_package: dict[str, Mapping[str, object]] | None = None
+        self._packages_by_package: dict[str, list[Mapping[str, object]]] | None = None
+
+    @staticmethod
+    def _mapping(value: object) -> Mapping[str, object] | None:
+        if isinstance(value, Mapping):
+            return value
+        return None
+
+    @staticmethod
+    def _localized_text(
+        app: Mapping[str, object],
+        field_name: str,
+    ) -> str | None:
+        direct = app.get(field_name)
+
+        if isinstance(direct, str):
+            cleaned = sanitize_text(
+                direct,
+                max_length=MAX_FIELD_VALUE_LENGTH,
+            )
+            return cleaned or None
+
+        localized = app.get("localized")
+
+        if isinstance(localized, Mapping):
+            preferred_locales = (
+                "en-US",
+                "en",
+                "en-GB",
+            )
+
+            for locale in preferred_locales:
+                locale_data = localized.get(locale)
+
+                if isinstance(locale_data, Mapping):
+                    value = locale_data.get(field_name)
+
+                    if isinstance(value, str):
+                        cleaned = sanitize_text(
+                            value,
+                            max_length=MAX_FIELD_VALUE_LENGTH,
+                        )
+
+                        if cleaned:
+                            return cleaned
+
+            for locale_data in localized.values():
+                if not isinstance(locale_data, Mapping):
+                    continue
+
+                value = locale_data.get(field_name)
+
+                if isinstance(value, str):
+                    cleaned = sanitize_text(
+                        value,
+                        max_length=MAX_FIELD_VALUE_LENGTH,
+                    )
+
+                    if cleaned:
+                        return cleaned
+
+        return None
+
+    @staticmethod
+    def _safe_apk_name(value: object) -> str | None:
+        if not isinstance(value, str):
+            return None
+
+        value = value.strip()
+
+        if not value or len(value) > 255:
+            return None
+
+        if "/" in value or "\\" in value or ".." in value:
+            return None
+
+        if not value.lower().endswith(".apk"):
+            return None
+
+        return value
+
+    @staticmethod
+    def _version_code(value: object) -> int | None:
+        if isinstance(value, bool):
+            return None
+
+        if isinstance(value, int):
+            return value
+
+        if isinstance(value, str):
+            stripped = value.strip()
+
+            if stripped.isdigit():
+                try:
+                    return int(stripped)
+                except ValueError:
+                    return None
+
+        return None
+
+    def _load_index(
+        self,
+        *,
+        timeout_seconds: float,
+    ) -> Mapping[str, object]:
+        if self._index_cache is not None:
+            return self._index_cache
+
+        request = Request(
+            self.INDEX_URL,
+            headers={
+                "Accept": "application/json",
+                "User-Agent": self.USER_AGENT,
+            },
+            method="GET",
+        )
+
+        try:
+            with urlopen(
+                request,
+                timeout=timeout_seconds,
+            ) as response:
+                status = getattr(response, "status", 200)
+
+                if status != 200:
+                    raise RuntimeError(
+                        f"F-Droid index returned HTTP {status}."
+                    )
+
+                raw = response.read(
+                    self.MAX_INDEX_BYTES + 1
+                )
+
+        except HTTPError as exc:
+            raise RuntimeError(
+                f"F-Droid index returned HTTP {exc.code}."
+            ) from exc
+        except URLError as exc:
+            reason = sanitize_text(
+                str(getattr(exc, "reason", "network error")),
+                max_length=300,
+            )
+            raise RuntimeError(
+                f"F-Droid index network error: {reason}"
+            ) from exc
+
+        if len(raw) > self.MAX_INDEX_BYTES:
+            raise RuntimeError(
+                "F-Droid index exceeded the resolver size limit."
+            )
+
+        try:
+            decoded = raw.decode("utf-8")
+            payload = json.loads(decoded)
+        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+            raise RuntimeError(
+                "F-Droid index returned invalid JSON."
+            ) from exc
+
+        if not isinstance(payload, Mapping):
+            raise RuntimeError(
+                "F-Droid index root must be an object."
+            )
+
+        self._index_cache = payload
+        self._build_lookup_tables(payload)
+
+        return payload
+
+    def _build_lookup_tables(
+        self,
+        payload: Mapping[str, object],
+    ) -> None:
+        apps_by_package: dict[str, Mapping[str, object]] = {}
+        packages_by_package: dict[str, list[Mapping[str, object]]] = {}
+
+        raw_apps = payload.get("apps")
+
+        if isinstance(raw_apps, list):
+            for raw_app in raw_apps:
+                if not isinstance(raw_app, Mapping):
+                    continue
+
+                package_name = raw_app.get("packageName")
+
+                if (
+                    isinstance(package_name, str)
+                    and is_valid_package_id(package_name)
+                ):
+                    apps_by_package[package_name] = raw_app
+
+        raw_packages = payload.get("packages")
+
+        if isinstance(raw_packages, Mapping):
+            for package_name, raw_items in raw_packages.items():
+                if (
+                    not isinstance(package_name, str)
+                    or not is_valid_package_id(package_name)
+                    or not isinstance(raw_items, list)
+                ):
+                    continue
+
+                items: list[Mapping[str, object]] = []
+
+                for raw_item in raw_items:
+                    if isinstance(raw_item, Mapping):
+                        items.append(raw_item)
+
+                if items:
+                    packages_by_package[package_name] = items
+
+        self._apps_by_package = apps_by_package
+        self._packages_by_package = packages_by_package
+
+    def _select_package(
+        self,
+        *,
+        app: Mapping[str, object] | None,
+        packages: Sequence[Mapping[str, object]],
+    ) -> Mapping[str, object] | None:
+        if not packages:
+            return None
+
+        suggested_code = None
+
+        if app is not None:
+            suggested_code = self._version_code(
+                app.get("suggestedVersionCode")
+            )
+
+        if suggested_code is not None:
+            for package in packages:
+                if (
+                    self._version_code(
+                        package.get("versionCode")
+                    )
+                    == suggested_code
+                ):
+                    return package
+
+        def sort_key(
+            package: Mapping[str, object],
+        ) -> int:
+            return self._version_code(
+                package.get("versionCode")
+            ) or -1
+
+        return max(
+            packages,
+            key=sort_key,
+        )
 
     def resolve(
         self,
@@ -1592,13 +1908,182 @@ class FutureFdroidResolverProvider(BaseResolverProvider):
         fields: Sequence[MetadataField],
         timeout_seconds: float,
     ) -> list[FieldEvidence]:
-        del candidate
-        del fields
-        del timeout_seconds
+        if candidate.source_enum != SourceType.FDROID:
+            return []
 
-        raise NotImplementedError(
-            "Live F-Droid Resolver provider is not connected yet."
+        if not candidate.package_id:
+            return []
+
+        if not is_valid_package_id(candidate.package_id):
+            return []
+
+        requested = set(fields)
+
+        if not requested:
+            return []
+
+        self._load_index(
+            timeout_seconds=timeout_seconds
         )
+
+        apps_by_package = self._apps_by_package or {}
+        packages_by_package = self._packages_by_package or {}
+
+        package_id = candidate.package_id
+        app = apps_by_package.get(package_id)
+        packages = packages_by_package.get(
+            package_id,
+            [],
+        )
+
+        selected_package = self._select_package(
+            app=app,
+            packages=packages,
+        )
+
+        evidence: list[FieldEvidence] = []
+
+        def add(
+            metadata_field: MetadataField,
+            value: str | None,
+            *,
+            confidence: float,
+            note: str,
+        ) -> None:
+            if metadata_field not in requested:
+                return
+
+            if not value:
+                return
+
+            cleaned = sanitize_text(
+                value,
+                max_length=MAX_FIELD_VALUE_LENGTH,
+            )
+
+            if not cleaned:
+                return
+
+            evidence.append(
+                FieldEvidence(
+                    field=metadata_field,
+                    value=cleaned,
+                    provider_name=self.name,
+                    source_type=self.source_type,
+                    source_url=self.INDEX_URL,
+                    confidence=confidence,
+                    note=note,
+                )
+            )
+
+        if app is not None:
+            add(
+                MetadataField.NAME,
+                self._localized_text(
+                    app,
+                    "name",
+                ),
+                confidence=0.98,
+                note="Name read from the official F-Droid repository index.",
+            )
+
+            add(
+                MetadataField.SHORT_DESCRIPTION,
+                self._localized_text(
+                    app,
+                    "summary",
+                ),
+                confidence=0.97,
+                note="Summary read from the official F-Droid repository index.",
+            )
+
+            add(
+                MetadataField.FULL_DESCRIPTION,
+                self._localized_text(
+                    app,
+                    "description",
+                ),
+                confidence=0.97,
+                note="Description read from the official F-Droid repository index.",
+            )
+
+            license_value = app.get("license")
+
+            if isinstance(license_value, str):
+                add(
+                    MetadataField.LICENSE,
+                    license_value,
+                    confidence=0.98,
+                    note="License read from the official F-Droid repository index.",
+                )
+
+            categories = app.get("categories")
+
+            if isinstance(categories, list):
+                for category in categories:
+                    if isinstance(category, str) and category.strip():
+                        add(
+                            MetadataField.CATEGORY,
+                            category,
+                            confidence=0.95,
+                            note="Category read from the official F-Droid repository index.",
+                        )
+                        break
+
+            source_code = app.get("sourceCode")
+
+            if (
+                isinstance(source_code, str)
+                and is_valid_http_url(
+                    source_code,
+                    require_https=True,
+                )
+            ):
+                add(
+                    MetadataField.REPOSITORY_URL,
+                    source_code,
+                    confidence=0.98,
+                    note="Source-code URL read from the official F-Droid repository index.",
+                )
+
+        if selected_package is not None:
+            version_name = selected_package.get(
+                "versionName"
+            )
+
+            if isinstance(version_name, str):
+                add(
+                    MetadataField.VERSION,
+                    version_name,
+                    confidence=0.99,
+                    note="Version read from the selected F-Droid package record.",
+                )
+
+            apk_name = self._safe_apk_name(
+                selected_package.get("apkName")
+            )
+
+            if apk_name:
+                apk_url = (
+                    self.REPO_BASE_URL
+                    + quote(
+                        apk_name,
+                        safe="._+-",
+                    )
+                )
+
+                if is_valid_http_url(
+                    apk_url,
+                    require_https=True,
+                ):
+                    add(
+                        MetadataField.APK_URL,
+                        apk_url,
+                        confidence=0.99,
+                        note="APK URL derived from the exact apkName in the official F-Droid index.",
+                    )
+
+        return evidence
 
 
 class FutureGithubResolverProvider(BaseResolverProvider):
@@ -1675,6 +2160,7 @@ __all__: Final[tuple[str, ...]] = (
     "apply_field_evidence",
     "build_default_resolver_registry",
     "build_extended_resolver_registry",
+    "build_live_resolver_registry",
     "candidate_bootstrap_evidence",
     "enabled_fields",
     "evaluate_resolution_status",
@@ -1685,6 +2171,7 @@ __all__: Final[tuple[str, ...]] = (
     "resolved_values",
     "resolution_summary",
     "run_extended_resolver_diagnostic",
+    "run_live_resolver",
     "run_provider",
     "run_resolver_diagnostic",
     "should_replace_field",
