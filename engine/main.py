@@ -56,6 +56,12 @@ from discovery import (
     run_default_discovery,
 )
 
+from resolver import (
+    MetadataField,
+    ResolutionStatus,
+    run_live_resolver,
+)
+
 
 # ============================================================
 # Exit codes
@@ -601,18 +607,77 @@ def run_discovery_phase(
             log_candidate(candidate)
 
             # ------------------------------------------------
-            # IMPORTANT:
-            # This is where the future Super Resolver will run.
-            # The candidate is currently only passed through
-            # the diagnostic pipeline and deliberately skipped.
+            # Phase 3: live read-only Resolver.
+            # No publishing or external writes occur here.
             # ------------------------------------------------
 
             stats.candidates_processed += 1
-            stats.skipped += 1
 
-            log_info(
-                "Candidate completed the Phase 2 diagnostic path."
-            )
+            try:
+                resolved = run_live_resolver(candidate)
+
+                log_info(
+                    "Resolver status: "
+                    f"{resolved.status.value}; "
+                    f"resolved fields: {resolved.resolved_field_count}; "
+                    f"conflicts: {resolved.conflict_count}."
+                )
+
+                for metadata_field in (
+                    MetadataField.PACKAGE_ID,
+                    MetadataField.VERSION,
+                    MetadataField.APK_URL,
+                    MetadataField.LICENSE,
+                    MetadataField.CATEGORY,
+                    MetadataField.SHORT_DESCRIPTION,
+                    MetadataField.FULL_DESCRIPTION,
+                    MetadataField.SOURCE_URL,
+                ):
+                    field_result = resolved.field_result(metadata_field)
+
+                    if field_result.resolved:
+                        log_info(
+                            f"Resolved {metadata_field.value}: "
+                            f"{safe_text(field_result.value, max_length=300)}"
+                        )
+
+                if resolved.status in {
+                    ResolutionStatus.RESOLVED,
+                    ResolutionStatus.PARTIAL,
+                }:
+                    log_info(
+                        "Candidate completed the live read-only "
+                        "Resolver path."
+                    )
+                else:
+                    stats.skipped += 1
+                    log_warning(
+                        "Candidate was not sufficiently resolved and "
+                        "remains skipped for later phases."
+                    )
+
+                for warning in resolved.warnings:
+                    bounded_warning = safe_text(warning, max_length=300)
+                    stats.warnings.append(bounded_warning)
+                    log_warning(bounded_warning)
+
+                for provider_error in resolved.provider_errors:
+                    bounded_error = safe_text(provider_error, max_length=300)
+                    stats.warnings.append(bounded_error)
+                    log_warning(bounded_error)
+
+            except Exception as resolver_exc:
+                stats.failures += 1
+                stats.skipped += 1
+
+                resolver_error = (
+                    "Resolver failed for candidate "
+                    f"{safe_text(candidate.name, max_length=120)!r}: "
+                    f"{sanitize_exception(resolver_exc)}"
+                )
+
+                stats.warnings.append(resolver_error)
+                log_warning(resolver_error)
 
             stats.current_candidate = None
 
