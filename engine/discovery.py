@@ -52,6 +52,7 @@ Those remain separate modules by design.
 from __future__ import annotations
 
 import hashlib
+import json
 import re
 import time
 from dataclasses import dataclass, field
@@ -64,6 +65,8 @@ from typing import (
     Protocol,
     Sequence,
 )
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 from urllib.parse import (
     parse_qsl,
     urlencode,
@@ -2213,6 +2216,50 @@ def build_default_diagnostic_registry(
     return registry
 
 
+def build_default_discovery_registry(
+) -> DiscoveryRegistry:
+    """
+    Build the normal read-only discovery registry.
+
+    Diagnostic providers are deliberately excluded from this registry.
+    """
+    registry = DiscoveryRegistry()
+
+    registry.register(
+        FutureFdroidSource()
+    )
+
+    return registry
+
+
+def run_default_discovery(
+    *,
+    max_apps: int = 5,
+) -> DiscoveryReport:
+    """
+    Run normal read-only discovery against approved real providers.
+    """
+    validate_source_policies()
+
+    registry = build_default_discovery_registry()
+
+    settings = DiscoverySettings(
+        max_apps=max_apps,
+        per_source_limit=max_apps,
+        per_source_timeout_seconds=8.0,
+        min_candidate_confidence=0.0,
+        deduplicate=True,
+        validate_candidates=True,
+        prefer_package_identity=True,
+    )
+
+    return discover_candidates(
+        registry.sources,
+        max_apps=max_apps,
+        settings=settings,
+    )
+
+
 def build_extended_diagnostic_registry(
 ) -> DiscoveryRegistry:
     """
@@ -2365,12 +2412,12 @@ class FutureFdroidSource(
     BaseDiscoverySource
 ):
     """
-    Placeholder contract for the real F-Droid discovery provider.
+    Real, read-only F-Droid discovery provider.
 
-    The provider is deliberately not enabled yet because network,
-    response-validation, retry, and rate-limit components belong
-    in the upcoming network/source files rather than being hacked
-    directly into Discovery.
+    Discovery reads the official F-Droid v1 repository index and emits
+    candidates only. It performs no writes, does not publish, and does
+    not fabricate missing metadata. Later engine stages remain
+    responsible for verification and publication decisions.
     """
 
     name = "fdroid"
@@ -2378,6 +2425,10 @@ class FutureFdroidSource(
     source_type = (
         SourceType.FDROID
     )
+
+    INDEX_URL: Final[str] = "https://f-droid.org/repo/index-v1.json"
+    APP_URL_PREFIX: Final[str] = "https://f-droid.org/packages/"
+    USER_AGENT: Final[str] = "OSGuide-Discovery/0.3 (+https://github.com/)"
 
     descriptor = ProviderDescriptor(
         name=name,
@@ -2389,8 +2440,57 @@ class FutureFdroidSource(
             provides_release_hint=True,
             performs_network_requests=True,
         ),
-        enabled_by_default=False,
+        enabled_by_default=True,
     )
+
+    @staticmethod
+    def _localized_text(value: object) -> str | None:
+        if isinstance(value, str):
+            cleaned = sanitize_text(
+                value,
+                max_length=MAX_DESCRIPTION_LENGTH,
+            )
+            return cleaned or None
+
+        if isinstance(value, Mapping):
+            for locale in ("en-US", "en", "en-GB"):
+                candidate = value.get(locale)
+                if isinstance(candidate, str):
+                    cleaned = sanitize_text(
+                        candidate,
+                        max_length=MAX_DESCRIPTION_LENGTH,
+                    )
+                    if cleaned:
+                        return cleaned
+
+            for candidate in value.values():
+                if isinstance(candidate, str):
+                    cleaned = sanitize_text(
+                        candidate,
+                        max_length=MAX_DESCRIPTION_LENGTH,
+                    )
+                    if cleaned:
+                        return cleaned
+
+        return None
+
+    @staticmethod
+    def _repository_hint(app: Mapping[str, object]) -> str | None:
+        for key in (
+            "sourceCode",
+            "SourceCode",
+            "sourceCodeUrl",
+            "repository",
+            "repo",
+        ):
+            value = app.get(key)
+            if (
+                isinstance(value, str)
+                and is_valid_http_url(value, require_https=True)
+            ):
+                return value.strip()
+
+        return None
 
     def discover(
         self,
@@ -2400,12 +2500,163 @@ class FutureFdroidSource(
     ) -> list[
         AppCandidate
     ]:
-        del limit
-        del timeout_seconds
+        validate_source_limit(limit)
+        validate_source_timeout(timeout_seconds)
 
-        raise NotImplementedError(
-            "Real F-Droid discovery is not connected yet."
+        request = Request(
+            self.INDEX_URL,
+            headers={
+                "Accept": "application/json",
+                "User-Agent": self.USER_AGENT,
+            },
+            method="GET",
         )
+
+        try:
+            with urlopen(
+                request,
+                timeout=timeout_seconds,
+            ) as response:
+                status = getattr(response, "status", 200)
+                if status != 200:
+                    raise RuntimeError(
+                        f"F-Droid index returned HTTP {status}."
+                    )
+
+                payload = json.load(response)
+
+        except HTTPError as exc:
+            raise RuntimeError(
+                f"F-Droid index returned HTTP {exc.code}."
+            ) from exc
+        except URLError as exc:
+            reason = sanitize_text(
+                getattr(exc, "reason", "network error"),
+                max_length=200,
+            )
+            raise RuntimeError(
+                f"F-Droid index network error: {reason}"
+            ) from exc
+        except json.JSONDecodeError as exc:
+            raise RuntimeError(
+                "F-Droid index returned invalid JSON."
+            ) from exc
+
+        if not isinstance(payload, Mapping):
+            raise RuntimeError(
+                "F-Droid index root must be an object."
+            )
+
+        raw_apps = payload.get("apps")
+        if not isinstance(raw_apps, list):
+            raise RuntimeError(
+                "F-Droid index does not contain an apps list."
+            )
+
+        confidence = source_base_confidence(
+            self.source_type
+        )
+
+        candidates: list[AppCandidate] = []
+
+        # The repository index is ordered by F-Droid. Discovery remains
+        # bounded and stops as soon as enough structurally valid hints
+        # have been collected.
+        for raw_app in raw_apps:
+            if len(candidates) >= limit:
+                break
+
+            if not isinstance(raw_app, Mapping):
+                continue
+
+            package_id = raw_app.get("packageName")
+            if not isinstance(package_id, str):
+                continue
+
+            package_id = package_id.strip()
+            if not is_valid_package_id(package_id):
+                continue
+
+            name = self._localized_text(
+                raw_app.get("name")
+            ) or package_id
+
+            description = (
+                self._localized_text(raw_app.get("summary"))
+                or self._localized_text(raw_app.get("description"))
+            )
+
+            repository_url = self._repository_hint(
+                raw_app
+            )
+
+            source_url = (
+                f"{self.APP_URL_PREFIX}{package_id}/"
+            )
+
+            metadata: dict[str, object] = {
+                "fdroid_package_id": package_id,
+                "fdroid_index": self.INDEX_URL,
+                "network_request": True,
+                "publish_allowed": False,
+            }
+
+            suggested_version_code = raw_app.get(
+                "suggestedVersionCode"
+            )
+            if isinstance(
+                suggested_version_code,
+                (int, str),
+            ):
+                metadata["suggested_version_code"] = (
+                    suggested_version_code
+                )
+
+            suggested_version_name = raw_app.get(
+                "suggestedVersionName"
+            )
+            if isinstance(
+                suggested_version_name,
+                str,
+            ):
+                metadata["suggested_version_name"] = (
+                    sanitize_text(
+                        suggested_version_name,
+                        max_length=100,
+                    )
+                )
+
+            candidate = AppCandidate(
+                name=name,
+                source_type=self.source_type.value,
+                source_url=source_url,
+                package_id=package_id,
+                repository_url=repository_url,
+                description=description,
+                source_confidence=confidence,
+                metadata=metadata,
+            )
+
+            candidate.add_source_name(
+                self.name
+            )
+
+            candidate.add_evidence(
+                create_listing_evidence(
+                    source_type=self.source_type,
+                    source_name=self.name,
+                    url=source_url,
+                    confidence=confidence,
+                    note=(
+                        "Candidate discovered from the official "
+                        "F-Droid repository index."
+                    ),
+                )
+            )
+
+            candidates.append(candidate)
+
+        return candidates
 
 
 class FutureGithubSource(
@@ -2480,6 +2731,7 @@ __all__: Final[
     "SourcePolicy",
     "SourceType",
     "build_default_diagnostic_registry",
+    "build_default_discovery_registry",
     "build_extended_diagnostic_registry",
     "candidate_sort_key",
     "clamp_confidence",
@@ -2492,6 +2744,7 @@ __all__: Final[
     "is_valid_package_id",
     "merge_candidates",
     "normalize_url",
+    "run_default_discovery",
     "run_discovery_diagnostic",
     "run_extended_discovery_diagnostic",
     "run_source",
