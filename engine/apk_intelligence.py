@@ -212,6 +212,10 @@ class SelectionStatus(str, Enum):
     FAILED = "failed"
 
 
+# Compatibility name used by the current main controller.
+ApkSelectionStatus = SelectionStatus
+
+
 # ============================================================
 # Host policy
 # ============================================================
@@ -412,6 +416,32 @@ class ApkSelectionReport:
             0.0,
             (end_time - self.started_at).total_seconds(),
         )
+
+    @property
+    def artifacts_seen(self) -> int:
+        return sum(
+            len(provider_result.artifacts)
+            for provider_result in self.provider_results
+        )
+
+    @property
+    def artifacts_accepted(self) -> int:
+        return len(self.candidates)
+
+    @property
+    def artifacts_rejected(self) -> int:
+        return self.invalid_removed
+
+    @property
+    def provider_errors(self) -> list[str]:
+        return [
+            (
+                f"{provider_result.provider_name}: "
+                f"{provider_result.error or 'unknown error'}"
+            )
+            for provider_result in self.provider_results
+            if not provider_result.succeeded
+        ]
 
     def add_warning(self, message: str) -> None:
         if len(self.warnings) >= MAX_WARNINGS:
@@ -1925,6 +1955,7 @@ __all__: Final[tuple[str, ...]] = (
     "ApkProviderRegistry",
     "ApkProviderResult",
     "ApkSelectionReport",
+    "ApkSelectionStatus",
     "ArtifactStatus",
     "ArtifactValidationResult",
     "BaseApkProvider",
