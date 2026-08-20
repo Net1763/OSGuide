@@ -591,6 +591,34 @@ jobs:
 
 
       # ======================================================
+      # Validate Supabase runtime credentials
+      # ======================================================
+
+      - name: Validate Supabase runtime credentials
+        shell: bash
+        env:
+          OSGUIDE_SUPABASE_URL: ${{ secrets.OSGUIDE_SUPABASE_URL }}
+          OSGUIDE_ENGINE_KEY: ${{ secrets.OSGUIDE_SUPABASE_KEY }}
+          OSGUIDE_SUPABASE_KEY: ${{ secrets.OSGUIDE_SUPABASE_KEY }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${OSGUIDE_SUPABASE_URL:-}" ]]; then
+            echo "::error title=OSGuide Supabase::OSGUIDE_SUPABASE_URL is missing or unavailable to this workflow."
+            exit 1
+          fi
+
+          if [[ -z "${OSGUIDE_ENGINE_KEY:-}" ]]; then
+            echo "::error title=OSGuide Supabase::OSGUIDE_SUPABASE_KEY is missing or unavailable to this workflow."
+            exit 1
+          fi
+
+          echo "Supabase URL secret: available"
+          echo "Supabase key secret: available"
+          echo "Supabase runtime credential validation passed."
+
+
+      # ======================================================
       # Run OSGuide Engine
       # ======================================================
 
@@ -600,6 +628,7 @@ jobs:
         env:
           OSGUIDE_SUPABASE_URL: ${{ secrets.OSGUIDE_SUPABASE_URL }}
           OSGUIDE_ENGINE_KEY: ${{ secrets.OSGUIDE_SUPABASE_KEY }}
+          OSGUIDE_SUPABASE_KEY: ${{ secrets.OSGUIDE_SUPABASE_KEY }}
         run: |
           set -euo pipefail
 
