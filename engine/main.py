@@ -557,6 +557,7 @@ def run_discovery_phase(
     config: EngineConfig,
     stats: RunStats,
     deadline: DeadlineController,
+    run_id: str,
 ) -> None:
     """
     Execute the current safe discovery phase.
@@ -1732,6 +1733,7 @@ def main() -> int:
             config=config,
             stats=stats,
             deadline=deadline,
+            run_id=run_id,
         )
 
         if CANCELLATION.requested:
