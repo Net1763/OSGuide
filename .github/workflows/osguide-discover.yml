@@ -24,10 +24,10 @@
 #
 # IMPORTANT
 # ---------
-# This workflow currently runs the engine with Publisher disabled.
-# Real Supabase publishing will be connected only when the Publisher
-# module is implemented and its secrets/policies are intentionally
-# enabled.
+# Dry-run remains the safe default.
+# Real Supabase publishing is enabled only when the operator manually
+# selects run_mode=publish from GitHub Actions.
+# Selecting dry-run always keeps external writes disabled.
 #
 # File:
 #   .github/workflows/osguide-discover.yml
@@ -190,20 +190,16 @@ env:
   # Publishing safety lock
   # ----------------------------------------------------------
   #
-  # DO NOT change this to true merely because run_mode=publish.
+  # Publishing is enabled only for an explicit manual publish run.
   #
-  # The real Publisher module will control this later after:
-  # - Supabase secret configuration
-  # - Admin authority enforcement
-  # - before/after snapshots
-  # - audit
-  # - rollback protection
-  # - decision gates
+  # dry-run  -> false
+  # publish  -> true
   #
-  # Until then publish mode remains non-destructive.
+  # This preserves dry-run as the safe default and prevents ordinary
+  # discovery runs from writing to Supabase.
   #
 
-  OSGUIDE_PUBLISH_ENABLED: "false"
+  OSGUIDE_PUBLISH_ENABLED: ${{ inputs.run_mode == 'publish' && 'true' || 'false' }}
 
 
   # ----------------------------------------------------------
@@ -651,10 +647,14 @@ jobs:
           echo "Run mode: $OSGUIDE_RUN_MODE"
           echo "Publishing feature enabled: $OSGUIDE_PUBLISH_ENABLED"
           echo ""
-          echo "If publish mode was selected, this phase still"
-          echo "remains non-destructive because the Publisher"
-          echo "safety lock is disabled."
-          echo "=============================================="
+          if [[ "$OSGUIDE_RUN_MODE" == "publish" ]]; then
+            echo "Publish mode was explicitly selected."
+            echo "Publisher writes were enabled for this run."
+          else
+            echo "Dry-run mode was selected."
+            echo "External Publisher writes remained disabled."
+          fi
+          echo "==============================================" 
 
 
       # ======================================================
