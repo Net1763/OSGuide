@@ -597,6 +597,9 @@ jobs:
       - name: Run OSGuide Engine
         working-directory: engine
         shell: bash
+        env:
+          OSGUIDE_SUPABASE_URL: ${{ secrets.OSGUIDE_SUPABASE_URL }}
+          OSGUIDE_ENGINE_KEY: ${{ secrets.OSGUIDE_ENGINE_KEY }}
         run: |
           set -euo pipefail
 
