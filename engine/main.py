@@ -555,6 +555,7 @@ def log_source_result(
 
 def run_discovery_phase(
     *,
+    run_id: str,
     config: EngineConfig,
     stats: RunStats,
     deadline: DeadlineController,
@@ -1759,6 +1760,7 @@ def main() -> int:
 
     try:
         run_discovery_phase(
+            run_id=run_id,
             config=config,
             stats=stats,
             deadline=deadline,
