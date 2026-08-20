@@ -767,11 +767,35 @@ def run_discovery_phase(
                                 log_warning(reason)
                             else:
                                 try:
+                                    short_result = resolved.field_result(
+                                        MetadataField.SHORT_DESCRIPTION
+                                    )
+                                    full_result = resolved.field_result(
+                                        MetadataField.FULL_DESCRIPTION
+                                    )
+
                                     content_report = (
                                         run_live_content_intelligence(
-                                            candidate=candidate,
-                                            resolved=resolved,
-                                            apk_report=apk_report,
+                                            app_name=candidate.name,
+                                            source_type=candidate.source_enum,
+                                            source_url=(
+                                                source_result.value
+                                                if source_result.resolved
+                                                else candidate.source_url
+                                            ),
+                                            short_description=(
+                                                short_result.value
+                                                if short_result.resolved
+                                                else candidate.description
+                                            ),
+                                            full_description=(
+                                                full_result.value
+                                                if full_result.resolved
+                                                else None
+                                            ),
+                                            confidence=(
+                                                candidate.source_confidence
+                                            ),
                                         )
                                     )
 
@@ -783,7 +807,7 @@ def run_discovery_phase(
                                         "evidence: "
                                         f"{content_report.evidence_count}; "
                                         "populated fields: "
-                                        f"{content_report.populated_field_count}."
+                                        f"{content_report.populated_fields}."
                                     )
 
                                     if content_report.status == ContentStatus.COMPLETE:
