@@ -395,6 +395,20 @@ class ApplicationPayload:
             max_length=500,
         )
 
+        if (
+            self.package_id
+            and self.name.strip() == self.package_id.strip()
+            and self.repository_url
+        ):
+            fallback_name = _humanize_repository_name(
+                self.repository_url
+            )
+            if fallback_name:
+                self.name = _clean_text(
+                    fallback_name,
+                    max_length=500,
+                )
+
         if not self.name:
             raise ValueError(
                 "Application name cannot be empty."
@@ -887,12 +901,71 @@ class PublisherBackend(Protocol):
 # Safe helpers
 # ============================================================
 
+def _extract_text_value(value: object) -> object:
+    """
+    Unwrap content/resolver value objects before text normalization.
+
+    OSGuide intelligence layers may pass small dataclass/value objects
+    (for example GeneratedField) instead of raw strings. Converting those
+    objects directly with str(...) stores their Python repr in Supabase.
+    This helper extracts the actual generated value without importing or
+    coupling Publisher to the intelligence-layer classes.
+    """
+    if value is None or isinstance(value, (str, bytes, bytearray)):
+        return value
+
+    candidate_keys = (
+        "value",
+        "text",
+        "content",
+        "generated_text",
+        "result",
+    )
+
+    if isinstance(value, Mapping):
+        for key in candidate_keys:
+            candidate = value.get(key)
+            if isinstance(candidate, str) and candidate.strip():
+                return candidate
+
+    if is_dataclass(value):
+        try:
+            data = asdict(value)
+        except Exception:
+            data = {}
+
+        for key in candidate_keys:
+            candidate = data.get(key)
+            if isinstance(candidate, str) and candidate.strip():
+                return candidate
+
+    for key in candidate_keys:
+        try:
+            candidate = getattr(value, key)
+        except Exception:
+            continue
+
+        if isinstance(candidate, str) and candidate.strip():
+            return candidate
+
+    return value
+
+
 def _clean_text(
     value: object,
     *,
     max_length: int,
 ) -> str:
-    text = str(value).replace("\x00", "")
+    value = _extract_text_value(value)
+
+    if isinstance(value, bytes):
+        text = value.decode("utf-8", errors="replace")
+    elif isinstance(value, bytearray):
+        text = bytes(value).decode("utf-8", errors="replace")
+    else:
+        text = str(value)
+
+    text = text.replace("\x00", "")
 
     text = (
         text.replace("\r", " ")
@@ -906,6 +979,38 @@ def _clean_text(
         text = text[:max_length]
 
     return text
+
+
+def _looks_like_package_id(value: str | None) -> bool:
+    if not value:
+        return False
+
+    return bool(PACKAGE_ID_RE.fullmatch(value.strip()))
+
+
+def _humanize_repository_name(repository_url: str | None) -> str | None:
+    """Return a readable fallback name from the repository slug."""
+    if not repository_url:
+        return None
+
+    try:
+        parsed = urlparse(repository_url)
+        slug = parsed.path.rstrip("/").rsplit("/", 1)[-1]
+    except Exception:
+        return None
+
+    slug = re.sub(r"\.git$", "", slug, flags=re.IGNORECASE).strip()
+    if not slug:
+        return None
+
+    # Preserve meaningful separators such as the hyphen in "10-bit" while
+    # splitting camelCase / PascalCase and ordinary underscores.
+    slug = slug.replace("_", " ")
+    slug = re.sub(r"(?<=[a-z0-9])(?=[A-Z])", " ", slug)
+    slug = re.sub(r"(?<=[A-Z])(?=[A-Z][a-z])", " ", slug)
+    slug = re.sub(r"\s+", " ", slug).strip()
+
+    return slug or None
 
 
 def _validate_external_url(
