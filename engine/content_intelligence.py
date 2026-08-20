@@ -1626,6 +1626,106 @@ def build_content_package(
 
 
 # ============================================================
+# Live read-only entry point
+# ============================================================
+
+def run_live_content_intelligence(
+    *,
+    app_name: str,
+    source_type: SourceType,
+    source_url: str | None = None,
+    short_description: str | None = None,
+    full_description: str | None = None,
+    confidence: float = 0.95,
+) -> ContentPackage:
+    """
+    Build user-facing content from source-backed text already supplied
+    by the live Resolver path.
+
+    No network access, AI call, Supabase write, deletion, or external
+    code execution occurs here.
+    """
+    cleaned_name = sanitize_text(app_name, max_length=300)
+    if not cleaned_name:
+        raise ValueError(
+            "Live Content Intelligence requires a non-empty app name."
+        )
+
+    bounded_confidence = max(0.0, min(1.0, float(confidence)))
+    evidence: list[ContentEvidence] = []
+
+    def add_evidence(label: str, value: str | None) -> None:
+        if not value:
+            return
+
+        cleaned = sanitize_text(
+            value,
+            max_length=MAX_SINGLE_EVIDENCE_CHARS,
+        )
+        if not cleaned:
+            return
+
+        evidence.append(
+            ContentEvidence(
+                source_name=label,
+                source_type=source_type,
+                source_kind=(
+                    ContentSourceKind.FDROID
+                    if source_type == SourceType.FDROID
+                    else ContentSourceKind.OTHER
+                ),
+                source_url=source_url,
+                text=cleaned,
+                confidence=bounded_confidence,
+                note="Source-backed text supplied by the live Resolver path.",
+            )
+        )
+
+    add_evidence("resolver-short-description", short_description)
+    add_evidence("resolver-full-description", full_description)
+
+    policy = ContentPolicy(
+        generate_short_description=True,
+        generate_full_description=True,
+        generate_capabilities=True,
+        generate_use_cases=True,
+        generate_beginner_note=True,
+        generate_guide_seed=True,
+        evidence_required=True,
+        do_not_reject_for_short_description=True,
+        minimum_evidence_confidence=0.50,
+        strong_evidence_confidence=0.80,
+        max_source_documents=8,
+        max_evidence_chars=MAX_EVIDENCE_TEXT_CHARS,
+        short_description_max_chars=MAX_SHORT_DESCRIPTION_CHARS,
+        full_description_max_chars=MAX_FULL_DESCRIPTION_CHARS,
+        max_capabilities=8,
+        max_use_cases=8,
+        allow_ai=False,
+        deterministic_fallback=True,
+    )
+
+    package = build_content_package(
+        cleaned_name,
+        evidence,
+        policy=policy,
+        ai_generator=None,
+    )
+
+    if not evidence:
+        package.add_warning(
+            "Live Resolver supplied no qualifying textual evidence; "
+            "deterministic fallback content was used."
+        )
+
+    package.status = evaluate_content_status(
+        package,
+        policy=policy,
+    )
+    return package
+
+
+# ============================================================
 # Diagnostic evidence
 # ============================================================
 
@@ -1886,6 +1986,7 @@ __all__: Final[tuple[str, ...]] = (
     "run_ai_content_diagnostic",
     "run_ai_failure_fallback_diagnostic",
     "run_content_diagnostic",
+    "run_live_content_intelligence",
     "split_sentences",
     "tokenize_for_grounding",
     "unique_sentences",
