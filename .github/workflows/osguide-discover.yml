@@ -135,6 +135,10 @@ permissions:
 
 env:
 
+  OSGUIDE_SUPABASE_URL: ${{ secrets.OSGUIDE_SUPABASE_URL }}
+  OSGUIDE_ENGINE_KEY: ${{ secrets.OSGUIDE_SUPABASE_KEY }}
+  OSGUIDE_SUPABASE_KEY: ${{ secrets.OSGUIDE_SUPABASE_KEY }}
+
   # ----------------------------------------------------------
   # Core runtime inputs
   # ----------------------------------------------------------
