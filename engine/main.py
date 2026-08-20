@@ -72,6 +72,11 @@ from content_intelligence import (
     run_live_content_intelligence,
 )
 
+from decision_engine import (
+    DecisionInput,
+    decide,
+)
+
 
 # ============================================================
 # Exit codes
@@ -150,6 +155,15 @@ class RunStats:
     content_candidates_completed: int = 0
     content_candidates_review_required: int = 0
     content_candidates_failed: int = 0
+
+    decision_candidates_processed: int = 0
+    decision_insert_recommended: int = 0
+    decision_update_recommended: int = 0
+    decision_repair_recommended: int = 0
+    decision_skip_recommended: int = 0
+    decision_review_recommended: int = 0
+    decision_blocked: int = 0
+    decision_failed: int = 0
 
     discovery_sources_succeeded: int = 0
     discovery_sources_failed: int = 0
@@ -816,6 +830,123 @@ def run_discovery_phase(
                                             "Candidate completed the live "
                                             "read-only Content Intelligence path."
                                         )
+
+                                        # ------------------------------------
+                                        # Phase 6: read-only Decision Engine.
+                                        # This phase only recommends an action.
+                                        # Publisher remains disconnected and
+                                        # no external write is performed here.
+                                        # ------------------------------------
+                                        decision_phase = stats.phases.get(
+                                            PHASE_DECISION
+                                        )
+
+                                        if decision_phase is None:
+                                            decision_phase = begin_phase(
+                                                stats,
+                                                PHASE_DECISION,
+                                            )
+
+                                        if (
+                                            CANCELLATION.requested
+                                            or not deadline.can_start_new_work()
+                                        ):
+                                            if CANCELLATION.requested:
+                                                stats.cancelled = True
+                                                reason = (
+                                                    "Cancellation requested before "
+                                                    "Decision Engine."
+                                                )
+                                            else:
+                                                stats.stopped_by_deadline = True
+                                                reason = (
+                                                    "Runtime deadline too close to "
+                                                    "run Decision Engine."
+                                                )
+
+                                            stats.skipped += 1
+                                            log_warning(reason)
+                                        else:
+                                            try:
+                                                decision_input = DecisionInput(
+                                                    candidate=candidate,
+                                                    resolution=resolved,
+                                                    apk=apk_report,
+                                                    content=content_report,
+                                                    # Existing-backend lookup is
+                                                    # intentionally not connected
+                                                    # yet.  The Decision Engine is
+                                                    # read-only in this phase.
+                                                    existing=None,
+                                                )
+
+                                                decision_result = decide(
+                                                    decision_input
+                                                )
+
+                                                stats.decision_candidates_processed += 1
+
+                                                action_value = (
+                                                    decision_result.action.value
+                                                )
+
+                                                if decision_result.blocked:
+                                                    stats.decision_blocked += 1
+                                                elif action_value == "insert":
+                                                    stats.decision_insert_recommended += 1
+                                                elif action_value == "update":
+                                                    stats.decision_update_recommended += 1
+                                                elif action_value == "repair":
+                                                    stats.decision_repair_recommended += 1
+                                                elif action_value == "skip":
+                                                    stats.decision_skip_recommended += 1
+                                                elif action_value == "review":
+                                                    stats.decision_review_recommended += 1
+
+                                                if decision_result.requires_review:
+                                                    stats.review_required += 1
+
+                                                log_info(
+                                                    "Decision Engine result: "
+                                                    f"action={action_value}; "
+                                                    f"kind={decision_result.kind.value}; "
+                                                    f"confidence={decision_result.confidence:.3f}; "
+                                                    f"review={decision_result.requires_review}; "
+                                                    f"blocked={decision_result.blocked}."
+                                                )
+
+                                                for decision_reason in (
+                                                    decision_result.reasons
+                                                ):
+                                                    log_info(
+                                                        "Decision reason: "
+                                                        f"{decision_reason.code.value} — "
+                                                        f"{safe_text(decision_reason.message, max_length=260)}"
+                                                    )
+
+                                                log_info(
+                                                    "Candidate completed the "
+                                                    "read-only Decision Engine path."
+                                                )
+
+                                            except Exception as decision_exc:
+                                                stats.decision_candidates_processed += 1
+                                                stats.decision_failed += 1
+                                                stats.failures += 1
+                                                stats.skipped += 1
+
+                                                decision_error = (
+                                                    "Decision Engine failed for "
+                                                    "candidate "
+                                                    f"{safe_text(candidate.name, max_length=120)!r}: "
+                                                    f"{sanitize_exception(decision_exc)}"
+                                                )
+
+                                                stats.warnings.append(
+                                                    decision_error
+                                                )
+                                                log_warning(decision_error)
+
                                     elif content_report.status == ContentStatus.REVIEW:
                                         stats.content_candidates_review_required += 1
                                         stats.review_required += 1
@@ -937,6 +1068,13 @@ def run_discovery_phase(
             and content_phase.finished_at is None
         ):
             finish_phase_success(content_phase)
+
+        decision_phase = stats.phases.get(PHASE_DECISION)
+        if (
+            decision_phase is not None
+            and decision_phase.finished_at is None
+        ):
+            finish_phase_success(decision_phase)
 
         finish_phase_success(
             phase,
@@ -1061,6 +1199,16 @@ def build_report_payload(
             ),
             "failed": stats.content_candidates_failed,
         },
+        "decision": {
+            "processed": stats.decision_candidates_processed,
+            "insert_recommended": stats.decision_insert_recommended,
+            "update_recommended": stats.decision_update_recommended,
+            "repair_recommended": stats.decision_repair_recommended,
+            "skip_recommended": stats.decision_skip_recommended,
+            "review_recommended": stats.decision_review_recommended,
+            "blocked": stats.decision_blocked,
+            "failed": stats.decision_failed,
+        },
         "discovery": {
             "sources_succeeded": (
                 stats.discovery_sources_succeeded
@@ -1171,6 +1319,41 @@ def print_human_report(
     print(
         "  Failed: "
         f"{stats.content_candidates_failed}"
+    )
+    print()
+
+    print("Decision Engine")
+    print(
+        "  Processed: "
+        f"{stats.decision_candidates_processed}"
+    )
+    print(
+        "  Insert recommended: "
+        f"{stats.decision_insert_recommended}"
+    )
+    print(
+        "  Update recommended: "
+        f"{stats.decision_update_recommended}"
+    )
+    print(
+        "  Repair recommended: "
+        f"{stats.decision_repair_recommended}"
+    )
+    print(
+        "  Skip recommended: "
+        f"{stats.decision_skip_recommended}"
+    )
+    print(
+        "  Review recommended: "
+        f"{stats.decision_review_recommended}"
+    )
+    print(
+        "  Blocked: "
+        f"{stats.decision_blocked}"
+    )
+    print(
+        "  Failed: "
+        f"{stats.decision_failed}"
     )
     print()
 
