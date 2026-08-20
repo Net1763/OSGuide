@@ -77,6 +77,18 @@ from decision_engine import (
     decide,
 )
 
+from publisher import (
+    ApplicationPayload,
+    DiagnosticPublisherBackend,
+    PublicationAction,
+    PublicationRequest,
+    PublicationStatus,
+    PublisherCounters,
+    PublisherPolicy,
+    WriteMode,
+    execute_publication,
+)
+
 
 # ============================================================
 # Exit codes
@@ -98,7 +110,7 @@ RUN_COMPONENT: Final[str] = "discover"
 
 # This protects against accidentally enabling destructive behavior
 # before the Publisher layer is intentionally connected.
-PUBLISHER_CONNECTED: Final[bool] = False
+PUBLISHER_CONNECTED: Final[bool] = True
 
 # Future phase names are centralized here so logs and reports
 # remain stable as the engine grows.
@@ -164,6 +176,12 @@ class RunStats:
     decision_review_recommended: int = 0
     decision_blocked: int = 0
     decision_failed: int = 0
+
+    publisher_dry_run: int = 0
+    publisher_blocked: int = 0
+    publisher_review: int = 0
+    publisher_skipped: int = 0
+    publisher_failed: int = 0
 
     discovery_sources_succeeded: int = 0
     discovery_sources_failed: int = 0
@@ -609,6 +627,16 @@ def run_discovery_phase(
                 stats,
             )
 
+        # Publisher is connected in diagnostic dry-run mode only.
+        # This backend is in-memory and performs no network requests.
+        # It therefore cannot modify Supabase or any other external system.
+        publisher_backend = DiagnosticPublisherBackend()
+        publisher_counters = PublisherCounters()
+        publisher_policy = PublisherPolicy(
+            enabled=False,
+            write_mode=WriteMode.DRY_RUN,
+        )
+
         for candidate in report.candidates:
             if CANCELLATION.requested:
                 stats.cancelled = True
@@ -929,6 +957,186 @@ def run_discovery_phase(
                                                     "read-only Decision Engine path."
                                                 )
 
+                                                # ------------------------------------
+                                                # Phase 7: Publisher diagnostic dry-run.
+                                                # The Decision Engine recommendation is
+                                                # validated by the real Publisher safety
+                                                # layer, but the diagnostic backend makes
+                                                # no network request and no external write.
+                                                # ------------------------------------
+                                                publish_phase = stats.phases.get(
+                                                    PHASE_PUBLISH
+                                                )
+
+                                                if publish_phase is None:
+                                                    publish_phase = begin_phase(
+                                                        stats,
+                                                        PHASE_PUBLISH,
+                                                    )
+
+                                                if (
+                                                    CANCELLATION.requested
+                                                    or not deadline.can_start_new_work()
+                                                ):
+                                                    if CANCELLATION.requested:
+                                                        stats.cancelled = True
+                                                        publish_reason = (
+                                                            "Cancellation requested before "
+                                                            "Publisher dry-run."
+                                                        )
+                                                    else:
+                                                        stats.stopped_by_deadline = True
+                                                        publish_reason = (
+                                                            "Runtime deadline too close to "
+                                                            "run Publisher dry-run."
+                                                        )
+
+                                                    stats.publisher_skipped += 1
+                                                    log_warning(publish_reason)
+                                                else:
+                                                    try:
+                                                        def resolved_value(
+                                                            field: MetadataField,
+                                                        ) -> object | None:
+                                                            result = resolved.field_result(field)
+                                                            return (
+                                                                result.value
+                                                                if result.resolved
+                                                                else None
+                                                            )
+
+                                                        publication_action = PublicationAction(
+                                                            action_value
+                                                        )
+
+                                                        publication_request = PublicationRequest(
+                                                            action=publication_action,
+                                                            payload=ApplicationPayload(
+                                                                name=candidate.name,
+                                                                package_id=package_id,
+                                                                version=(
+                                                                    apk_report.selected.version
+                                                                    or resolved_value(
+                                                                        MetadataField.VERSION
+                                                                    )
+                                                                ),
+                                                                apk_url=apk_report.selected.url,
+                                                                source_url=resolved_value(
+                                                                    MetadataField.SOURCE_URL
+                                                                )
+                                                                or candidate.source_url,
+                                                                repository_url=resolved_value(
+                                                                    MetadataField.REPOSITORY_URL
+                                                                )
+                                                                or candidate.repository_url,
+                                                                license=resolved_value(
+                                                                    MetadataField.LICENSE
+                                                                ),
+                                                                category=resolved_value(
+                                                                    MetadataField.CATEGORY
+                                                                ),
+                                                                short_description=getattr(
+                                                                    content_report,
+                                                                    "short_description",
+                                                                    None,
+                                                                )
+                                                                or resolved_value(
+                                                                    MetadataField.SHORT_DESCRIPTION
+                                                                ),
+                                                                full_description=getattr(
+                                                                    content_report,
+                                                                    "full_description",
+                                                                    None,
+                                                                )
+                                                                or resolved_value(
+                                                                    MetadataField.FULL_DESCRIPTION
+                                                                ),
+                                                                source=str(
+                                                                    candidate.source_type
+                                                                ),
+                                                            ),
+                                                            decision_confidence=(
+                                                                decision_result.confidence
+                                                            ),
+                                                            decision_reason="; ".join(
+                                                                safe_text(
+                                                                    reason.message,
+                                                                    max_length=300,
+                                                                )
+                                                                for reason in decision_result.reasons
+                                                            ),
+                                                            run_id=run_id,
+                                                            candidate_identity=(
+                                                                package_id or candidate.name
+                                                            ),
+                                                        )
+
+                                                        publication_outcome = execute_publication(
+                                                            publication_request,
+                                                            publisher_backend,
+                                                            policy=publisher_policy,
+                                                            counters=publisher_counters,
+                                                        )
+
+                                                        if (
+                                                            publication_outcome.status
+                                                            == PublicationStatus.DRY_RUN
+                                                        ):
+                                                            stats.publisher_dry_run += 1
+                                                        elif (
+                                                            publication_outcome.status
+                                                            == PublicationStatus.BLOCKED
+                                                        ):
+                                                            stats.publisher_blocked += 1
+                                                        elif (
+                                                            publication_outcome.status
+                                                            == PublicationStatus.REVIEW
+                                                        ):
+                                                            stats.publisher_review += 1
+                                                        elif (
+                                                            publication_outcome.status
+                                                            == PublicationStatus.SKIPPED
+                                                        ):
+                                                            stats.publisher_skipped += 1
+                                                        elif (
+                                                            publication_outcome.status
+                                                            == PublicationStatus.FAILED
+                                                        ):
+                                                            stats.publisher_failed += 1
+                                                            stats.failures += 1
+
+                                                        log_info(
+                                                            "Publisher result: "
+                                                            f"status={publication_outcome.status.value}; "
+                                                            f"action={publication_action.value}; "
+                                                            "backend=diagnostic; external_write=no."
+                                                        )
+
+                                                        if publication_outcome.error:
+                                                            log_warning(
+                                                                "Publisher outcome: "
+                                                                + safe_text(
+                                                                    publication_outcome.error,
+                                                                    max_length=300,
+                                                                )
+                                                            )
+
+                                                    except Exception as publisher_exc:
+                                                        stats.publisher_failed += 1
+                                                        stats.failures += 1
+
+                                                        publisher_error = (
+                                                            "Publisher dry-run failed for "
+                                                            "candidate "
+                                                            f"{safe_text(candidate.name, max_length=120)!r}: "
+                                                            f"{sanitize_exception(publisher_exc)}"
+                                                        )
+
+                                                        stats.warnings.append(
+                                                            publisher_error
+                                                        )
+                                                        log_warning(publisher_error)
+
                                             except Exception as decision_exc:
                                                 stats.decision_candidates_processed += 1
                                                 stats.decision_failed += 1
@@ -1076,6 +1284,13 @@ def run_discovery_phase(
         ):
             finish_phase_success(decision_phase)
 
+        publish_phase = stats.phases.get(PHASE_PUBLISH)
+        if (
+            publish_phase is not None
+            and publish_phase.finished_at is None
+        ):
+            finish_phase_success(publish_phase)
+
         finish_phase_success(
             phase,
         )
@@ -1208,6 +1423,16 @@ def build_report_payload(
             "review_recommended": stats.decision_review_recommended,
             "blocked": stats.decision_blocked,
             "failed": stats.decision_failed,
+        },
+        "publisher": {
+            "connected": PUBLISHER_CONNECTED,
+            "mode": "diagnostic-dry-run",
+            "dry_run": stats.publisher_dry_run,
+            "blocked": stats.publisher_blocked,
+            "review": stats.publisher_review,
+            "skipped": stats.publisher_skipped,
+            "failed": stats.publisher_failed,
+            "external_write": False,
         },
         "discovery": {
             "sources_succeeded": (
@@ -1357,6 +1582,32 @@ def print_human_report(
     )
     print()
 
+    print("Publisher")
+    print("  Connected: yes")
+    print("  Mode: diagnostic dry-run")
+    print(
+        "  Dry-run validated: "
+        f"{stats.publisher_dry_run}"
+    )
+    print(
+        "  Blocked: "
+        f"{stats.publisher_blocked}"
+    )
+    print(
+        "  Review: "
+        f"{stats.publisher_review}"
+    )
+    print(
+        "  Skipped: "
+        f"{stats.publisher_skipped}"
+    )
+    print(
+        "  Failed: "
+        f"{stats.publisher_failed}"
+    )
+    print("  External writes: no")
+    print()
+
     print(
         f"Failures: {stats.failures}"
     )
@@ -1391,12 +1642,12 @@ def print_human_report(
             "no external data was modified."
         )
 
-    elif not PUBLISHER_CONNECTED:
+    elif PUBLISHER_CONNECTED:
         print()
         print(
-            "Safety lock confirmed: "
-            "Publisher is not connected, therefore "
-            "no external data was modified."
+            "Publisher diagnostic lock confirmed: "
+            "the connected Publisher uses an in-memory backend, "
+            "therefore no external data was modified."
         )
 
 
