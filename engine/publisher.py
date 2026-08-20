@@ -224,48 +224,43 @@ class PublisherSchema:
 
     applications_table: str = "applications"
 
+    # Actual public.applications schema used by OSGuide.
     package_id_column: str = "package_id"
-
     name_column: str = "name"
-
     version_column: str = "version"
+    apk_url_column: str = "download_url"
 
-    apk_url_column: str = "apk_url"
-
-    source_url_column: str = "source_url"
-
+    # There is no standalone source_url column in the current table.
+    # repository_url is stored separately and source_url remains
+    # backend-neutral only.
+    source_url_column: str | None = None
     repository_url_column: str = "repository_url"
 
     license_column: str = "license"
-
     category_column: str = "category"
-
-    short_description_column: str = "short_description"
-
-    full_description_column: str = "full_description"
-
-    icon_url_column: str = "icon_url"
-
+    short_description_column: str = "description"
+    full_description_column: str = "long_description"
+    icon_url_column: str = "image_url"
     source_column: str = "source"
-
-    updated_at_column: str = "updated_at"
+    visible_column: str = "is_published"
 
     created_at_column: str = "created_at"
+    updated_at_column: str = "metadata_updated_at"
 
-    visible_column: str = "is_visible"
-
-    managed_fields_column: str = "managed_fields"
-
-    tombstone_column: str = "admin_deleted"
-
-    tombstone_at_column: str = "admin_deleted_at"
-
-    engine_metadata_column: str = "engine_metadata"
+    # These Publisher safety/ownership columns are not present in the
+    # current table. None means "do not write a fabricated column".
+    managed_fields_column: str | None = None
+    tombstone_column: str | None = None
+    tombstone_at_column: str | None = None
+    engine_metadata_column: str | None = None
 
     def validate(self) -> None:
         values = asdict(self)
 
         for field_name, value in values.items():
+            if value is None:
+                continue
+
             if field_name.endswith("_table"):
                 if not SAFE_TABLE_RE.fullmatch(value):
                     raise ValueError(
@@ -1051,7 +1046,6 @@ def payload_to_backend_row(
         schema.package_id_column: payload.package_id,
         schema.version_column: payload.version,
         schema.apk_url_column: payload.apk_url,
-        schema.source_url_column: payload.source_url,
         schema.repository_url_column: payload.repository_url,
         schema.license_column: payload.license,
         schema.category_column: payload.category,
@@ -1062,16 +1056,16 @@ def payload_to_backend_row(
         schema.visible_column: payload.visible,
     }
 
+    if schema.source_url_column is not None:
+        mapping[schema.source_url_column] = payload.source_url
+
     for key, value in payload.extra.items():
         if not isinstance(key, str):
             continue
-
         if not SAFE_COLUMN_RE.fullmatch(key):
             continue
-
         if key in mapping:
             continue
-
         mapping[key] = value
 
     if include_none:
@@ -1136,21 +1130,23 @@ def parse_existing_application(
         else None
     )
 
-    tombstone_raw = raw.get(
-        schema.tombstone_column
-    )
-
-    if tombstone_raw is True:
-        tombstone = TombstoneState.ACTIVE
-    elif tombstone_raw is False:
-        tombstone = TombstoneState.CLEAR
-    else:
+    if schema.tombstone_column is None:
+        # Current DB has no tombstone column. Treat existing rows as
+        # unknown so LIVE update/repair remains fail-closed.
         tombstone = TombstoneState.UNKNOWN
+    else:
+        tombstone_raw = raw.get(schema.tombstone_column)
+        if tombstone_raw is True:
+            tombstone = TombstoneState.ACTIVE
+        elif tombstone_raw is False:
+            tombstone = TombstoneState.CLEAR
+        else:
+            tombstone = TombstoneState.UNKNOWN
 
-    managed_fields = _parse_field_ownership(
-        raw.get(
-            schema.managed_fields_column
-        )
+    managed_fields = (
+        _parse_field_ownership(raw.get(schema.managed_fields_column))
+        if schema.managed_fields_column is not None
+        else {}
     )
 
     updated_at_raw = raw.get(
@@ -1235,10 +1231,14 @@ def compute_changes(
     changes = ChangeSet()
 
     protected_columns = {
-        schema.created_at_column,
-        schema.tombstone_column,
-        schema.tombstone_at_column,
-        schema.managed_fields_column,
+        column
+        for column in (
+            schema.created_at_column,
+            schema.tombstone_column,
+            schema.tombstone_at_column,
+            schema.managed_fields_column,
+        )
+        if column is not None
     }
 
     for field_name, new_value in desired.items():
@@ -1361,15 +1361,11 @@ def build_insert_row(
         schema.updated_at_column
     ] = now
 
-    row[
-        schema.tombstone_column
-    ] = False
+    if schema.tombstone_column is not None:
+        row[schema.tombstone_column] = False
 
-    row[
-        schema.engine_metadata_column
-    ] = engine_metadata(
-        request
-    )
+    if schema.engine_metadata_column is not None:
+        row[schema.engine_metadata_column] = engine_metadata(request)
 
     return row
 
@@ -2656,7 +2652,11 @@ def diagnostic_existing_row(
             "https://github.com/example/osguide-diagnostic/"
             "releases/download/v1.0.0/app.apk"
         ),
-        schema.source_url_column: "https://github.com/",
+        **(
+            {schema.source_url_column: "https://github.com/"}
+            if schema.source_url_column is not None
+            else {}
+        ),
         schema.repository_url_column: "https://github.com/",
         schema.license_column: "GPL-3.0",
         schema.category_column: "Development",
@@ -2665,13 +2665,23 @@ def diagnostic_existing_row(
         schema.icon_url_column: "https://github.com/favicon.ico",
         schema.source_column: "GitHub",
         schema.visible_column: True,
-        schema.tombstone_column: False,
-        schema.managed_fields_column: {
-            schema.name_column: FieldOwnership.MANUAL.value,
-            schema.version_column: FieldOwnership.AUTO.value,
-            schema.apk_url_column: FieldOwnership.AUTO.value,
-            schema.short_description_column: FieldOwnership.AUTO.value,
-        },
+        **(
+            {schema.tombstone_column: False}
+            if schema.tombstone_column is not None
+            else {}
+        ),
+        **(
+            {
+                schema.managed_fields_column: {
+                    schema.name_column: FieldOwnership.MANUAL.value,
+                    schema.version_column: FieldOwnership.AUTO.value,
+                    schema.apk_url_column: FieldOwnership.AUTO.value,
+                    schema.short_description_column: FieldOwnership.AUTO.value,
+                }
+            }
+            if schema.managed_fields_column is not None
+            else {}
+        ),
         schema.updated_at_column: "2026-01-01T00:00:00+00:00",
     }
 
@@ -2762,13 +2772,11 @@ def diagnostic_tombstoned_row(
         schema=schema
     )
 
-    row[
-        schema.tombstone_column
-    ] = True
+    if schema.tombstone_column is not None:
+        row[schema.tombstone_column] = True
 
-    row[
-        schema.tombstone_at_column
-    ] = "2026-01-02T00:00:00+00:00"
+    if schema.tombstone_at_column is not None:
+        row[schema.tombstone_at_column] = "2026-01-02T00:00:00+00:00"
 
     return row
 
