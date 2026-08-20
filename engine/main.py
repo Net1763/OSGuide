@@ -88,6 +88,7 @@ from publisher import (
     WriteMode,
     create_live_backend,
     execute_publication,
+    live_policy_from_environment,
 )
 
 
@@ -183,6 +184,10 @@ class RunStats:
     publisher_review: int = 0
     publisher_skipped: int = 0
     publisher_failed: int = 0
+
+    publisher_connected: bool = False
+    publisher_mode: str = "diagnostic-dry-run"
+    publisher_external_write: bool = False
 
     discovery_sources_succeeded: int = 0
     discovery_sources_failed: int = 0
@@ -598,18 +603,6 @@ def run_discovery_phase(
 
             return
 
-        if config.publishing_enabled:
-            if not PUBLISHER_CONNECTED:
-                warning = (
-                    "Publish mode was selected, but the Publisher "
-                    "layer is not connected in this phase. "
-                    "The run remains non-destructive."
-                )
-
-                stats.warnings.append(warning)
-
-                log_warning(warning)
-
         log_info(
             "Starting default discovery pipeline."
         )
@@ -629,13 +622,22 @@ def run_discovery_phase(
                 stats,
             )
 
-        # Publisher remains write-locked.  When Supabase runtime
-        # credentials are available, use the real backend for READ-ONLY
-        # existing-record lookups while the policy remains DRY_RUN.
-        # execute_publication() therefore may issue GET requests, but its
-        # insert/update/repair paths cannot perform an external write.
+        # Publisher runtime connection.
+        #
+        # Supabase can be connected for read-only dry-run operation without
+        # granting writes. Live writes require BOTH:
+        #   1) the engine run to be in publish mode, and
+        #   2) OSGUIDE_PUBLISH_ENABLED to be explicitly enabled.
+        #
+        # The Publisher module still enforces Admin priority, tombstones,
+        # manual-field protection, snapshots, bounded writes and no deletes.
         publisher_backend_name = "diagnostic"
         publisher_backend = DiagnosticPublisherBackend()
+        publisher_counters = PublisherCounters()
+        publisher_policy = PublisherPolicy(
+            enabled=False,
+            write_mode=WriteMode.DRY_RUN,
+        )
 
         if (
             os.getenv("OSGUIDE_SUPABASE_URL", "").strip()
@@ -643,30 +645,54 @@ def run_discovery_phase(
         ):
             try:
                 publisher_backend = create_live_backend()
-                publisher_backend_name = "supabase-readonly"
-                log_info(
-                    "Publisher backend: Supabase read-only dry-run "
-                    "(external writes remain disabled)."
-                )
+                stats.publisher_connected = True
+
+                if config.publishing_enabled:
+                    publisher_policy = live_policy_from_environment()
+                else:
+                    publisher_policy = PublisherPolicy(
+                        enabled=False,
+                        write_mode=WriteMode.DRY_RUN,
+                    )
+
+                if (
+                    publisher_policy.enabled
+                    and publisher_policy.write_mode == WriteMode.LIVE
+                ):
+                    publisher_backend_name = "supabase-live"
+                    stats.publisher_mode = "supabase-live"
+                    log_warning(
+                        "Publisher backend: Supabase LIVE mode enabled. "
+                        "Writes remain subject to Publisher safety policy."
+                    )
+                else:
+                    publisher_backend_name = "supabase-readonly"
+                    stats.publisher_mode = "supabase-readonly-dry-run"
+                    log_info(
+                        "Publisher backend: Supabase read-only dry-run "
+                        "(external writes remain disabled)."
+                    )
             except Exception as publisher_backend_exc:
                 warning = (
-                    "Supabase read-only Publisher backend could not be "
-                    "initialized; diagnostic backend will be used instead: "
+                    "Supabase Publisher backend could not be initialized; "
+                    "diagnostic dry-run backend will be used instead: "
                     f"{sanitize_exception(publisher_backend_exc)}"
                 )
                 stats.warnings.append(warning)
                 log_warning(warning)
+                publisher_backend = DiagnosticPublisherBackend()
+                publisher_policy = PublisherPolicy(
+                    enabled=False,
+                    write_mode=WriteMode.DRY_RUN,
+                )
+                publisher_backend_name = "diagnostic"
+                stats.publisher_connected = False
+                stats.publisher_mode = "diagnostic-dry-run"
         else:
             log_warning(
                 "Supabase Publisher credentials are not available; "
                 "using diagnostic dry-run backend."
             )
-
-        publisher_counters = PublisherCounters()
-        publisher_policy = PublisherPolicy(
-            enabled=False,
-            write_mode=WriteMode.DRY_RUN,
-        )
 
         for candidate in report.candidates:
             if CANCELLATION.requested:
@@ -1116,6 +1142,24 @@ def run_discovery_phase(
                                                             stats.publisher_dry_run += 1
                                                         elif (
                                                             publication_outcome.status
+                                                            == PublicationStatus.PUBLISHED
+                                                        ):
+                                                            stats.published += 1
+                                                            stats.publisher_external_write = True
+                                                        elif (
+                                                            publication_outcome.status
+                                                            == PublicationStatus.UPDATED
+                                                        ):
+                                                            stats.updated += 1
+                                                            stats.publisher_external_write = True
+                                                        elif (
+                                                            publication_outcome.status
+                                                            == PublicationStatus.REPAIRED
+                                                        ):
+                                                            stats.repaired += 1
+                                                            stats.publisher_external_write = True
+                                                        elif (
+                                                            publication_outcome.status
                                                             == PublicationStatus.BLOCKED
                                                         ):
                                                             stats.publisher_blocked += 1
@@ -1136,11 +1180,21 @@ def run_discovery_phase(
                                                             stats.publisher_failed += 1
                                                             stats.failures += 1
 
+                                                        external_write = (
+                                                            publication_outcome.status
+                                                            in {
+                                                                PublicationStatus.PUBLISHED,
+                                                                PublicationStatus.UPDATED,
+                                                                PublicationStatus.REPAIRED,
+                                                            }
+                                                        )
+
                                                         log_info(
                                                             "Publisher result: "
                                                             f"status={publication_outcome.status.value}; "
                                                             f"action={publication_action.value}; "
-                                                            "backend=diagnostic; external_write=no."
+                                                            f"backend={publisher_backend_name}; "
+                                                            f"external_write={'yes' if external_write else 'no'}."
                                                         )
 
                                                         if publication_outcome.error:
@@ -1456,14 +1510,14 @@ def build_report_payload(
             "failed": stats.decision_failed,
         },
         "publisher": {
-            "connected": PUBLISHER_CONNECTED,
-            "mode": "diagnostic-dry-run",
+            "connected": stats.publisher_connected,
+            "mode": stats.publisher_mode,
             "dry_run": stats.publisher_dry_run,
             "blocked": stats.publisher_blocked,
             "review": stats.publisher_review,
             "skipped": stats.publisher_skipped,
             "failed": stats.publisher_failed,
-            "external_write": False,
+            "external_write": stats.publisher_external_write,
         },
         "discovery": {
             "sources_succeeded": (
@@ -1614,8 +1668,14 @@ def print_human_report(
     print()
 
     print("Publisher")
-    print("  Connected: yes")
-    print("  Mode: diagnostic dry-run")
+    print(
+        "  Connected: "
+        + ("yes" if stats.publisher_connected else "no")
+    )
+    print(
+        "  Mode: "
+        + stats.publisher_mode
+    )
     print(
         "  Dry-run validated: "
         f"{stats.publisher_dry_run}"
@@ -1636,7 +1696,10 @@ def print_human_report(
         "  Failed: "
         f"{stats.publisher_failed}"
     )
-    print("  External writes: no")
+    print(
+        "  External writes: "
+        + ("yes" if stats.publisher_external_write else "no")
+    )
     print()
 
     print(
@@ -1673,12 +1736,10 @@ def print_human_report(
             "no external data was modified."
         )
 
-    elif PUBLISHER_CONNECTED:
+    elif not stats.publisher_external_write:
         print()
         print(
-            "Publisher diagnostic lock confirmed: "
-            "the connected Publisher uses an in-memory backend, "
-            "therefore no external data was modified."
+            "Publisher run completed without an external mutation."
         )
 
 
