@@ -110,7 +110,7 @@ RUN_COMPONENT: Final[str] = "discover"
 
 # This protects against accidentally enabling destructive behavior
 # before the Publisher layer is intentionally connected.
-PUBLISHER_CONNECTED: Final[bool] = True
+PUBLISHER_CONNECTED: Final[bool] = False
 
 # Future phase names are centralized here so logs and reports
 # remain stable as the engine grows.
