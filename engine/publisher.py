@@ -1466,6 +1466,15 @@ class SupabaseRestBackend:
                 "Configured engine key appears invalid."
             )
 
+        # Supabase publishable keys map to the anonymous role and are
+        # not appropriate for this privileged backend Publisher.
+        if self._engine_key.startswith("sb_publishable_"):
+            raise ValueError(
+                "Publisher requires a Supabase secret key "
+                "(sb_secret_...) or legacy service_role key; "
+                "a publishable key cannot be used for backend publishing."
+            )
+
     @property
     def rest_base_url(self) -> str:
         return (
@@ -1479,13 +1488,20 @@ class SupabaseRestBackend:
         content_type: bool = True,
         prefer: str | None = None,
     ) -> dict[str, str]:
+        # Supabase's modern sb_secret_ keys are opaque API keys, not JWTs.
+        # Sending one as Authorization: Bearer makes the platform try to
+        # parse it as a JWT and can produce HTTP 401. Modern keys therefore
+        # go only in the apikey header. Legacy service_role JWT keys keep
+        # the historical Authorization header for compatibility.
         headers = {
             "apikey": self._engine_key,
-            "Authorization": (
-                f"Bearer {self._engine_key}"
-            ),
             "Accept": "application/json",
         }
+
+        if not self._engine_key.startswith("sb_"):
+            headers["Authorization"] = (
+                f"Bearer {self._engine_key}"
+            )
 
         if content_type:
             headers[
