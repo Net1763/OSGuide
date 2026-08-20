@@ -86,6 +86,7 @@ from publisher import (
     PublisherCounters,
     PublisherPolicy,
     WriteMode,
+    create_live_backend,
     execute_publication,
 )
 
@@ -557,7 +558,6 @@ def run_discovery_phase(
     config: EngineConfig,
     stats: RunStats,
     deadline: DeadlineController,
-    run_id: str,
 ) -> None:
     """
     Execute the current safe discovery phase.
@@ -628,10 +628,39 @@ def run_discovery_phase(
                 stats,
             )
 
-        # Publisher is connected in diagnostic dry-run mode only.
-        # This backend is in-memory and performs no network requests.
-        # It therefore cannot modify Supabase or any other external system.
+        # Publisher remains write-locked.  When Supabase runtime
+        # credentials are available, use the real backend for READ-ONLY
+        # existing-record lookups while the policy remains DRY_RUN.
+        # execute_publication() therefore may issue GET requests, but its
+        # insert/update/repair paths cannot perform an external write.
+        publisher_backend_name = "diagnostic"
         publisher_backend = DiagnosticPublisherBackend()
+
+        if (
+            os.getenv("OSGUIDE_SUPABASE_URL", "").strip()
+            and os.getenv("OSGUIDE_ENGINE_KEY", "").strip()
+        ):
+            try:
+                publisher_backend = create_live_backend()
+                publisher_backend_name = "supabase-readonly"
+                log_info(
+                    "Publisher backend: Supabase read-only dry-run "
+                    "(external writes remain disabled)."
+                )
+            except Exception as publisher_backend_exc:
+                warning = (
+                    "Supabase read-only Publisher backend could not be "
+                    "initialized; diagnostic backend will be used instead: "
+                    f"{sanitize_exception(publisher_backend_exc)}"
+                )
+                stats.warnings.append(warning)
+                log_warning(warning)
+        else:
+            log_warning(
+                "Supabase Publisher credentials are not available; "
+                "using diagnostic dry-run backend."
+            )
+
         publisher_counters = PublisherCounters()
         publisher_policy = PublisherPolicy(
             enabled=False,
@@ -1733,7 +1762,6 @@ def main() -> int:
             config=config,
             stats=stats,
             deadline=deadline,
-            run_id=run_id,
         )
 
         if CANCELLATION.requested:
