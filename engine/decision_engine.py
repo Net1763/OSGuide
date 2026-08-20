@@ -165,7 +165,7 @@ class DecisionPolicy:
     Scores are normalized to 0..1.
     """
 
-    auto_insert_threshold: float = 0.84
+    auto_insert_threshold: float = 0.82
     auto_update_threshold: float = 0.78
     auto_repair_threshold: float = 0.72
     review_threshold: float = 0.55
