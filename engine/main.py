@@ -67,6 +67,11 @@ from apk_intelligence import (
     run_live_apk_intelligence,
 )
 
+from content_intelligence import (
+    ContentStatus,
+    run_live_content_intelligence,
+)
+
 
 # ============================================================
 # Exit codes
@@ -140,6 +145,11 @@ class RunStats:
     skipped: int = 0
     review_required: int = 0
     failures: int = 0
+
+    content_candidates_processed: int = 0
+    content_candidates_completed: int = 0
+    content_candidates_review_required: int = 0
+    content_candidates_failed: int = 0
 
     discovery_sources_succeeded: int = 0
     discovery_sources_failed: int = 0
@@ -721,6 +731,122 @@ def run_discovery_phase(
                                 "Candidate completed the live read-only "
                                 "APK Intelligence path."
                             )
+
+                            # ----------------------------------------
+                            # Phase 5: live read-only Content Intelligence.
+                            # Generate bounded explanatory content only
+                            # after Resolver + APK Intelligence succeeded.
+                            # No publishing or external write occurs here.
+                            # ----------------------------------------
+                            content_phase = stats.phases.get(PHASE_CONTENT)
+
+                            if content_phase is None:
+                                content_phase = begin_phase(
+                                    stats,
+                                    PHASE_CONTENT,
+                                )
+
+                            if (
+                                CANCELLATION.requested
+                                or not deadline.can_start_new_work()
+                            ):
+                                if CANCELLATION.requested:
+                                    stats.cancelled = True
+                                    reason = (
+                                        "Cancellation requested before "
+                                        "Content Intelligence."
+                                    )
+                                else:
+                                    stats.stopped_by_deadline = True
+                                    reason = (
+                                        "Runtime deadline too close to run "
+                                        "Content Intelligence."
+                                    )
+
+                                stats.skipped += 1
+                                log_warning(reason)
+                            else:
+                                try:
+                                    content_report = (
+                                        run_live_content_intelligence(
+                                            candidate=candidate,
+                                            resolved=resolved,
+                                            apk_report=apk_report,
+                                        )
+                                    )
+
+                                    stats.content_candidates_processed += 1
+
+                                    log_info(
+                                        "Content Intelligence status: "
+                                        f"{content_report.status.value}; "
+                                        "evidence: "
+                                        f"{content_report.evidence_count}; "
+                                        "populated fields: "
+                                        f"{content_report.populated_field_count}."
+                                    )
+
+                                    if content_report.status == ContentStatus.COMPLETE:
+                                        stats.content_candidates_completed += 1
+                                        log_info(
+                                            "Candidate completed the live "
+                                            "read-only Content Intelligence path."
+                                        )
+                                    elif content_report.status == ContentStatus.REVIEW:
+                                        stats.content_candidates_review_required += 1
+                                        stats.review_required += 1
+                                        log_warning(
+                                            "Content Intelligence requires "
+                                            "manual review for this candidate."
+                                        )
+                                    elif content_report.status == ContentStatus.FAILED:
+                                        stats.content_candidates_failed += 1
+                                        stats.failures += 1
+                                        stats.skipped += 1
+                                        log_warning(
+                                            "Content Intelligence failed for "
+                                            "this candidate; candidate remains "
+                                            "skipped."
+                                        )
+                                    else:
+                                        stats.skipped += 1
+                                        log_warning(
+                                            "Content Intelligence returned a "
+                                            "non-complete result; candidate "
+                                            "remains skipped."
+                                        )
+
+                                    for warning in content_report.warnings:
+                                        bounded_warning = safe_text(
+                                            warning,
+                                            max_length=300,
+                                        )
+                                        stats.warnings.append(bounded_warning)
+                                        log_warning(bounded_warning)
+
+                                    for content_error in content_report.errors:
+                                        bounded_error = safe_text(
+                                            content_error,
+                                            max_length=300,
+                                        )
+                                        stats.warnings.append(bounded_error)
+                                        log_warning(bounded_error)
+
+                                except Exception as content_exc:
+                                    stats.content_candidates_processed += 1
+                                    stats.content_candidates_failed += 1
+                                    stats.failures += 1
+                                    stats.skipped += 1
+
+                                    content_error = (
+                                        "Content Intelligence failed for "
+                                        "candidate "
+                                        f"{safe_text(candidate.name, max_length=120)!r}: "
+                                        f"{sanitize_exception(content_exc)}"
+                                    )
+
+                                    stats.warnings.append(content_error)
+                                    log_warning(content_error)
                         else:
                             stats.skipped += 1
                             log_warning(
@@ -780,6 +906,13 @@ def run_discovery_phase(
                 log_warning(resolver_error)
 
             stats.current_candidate = None
+
+        content_phase = stats.phases.get(PHASE_CONTENT)
+        if (
+            content_phase is not None
+            and content_phase.finished_at is None
+        ):
+            finish_phase_success(content_phase)
 
         finish_phase_success(
             phase,
@@ -896,6 +1029,14 @@ def build_report_payload(
             "skipped": stats.skipped,
             "review_required": stats.review_required,
         },
+        "content": {
+            "processed": stats.content_candidates_processed,
+            "completed": stats.content_candidates_completed,
+            "review_required": (
+                stats.content_candidates_review_required
+            ),
+            "failed": stats.content_candidates_failed,
+        },
         "discovery": {
             "sources_succeeded": (
                 stats.discovery_sources_succeeded
@@ -987,6 +1128,25 @@ def print_human_report(
     print(
         "  Review required: "
         f"{stats.review_required}"
+    )
+    print()
+
+    print("Content Intelligence")
+    print(
+        "  Processed: "
+        f"{stats.content_candidates_processed}"
+    )
+    print(
+        "  Completed: "
+        f"{stats.content_candidates_completed}"
+    )
+    print(
+        "  Review required: "
+        f"{stats.content_candidates_review_required}"
+    )
+    print(
+        "  Failed: "
+        f"{stats.content_candidates_failed}"
     )
     print()
 
