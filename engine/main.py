@@ -93,6 +93,19 @@ from publisher import (
     parse_existing_application,
 )
 
+from memory import (
+    MemoryStatus,
+    RetryDecision,
+    create_in_memory_manager,
+    create_json_memory_manager,
+    remember_apk,
+    remember_candidate,
+    remember_content,
+    remember_decision,
+    remember_publication,
+    remember_resolution,
+)
+
 
 # ============================================================
 # Exit codes
@@ -677,6 +690,47 @@ def run_discovery_phase(
             stats.warnings.append(warning)
             log_warning(warning)
 
+        # Durable Memory Layer. The JSON file is safe engine runtime state only;
+        # it never contains Supabase credentials and never writes application rows.
+        memory_path = (
+            os.getenv("OSGUIDE_MEMORY_PATH", ".osguide/runtime/memory.json").strip()
+            or ".osguide/runtime/memory.json"
+        )
+
+        try:
+            engine_memory = create_json_memory_manager(memory_path)
+            log_info(
+                "Memory Layer: file-backed runtime memory ready at "
+                f"{safe_text(memory_path, max_length=240)}."
+            )
+        except Exception as memory_init_exc:
+            warning = (
+                "Memory Layer could not initialize durable storage; "
+                "falling back to in-memory safety for this run: "
+                f"{sanitize_exception(memory_init_exc)}"
+            )
+            stats.warnings.append(warning)
+            log_warning(warning)
+            engine_memory = create_in_memory_manager()
+
+        def save_memory_safely() -> None:
+            try:
+                save_result = engine_memory.save()
+                if not save_result.succeeded:
+                    warning = (
+                        "Memory Layer save failed: "
+                        + safe_text(save_result.error or "unknown error", max_length=300)
+                    )
+                    stats.warnings.append(warning)
+                    log_warning(warning)
+            except Exception as memory_save_exc:
+                warning = (
+                    "Memory Layer save raised an error: "
+                    f"{sanitize_exception(memory_save_exc)}"
+                )
+                stats.warnings.append(warning)
+                log_warning(warning)
+
         for candidate in report.candidates:
             if CANCELLATION.requested:
                 stats.cancelled = True
@@ -704,6 +758,40 @@ def run_discovery_phase(
             log_candidate(candidate)
 
             # ------------------------------------------------
+            # Memory preflight: stable identity + retry/cooldown policy.
+            # This happens before expensive Resolver/APK/Content work.
+            # ------------------------------------------------
+            memory_record = remember_candidate(engine_memory, candidate)
+            memory_key = memory_record.key
+            retry_decision = engine_memory.retry_decision(memory_key)
+
+            log_info(
+                "Memory preflight: "
+                f"key={safe_text(memory_key, max_length=220)}; "
+                f"decision={retry_decision.value}."
+            )
+
+            if retry_decision != RetryDecision.PROCESS:
+                stats.skipped += 1
+
+                if retry_decision in {
+                    RetryDecision.REVIEW_REQUIRED,
+                    RetryDecision.BLOCKED,
+                    RetryDecision.ATTEMPTS_EXHAUSTED,
+                }:
+                    stats.review_required += 1
+
+                log_info(
+                    "Candidate skipped by Memory Layer before expensive processing: "
+                    f"{retry_decision.value}."
+                )
+                save_memory_safely()
+                stats.current_candidate = None
+                continue
+
+            engine_memory.mark_processing(memory_key)
+
+            # ------------------------------------------------
             # Phase 3: live read-only Resolver.
             # No publishing or external writes occur here.
             # ------------------------------------------------
@@ -712,6 +800,17 @@ def run_discovery_phase(
 
             try:
                 resolved = run_live_resolver(candidate)
+
+                remember_resolution(
+                    engine_memory,
+                    memory_key,
+                    resolved,
+                    summary={
+                        "status": resolved.status.value,
+                        "resolved_fields": resolved.resolved_field_count,
+                        "conflicts": resolved.conflict_count,
+                    },
+                )
 
                 log_info(
                     "Resolver status: "
@@ -846,6 +945,18 @@ def run_discovery_phase(
                             ),
                         )
 
+                        remember_apk(
+                            engine_memory,
+                            memory_key,
+                            apk_report,
+                            summary={
+                                "status": apk_report.status.value,
+                                "artifacts_seen": apk_report.artifacts_seen,
+                                "accepted": apk_report.artifacts_accepted,
+                                "rejected": apk_report.artifacts_rejected,
+                            },
+                        )
+
                         log_info(
                             "APK Intelligence status: "
                             f"{apk_report.status.value}; "
@@ -945,6 +1056,17 @@ def run_discovery_phase(
                                         )
                                     )
 
+                                    remember_content(
+                                        engine_memory,
+                                        memory_key,
+                                        content_report,
+                                        summary={
+                                            "status": content_report.status.value,
+                                            "evidence_count": content_report.evidence_count,
+                                            "populated_fields": content_report.populated_fields,
+                                        },
+                                    )
+
                                     stats.content_candidates_processed += 1
 
                                     log_info(
@@ -1018,11 +1140,27 @@ def run_discovery_phase(
                                                     decision_input
                                                 )
 
-                                                stats.decision_candidates_processed += 1
-
                                                 action_value = (
                                                     decision_result.action.value
                                                 )
+
+                                                remember_decision(
+                                                    engine_memory,
+                                                    memory_key,
+                                                    decision_result,
+                                                    action=action_value,
+                                                    summary={
+                                                        "kind": decision_result.kind.value,
+                                                        "confidence": round(
+                                                            decision_result.confidence,
+                                                            4,
+                                                        ),
+                                                        "review": decision_result.requires_review,
+                                                        "blocked": decision_result.blocked,
+                                                    },
+                                                )
+
+                                                stats.decision_candidates_processed += 1
 
                                                 if decision_result.blocked:
                                                     stats.decision_blocked += 1
@@ -1056,6 +1194,29 @@ def run_discovery_phase(
                                                         "Decision reason: "
                                                         f"{decision_reason.code.value} — "
                                                         f"{safe_text(decision_reason.message, max_length=260)}"
+                                                    )
+
+                                                if decision_result.blocked:
+                                                    engine_memory.mark_blocked(
+                                                        memory_key,
+                                                        decision_result.reason_text,
+                                                    )
+                                                elif decision_result.requires_review:
+                                                    engine_memory.mark_review(
+                                                        memory_key,
+                                                        decision_result.reason_text,
+                                                        metadata={
+                                                            "action": action_value,
+                                                        },
+                                                    )
+                                                elif action_value == "skip":
+                                                    engine_memory.mark_success(
+                                                        memory_key,
+                                                        status=MemoryStatus.SKIPPED,
+                                                        action=action_value,
+                                                        metadata={
+                                                            "reason": decision_result.reason_text,
+                                                        },
                                                     )
 
                                                 log_info(
@@ -1190,6 +1351,17 @@ def run_discovery_phase(
                                                             publisher_backend,
                                                             policy=publisher_policy,
                                                             counters=publisher_counters,
+                                                        )
+
+                                                        remember_publication(
+                                                            engine_memory,
+                                                            memory_key,
+                                                            publication_outcome,
+                                                            summary={
+                                                                "status": publication_outcome.status.value,
+                                                                "action": publication_action.value,
+                                                                "external_write": False,
+                                                            },
                                                         )
 
                                                         if (
@@ -1330,6 +1502,15 @@ def run_discovery_phase(
                                 "APK Intelligence did not select a trusted "
                                 "APK artifact; candidate remains skipped."
                             )
+                            engine_memory.mark_failure(
+                                memory_key,
+                                "APK Intelligence did not select a trusted artifact.",
+                                retryable=True,
+                                metadata={
+                                    "stage": "apk",
+                                    "status": apk_report.status.value,
+                                },
+                            )
 
                         for warning in apk_report.warnings:
                             bounded_warning = safe_text(
@@ -1382,6 +1563,22 @@ def run_discovery_phase(
                 stats.warnings.append(resolver_error)
                 log_warning(resolver_error)
 
+                try:
+                    engine_memory.mark_failure(
+                        memory_key,
+                        resolver_error,
+                        retryable=True,
+                        metadata={
+                            "stage": "candidate-pipeline",
+                        },
+                    )
+                except Exception as memory_failure_exc:
+                    log_warning(
+                        "Memory Layer could not record candidate failure: "
+                        f"{sanitize_exception(memory_failure_exc)}"
+                    )
+
+            save_memory_safely()
             stats.current_candidate = None
 
         content_phase = stats.phases.get(PHASE_CONTENT)
@@ -1404,6 +1601,8 @@ def run_discovery_phase(
             and publish_phase.finished_at is None
         ):
             finish_phase_success(publish_phase)
+
+        save_memory_safely()
 
         finish_phase_success(
             phase,
