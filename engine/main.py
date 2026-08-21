@@ -79,14 +79,18 @@ from decision_engine import (
 
 from publisher import (
     ApplicationPayload,
+    BackendStatus,
     DiagnosticPublisherBackend,
     PublicationAction,
     PublicationRequest,
     PublicationStatus,
     PublisherCounters,
     PublisherPolicy,
+    PublisherSchema,
+    SupabaseRestBackend,
     WriteMode,
     execute_publication,
+    parse_existing_application,
 )
 
 
@@ -638,6 +642,41 @@ def run_discovery_phase(
             write_mode=WriteMode.DRY_RUN,
         )
 
+        # Read-only existing-application lookup.
+        # This connection is used only for GET requests so the Decision Engine
+        # can distinguish a genuinely new package from an app already present
+        # in Supabase.  All publication writes remain locked to the in-memory
+        # diagnostic backend above.
+        publisher_schema = PublisherSchema()
+        existing_lookup_backend: SupabaseRestBackend | None = None
+
+        if (
+            os.getenv("OSGUIDE_SUPABASE_URL", "").strip()
+            and os.getenv("OSGUIDE_ENGINE_KEY", "").strip()
+        ):
+            try:
+                existing_lookup_backend = SupabaseRestBackend(
+                    schema=publisher_schema
+                )
+                log_info(
+                    "Existing-application lookup: Supabase read-only connection ready."
+                )
+            except Exception as lookup_backend_exc:
+                warning = (
+                    "Existing-application lookup could not be initialized; "
+                    "duplicate-sensitive decisions will fail closed: "
+                    f"{sanitize_exception(lookup_backend_exc)}"
+                )
+                stats.warnings.append(warning)
+                log_warning(warning)
+        else:
+            warning = (
+                "Existing-application lookup credentials are unavailable; "
+                "duplicate-sensitive decisions will fail closed."
+            )
+            stats.warnings.append(warning)
+            log_warning(warning)
+
         for candidate in report.candidates:
             if CANCELLATION.requested:
                 stats.cancelled = True
@@ -732,6 +771,61 @@ def run_discovery_phase(
                         else candidate.package_id
                     )
 
+                    existing_application = None
+                    existing_lookup_confirmed = False
+
+                    if package_id and existing_lookup_backend is not None:
+                        lookup_response = existing_lookup_backend.get_by_package_id(
+                            package_id
+                        )
+
+                        if lookup_response.status == BackendStatus.NOT_FOUND:
+                            existing_lookup_confirmed = True
+                            log_info(
+                                "Existing-application lookup: package is not present "
+                                "in Supabase."
+                            )
+                        elif (
+                            lookup_response.status == BackendStatus.SUCCESS
+                            and isinstance(lookup_response.data, dict)
+                        ):
+                            try:
+                                existing_application = parse_existing_application(
+                                    lookup_response.data,
+                                    schema=publisher_schema,
+                                )
+                                existing_lookup_confirmed = True
+                                log_info(
+                                    "Existing-application lookup: matching package "
+                                    "already exists in Supabase."
+                                )
+                            except Exception as existing_parse_exc:
+                                warning = (
+                                    "Existing application could not be parsed safely; "
+                                    "candidate will not be treated as new: "
+                                    f"{sanitize_exception(existing_parse_exc)}"
+                                )
+                                stats.warnings.append(warning)
+                                log_warning(warning)
+                        else:
+                            warning = (
+                                "Existing-application lookup failed; candidate will "
+                                "not be treated as new. "
+                                f"status={lookup_response.status.value}; "
+                                f"http={lookup_response.status_code or 'n/a'}"
+                            )
+                            stats.warnings.append(warning)
+                            log_warning(warning)
+
+                    if package_id and not existing_lookup_confirmed:
+                        stats.skipped += 1
+                        stats.review_required += 1
+                        log_warning(
+                            "Candidate skipped because existing-application state "
+                            "could not be confirmed safely."
+                        )
+                        continue
+
                     if package_id:
                         apk_report = run_live_apk_intelligence(
                             package_id=package_id,
@@ -817,9 +911,18 @@ def run_discovery_phase(
                                         MetadataField.FULL_DESCRIPTION
                                     )
 
+                                    name_result = resolved.field_result(
+                                        MetadataField.NAME
+                                    )
+                                    resolved_name = (
+                                        name_result.value
+                                        if name_result.resolved and name_result.value
+                                        else candidate.name
+                                    )
+
                                     content_report = (
                                         run_live_content_intelligence(
-                                            app_name=candidate.name,
+                                            app_name=resolved_name,
                                             source_type=candidate.source_enum,
                                             source_url=(
                                                 source_result.value
@@ -902,11 +1005,13 @@ def run_discovery_phase(
                                                     resolution=resolved,
                                                     apk=apk_report,
                                                     content=content_report,
-                                                    # Existing-backend lookup is
-                                                    # intentionally not connected
-                                                    # yet.  The Decision Engine is
-                                                    # read-only in this phase.
-                                                    existing=None,
+                                                    # Supabase is consulted read-only
+                                                    # before this point. Existing rows are
+                                                    # passed to the Decision Engine so a
+                                                    # duplicate can never be classified as
+                                                    # a new application merely because the
+                                                    # current run has no local memory.
+                                                    existing=existing_application,
                                                 )
 
                                                 decision_result = decide(
@@ -1013,7 +1118,7 @@ def run_discovery_phase(
                                                         publication_request = PublicationRequest(
                                                             action=publication_action,
                                                             payload=ApplicationPayload(
-                                                                name=candidate.name,
+                                                                name=resolved_name,
                                                                 package_id=package_id,
                                                                 version=(
                                                                     apk_report.selected.version
@@ -1037,16 +1142,24 @@ def run_discovery_phase(
                                                                     MetadataField.CATEGORY
                                                                 ),
                                                                 short_description=getattr(
-                                                                    content_report,
-                                                                    "short_description",
+                                                                    getattr(
+                                                                        content_report,
+                                                                        "short_description",
+                                                                        None,
+                                                                    ),
+                                                                    "value",
                                                                     None,
                                                                 )
                                                                 or resolved_value(
                                                                     MetadataField.SHORT_DESCRIPTION
                                                                 ),
                                                                 full_description=getattr(
-                                                                    content_report,
-                                                                    "full_description",
+                                                                    getattr(
+                                                                        content_report,
+                                                                        "full_description",
+                                                                        None,
+                                                                    ),
+                                                                    "value",
                                                                     None,
                                                                 )
                                                                 or resolved_value(
