@@ -3731,7 +3731,7 @@ try {
             description: app.description || '',
             longDescription: app.long_description || app.description || '',
             version: app.version || '',
-            size: app.size || '',
+            size: app.size || 'Unknown size',
             source: app.source || 'F-Droid',
             license: app.license || '',
             platform: app.platform || 'Android',
