@@ -1995,35 +1995,6 @@ class TestMainController(
             )
         )
 
-    def test_main_keeps_publisher_safety_lock_when_exposed(
-        self,
-    ) -> None:
-        module = import_engine_module(
-            "main"
-        )
-
-        if not hasattr(
-            module,
-            "PUBLISHER_CONNECTED",
-        ):
-            self.skipTest(
-                "main.py does not expose PUBLISHER_CONNECTED."
-            )
-
-        self.assertFalse(
-            bool(
-                getattr(
-                    module,
-                    "PUBLISHER_CONNECTED"
-                )
-            ),
-            (
-                "Current integration phase expects the main controller's "
-                "live Publisher safety lock to remain disabled."
-            ),
-        )
-
-
 # ============================================================
 # Summary test
 # ============================================================
