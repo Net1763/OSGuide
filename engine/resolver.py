@@ -1713,6 +1713,57 @@ class FutureFdroidResolverProvider(BaseResolverProvider):
         return None
 
     @staticmethod
+    def _safe_repo_asset_name(value: object) -> str | None:
+        """Return a safe repository asset filename from F-Droid metadata."""
+        if not isinstance(value, str):
+            return None
+
+        value = value.strip()
+
+        if not value or len(value) > 255:
+            return None
+
+        if "/" in value or "\\" in value or ".." in value:
+            return None
+
+        return value
+
+    @classmethod
+    def _icon_name(
+        cls,
+        app: Mapping[str, object],
+    ) -> str | None:
+        """
+        Resolve an icon filename from official F-Droid index metadata.
+
+        Prefer the top-level icon field, then localized icon metadata.
+        """
+        direct = cls._safe_repo_asset_name(app.get("icon"))
+        if direct:
+            return direct
+
+        localized = app.get("localized")
+        if not isinstance(localized, Mapping):
+            return None
+
+        for locale in ("en-US", "en", "en-GB"):
+            locale_data = localized.get(locale)
+            if isinstance(locale_data, Mapping):
+                icon = cls._safe_repo_asset_name(locale_data.get("icon"))
+                if icon:
+                    return icon
+
+        for locale_data in localized.values():
+            if not isinstance(locale_data, Mapping):
+                continue
+
+            icon = cls._safe_repo_asset_name(locale_data.get("icon"))
+            if icon:
+                return icon
+
+        return None
+
+    @staticmethod
     def _safe_apk_name(value: object) -> str | None:
         if not isinstance(value, str):
             return None
@@ -2006,6 +2057,32 @@ class FutureFdroidResolverProvider(BaseResolverProvider):
                 confidence=0.97,
                 note="Description read from the official F-Droid repository index.",
             )
+
+            icon_name = self._icon_name(app)
+
+            if icon_name:
+                icon_url = (
+                    self.REPO_BASE_URL
+                    + "icons-640/"
+                    + quote(
+                        icon_name,
+                        safe="._+-=@",
+                    )
+                )
+
+                if is_valid_http_url(
+                    icon_url,
+                    require_https=True,
+                ):
+                    add(
+                        MetadataField.ICON_URL,
+                        icon_url,
+                        confidence=0.98,
+                        note=(
+                            "Icon URL derived from official F-Droid "
+                            "repository index metadata."
+                        ),
+                    )
 
             license_value = app.get("license")
 
