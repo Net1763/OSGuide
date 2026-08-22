@@ -33,6 +33,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import signal
 import sys
 import time
@@ -287,6 +288,45 @@ def safe_text(value: object, *, max_length: int = 500) -> str:
         text = text[:max_length] + "…"
 
     return text
+
+
+def app_name_requires_review(value: object) -> bool:
+    """
+    Reject obviously unsafe/low-quality display names before publication.
+
+    This intentionally does not invent a replacement name. A suspicious
+    name is sent to review instead of being published.
+    """
+    name = str(value or "").strip()
+
+    if not name:
+        return True
+
+    if len(name) < 2 or len(name) > 120:
+        return True
+
+    compact = re.sub(r"[\s._+\-]+", "", name)
+
+    # Examples such as "12345" must never be auto-published.
+    if compact.isdigit():
+        return True
+
+    # A package ID is not an acceptable public application name.
+    if (
+        "." in name
+        and " " not in name
+        and re.fullmatch(
+            r"[A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z0-9_]+)+",
+            name,
+        )
+    ):
+        return True
+
+    # Require at least one alphabetic character for automatic publication.
+    if not any(character.isalpha() for character in name):
+        return True
+
+    return False
 
 
 def sanitize_exception(exc: BaseException) -> str:
@@ -849,9 +889,11 @@ def run_discovery_phase(
                 )
 
                 for metadata_field in (
+                    MetadataField.NAME,
                     MetadataField.PACKAGE_ID,
                     MetadataField.VERSION,
                     MetadataField.APK_URL,
+                    MetadataField.ICON_URL,
                     MetadataField.LICENSE,
                     MetadataField.CATEGORY,
                     MetadataField.SHORT_DESCRIPTION,
@@ -1059,6 +1101,36 @@ def run_discovery_phase(
                                         if name_result.resolved and name_result.value
                                         else candidate.name
                                     )
+
+                                    if app_name_requires_review(resolved_name):
+                                        stats.skipped += 1
+                                        stats.review_required += 1
+
+                                        name_warning = (
+                                            "Candidate requires review because the "
+                                            "resolved application name is not suitable "
+                                            "for automatic publication: "
+                                            f"{safe_text(resolved_name, max_length=120)!r}."
+                                        )
+
+                                        stats.warnings.append(name_warning)
+                                        log_warning(name_warning)
+
+                                        engine_memory.mark_review(
+                                            memory_key,
+                                            name_warning,
+                                            metadata={
+                                                "stage": "name-quality",
+                                                "resolved_name": safe_text(
+                                                    resolved_name,
+                                                    max_length=120,
+                                                ),
+                                            },
+                                        )
+
+                                        save_memory_safely()
+                                        stats.current_candidate = None
+                                        continue
 
                                     content_report = (
                                         run_live_content_intelligence(
@@ -1354,6 +1426,9 @@ def run_discovery_phase(
                                                                 )
                                                                 or resolved_value(
                                                                     MetadataField.FULL_DESCRIPTION
+                                                                ),
+                                                                icon_url=resolved_value(
+                                                                    MetadataField.ICON_URL
                                                                 ),
                                                                 source=str(
                                                                     candidate.source_type
