@@ -759,7 +759,30 @@ def candidate_bootstrap_evidence(
             )
         )
 
-    add(MetadataField.NAME, candidate.name)
+    # Do not promote a suspicious Discovery name to strong Resolver evidence.
+    # Discovery can sometimes supply a Package ID or a numeric placeholder
+    # (for example "12345") as the candidate name. If we bootstrap that value
+    # with strong confidence, the live F-Droid provider is never asked to
+    # resolve MetadataField.NAME because stop_field_on_strong_evidence=True.
+    #
+    # Leaving NAME unresolved here allows the official F-Droid index to provide
+    # the real public application name.
+    bootstrap_name = (candidate.name or "").strip()
+    compact_name = re.sub(r"[\s._+\-]+", "", bootstrap_name)
+
+    suspicious_name = (
+        not bootstrap_name
+        or compact_name.isdigit()
+        or (
+            candidate.package_id is not None
+            and bootstrap_name.lower() == candidate.package_id.strip().lower()
+        )
+        or is_valid_package_id(bootstrap_name)
+    )
+
+    if not suspicious_name:
+        add(MetadataField.NAME, bootstrap_name)
+
     add(MetadataField.PACKAGE_ID, candidate.package_id)
     add(MetadataField.REPOSITORY_URL, candidate.repository_url)
     add(MetadataField.SOURCE_URL, candidate.source_url)
