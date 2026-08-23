@@ -1705,10 +1705,11 @@ def spread_candidates_deterministically(
     desired_count: int,
 ) -> list[AppCandidate]:
     """
-    Select candidates from across the whole pool instead of taking a prefix.
+    Select a broad A-Z / 0-9 cross-section of the candidate pool.
 
-    This is deterministic for a given pool, so diagnostics remain reproducible,
-    while avoiding the old alphabetical/numeric-prefix bias from F-Droid.
+    Candidates are grouped by their first ASCII letter or digit. Bucket order
+    and candidates inside each bucket are randomized for each workflow run, so
+    repeated runs do not keep returning the same alphabetical prefix.
     """
     if desired_count <= 0 or not candidates:
         return []
@@ -1716,52 +1717,46 @@ def spread_candidates_deterministically(
     if len(candidates) <= desired_count:
         return list(candidates)
 
-    # Sort by stable identity first so the spread is reproducible regardless
-    # of incidental source iteration details.
-    ordered = sorted(
-        candidates,
-        key=lambda item: (
-            item.name.lower(),
-            item.identity,
-        ),
-    )
+    bucket_keys = list("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+    buckets: dict[str, list[AppCandidate]] = {
+        key: [] for key in bucket_keys
+    }
+    other: list[AppCandidate] = []
+
+    for candidate in candidates:
+        name = candidate.name.strip()
+        first = name[0].upper() if name else ""
+        if first in buckets:
+            buckets[first].append(candidate)
+        else:
+            other.append(candidate)
+
+    rng = random.SystemRandom()
+    active_keys = [key for key in bucket_keys if buckets[key]]
+    rng.shuffle(active_keys)
+
+    for key in active_keys:
+        rng.shuffle(buckets[key])
+    rng.shuffle(other)
 
     selected: list[AppCandidate] = []
-    used_indexes: set[int] = set()
 
-    # Evenly sample the full catalog range.
-    for slot in range(desired_count):
-        if desired_count == 1:
-            index = len(ordered) // 2
-        else:
-            index = round(
-                slot * (len(ordered) - 1) / (desired_count - 1)
-            )
+    # First pass: maximize prefix diversity by taking one candidate from each
+    # available A-Z / 0-9 bucket before taking a second from any bucket.
+    while active_keys and len(selected) < desired_count:
+        next_round: list[str] = []
+        for key in active_keys:
+            bucket = buckets[key]
+            if bucket and len(selected) < desired_count:
+                selected.append(bucket.pop())
+            if bucket:
+                next_round.append(key)
+        active_keys = next_round
+        rng.shuffle(active_keys)
 
-        index = max(0, min(len(ordered) - 1, index))
-
-        if index in used_indexes:
-            continue
-
-        used_indexes.add(index)
-        selected.append(ordered[index])
-
-    # Fill any gaps deterministically from hashed identities.
+    # Non-ASCII/non-alphanumeric names remain eligible as a fallback.
     if len(selected) < desired_count:
-        remaining = [
-            item for idx, item in enumerate(ordered)
-            if idx not in used_indexes
-        ]
-
-        remaining.sort(
-            key=lambda item: hashlib.sha256(
-                item.identity.encode("utf-8")
-            ).hexdigest()
-        )
-
-        selected.extend(
-            remaining[: desired_count - len(selected)]
-        )
+        selected.extend(other[: desired_count - len(selected)])
 
     return selected[:desired_count]
 
@@ -2640,13 +2635,10 @@ class FutureFdroidSource(
 
         candidates: list[AppCandidate] = []
 
-        # The repository index is ordered by F-Droid. Discovery remains
-        # bounded and stops as soon as enough structurally valid hints
-        # have been collected.
+        # Scan the complete F-Droid index. The index itself is ordered, so
+        # stopping after the first `limit` entries would bias discovery toward
+        # numeric/A-prefixed applications and hide most of the catalog.
         for raw_app in raw_apps:
-            if len(candidates) >= limit:
-                break
-
             if not isinstance(raw_app, Mapping):
                 continue
 
@@ -2737,7 +2729,12 @@ class FutureFdroidSource(
 
             candidates.append(candidate)
 
-        return candidates
+        # Return only the requested bounded amount, but choose it from the
+        # complete valid catalog using the A-Z / 0-9 spread selector.
+        return spread_candidates_deterministically(
+            candidates,
+            desired_count=limit,
+        )
 
 
 class FutureGithubSource(
