@@ -53,6 +53,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import random
 import re
 import time
 from dataclasses import dataclass, field
@@ -97,6 +98,12 @@ MAX_SOURCE_LIMIT: Final[int] = 100
 
 DEFAULT_GLOBAL_CANDIDATE_LIMIT: Final[int] = 20
 MAX_GLOBAL_CANDIDATE_LIMIT: Final[int] = 100
+
+# Smart discovery pool settings.
+# Discovery should never select only the first N entries from F-Droid.
+DEFAULT_DISCOVERY_POOL_MULTIPLIER: Final[int] = 12
+MIN_DISCOVERY_POOL_SIZE: Final[int] = 40
+MAX_DISCOVERY_POOL_SIZE: Final[int] = 100
 
 DEFAULT_SOURCE_TIMEOUT_SECONDS: Final[float] = 8.0
 MIN_SOURCE_TIMEOUT_SECONDS: Final[float] = 1.0
@@ -1692,6 +1699,73 @@ def run_source(
         )
 
 
+def spread_candidates_deterministically(
+    candidates: Sequence[AppCandidate],
+    *,
+    desired_count: int,
+) -> list[AppCandidate]:
+    """
+    Select candidates from across the whole pool instead of taking a prefix.
+
+    This is deterministic for a given pool, so diagnostics remain reproducible,
+    while avoiding the old alphabetical/numeric-prefix bias from F-Droid.
+    """
+    if desired_count <= 0 or not candidates:
+        return []
+
+    if len(candidates) <= desired_count:
+        return list(candidates)
+
+    # Sort by stable identity first so the spread is reproducible regardless
+    # of incidental source iteration details.
+    ordered = sorted(
+        candidates,
+        key=lambda item: (
+            item.name.lower(),
+            item.identity,
+        ),
+    )
+
+    selected: list[AppCandidate] = []
+    used_indexes: set[int] = set()
+
+    # Evenly sample the full catalog range.
+    for slot in range(desired_count):
+        if desired_count == 1:
+            index = len(ordered) // 2
+        else:
+            index = round(
+                slot * (len(ordered) - 1) / (desired_count - 1)
+            )
+
+        index = max(0, min(len(ordered) - 1, index))
+
+        if index in used_indexes:
+            continue
+
+        used_indexes.add(index)
+        selected.append(ordered[index])
+
+    # Fill any gaps deterministically from hashed identities.
+    if len(selected) < desired_count:
+        remaining = [
+            item for idx, item in enumerate(ordered)
+            if idx not in used_indexes
+        ]
+
+        remaining.sort(
+            key=lambda item: hashlib.sha256(
+                item.identity.encode("utf-8")
+            ).hexdigest()
+        )
+
+        selected.extend(
+            remaining[: desired_count - len(selected)]
+        )
+
+    return selected[:desired_count]
+
+
 # ============================================================
 # Source ranking
 # ============================================================
@@ -1875,10 +1949,7 @@ def discover_candidates(
     for source in source_list:
         result = run_source(
             source,
-            limit=min(
-                settings.per_source_limit,
-                settings.max_apps,
-            ),
+            limit=settings.per_source_limit,
             timeout_seconds=(
                 settings.per_source_timeout_seconds
             ),
@@ -1966,10 +2037,12 @@ def discover_candidates(
         key=candidate_sort_key
     )
 
-    report.candidates = (
-        filtered_candidates[
-            :settings.max_apps
-        ]
+    # Do not take the first N candidates from the sorted F-Droid prefix.
+    # Spread selection across the entire validated pool so each run processes
+    # a diverse cross-section of the catalog.
+    report.candidates = spread_candidates_deterministically(
+        filtered_candidates,
+        desired_count=settings.max_apps,
     )
 
     report.accepted_candidates = len(
@@ -2243,9 +2316,17 @@ def run_default_discovery(
 
     registry = build_default_discovery_registry()
 
+    discovery_pool_limit = min(
+        MAX_DISCOVERY_POOL_SIZE,
+        max(
+            MIN_DISCOVERY_POOL_SIZE,
+            max_apps * DEFAULT_DISCOVERY_POOL_MULTIPLIER,
+        ),
+    )
+
     settings = DiscoverySettings(
         max_apps=max_apps,
-        per_source_limit=max_apps,
+        per_source_limit=discovery_pool_limit,
         per_source_timeout_seconds=8.0,
         min_candidate_confidence=0.0,
         deduplicate=True,
