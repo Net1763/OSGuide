@@ -2,23 +2,18 @@
 """
 OSGuide AI Review Layer
 -----------------------
-A read-only review helper for GitHub Actions.
+Read-only Groq review helper used by the OSGuide AI Review Bridge.
 
-Core rule:
+Core rules:
 - Never edits OSGuide source files.
 - Never commits, pushes, deploys, or executes generated code.
-- Reviews a supplied diff/text and returns structured JSON only.
-
-Environment:
-- GROQ_API_KEY (required)
-- GROQ_MODEL (optional; defaults to openai/gpt-oss-120b)
+- Reviews supplied candidate data and returns a structured result.
 """
 
 from __future__ import annotations
 
 import json
 import os
-import sys
 import urllib.error
 import urllib.request
 from typing import Any
@@ -68,38 +63,19 @@ Return ONLY valid JSON using this schema:
 }
 """
 
-def fail(message: str, code: int = 1) -> None:
-    print(f"ERROR: {message}", file=sys.stderr)
-    raise SystemExit(code)
 
-def read_input() -> str:
-    if len(sys.argv) > 1:
-        path = sys.argv[1]
-        try:
-            with open(path, "r", encoding="utf-8") as handle:
-                data = handle.read()
-        except OSError as exc:
-            fail(f"Cannot read input file: {exc}")
-    elif not sys.stdin.isatty():
-        data = sys.stdin.read()
-    else:
-        fail("Provide a text/diff file path or pipe text through stdin.")
-
-    data = data.strip()
-    if not data:
-        fail("Review input is empty.")
-
-    if len(data) > MAX_INPUT_CHARS:
-        data = data[:MAX_INPUT_CHARS] + "\n\n[INPUT TRUNCATED SAFELY]"
-
-    return data
-
-def call_groq(review_input: str) -> dict[str, Any]:
+def _call_groq(review_input: str) -> dict[str, Any]:
     api_key = os.environ.get("GROQ_API_KEY", "").strip()
     if not api_key:
-        fail("GROQ_API_KEY is not configured.")
+        raise RuntimeError("GROQ_API_KEY is not configured.")
 
     model = os.environ.get("GROQ_MODEL", DEFAULT_MODEL).strip() or DEFAULT_MODEL
+
+    text = review_input.strip()
+    if not text:
+        raise ValueError("Review input is empty.")
+    if len(text) > MAX_INPUT_CHARS:
+        text = text[:MAX_INPUT_CHARS] + "\n\n[INPUT TRUNCATED SAFELY]"
 
     payload = {
         "model": model,
@@ -108,9 +84,8 @@ def call_groq(review_input: str) -> dict[str, Any]:
             {
                 "role": "user",
                 "content": (
-                    "Review the following proposed OSGuide change. "
-                    "Do not modify anything. Return JSON only.\n\n"
-                    + review_input
+                    "Review the following proposed OSGuide candidate/change. "
+                    "Do not modify anything. Return JSON only.\n\n" + text
                 ),
             },
         ],
@@ -124,7 +99,7 @@ def call_groq(review_input: str) -> dict[str, Any]:
         headers={
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
-            "User-Agent": "OSGuide-AI-Review-Layer/1.0",
+            "User-Agent": "OSGuide-AI-Review-Layer/2.0",
         },
         method="POST",
     )
@@ -134,27 +109,33 @@ def call_groq(review_input: str) -> dict[str, Any]:
             raw = response.read().decode("utf-8")
     except urllib.error.HTTPError as exc:
         body = exc.read().decode("utf-8", errors="replace")
-        fail(f"Groq API returned HTTP {exc.code}: {body[:500]}")
+        raise RuntimeError(
+            f"Groq API returned HTTP {exc.code}: {body[:500]}"
+        ) from exc
     except urllib.error.URLError as exc:
-        fail(f"Groq API connection failed: {exc.reason}")
-    except TimeoutError:
-        fail("Groq API request timed out.")
+        raise RuntimeError(f"Groq API connection failed: {exc.reason}") from exc
+    except TimeoutError as exc:
+        raise RuntimeError("Groq API request timed out.") from exc
 
     try:
         envelope = json.loads(raw)
         content = envelope["choices"][0]["message"]["content"]
         result = json.loads(content)
     except (KeyError, IndexError, TypeError, json.JSONDecodeError) as exc:
-        fail(f"Invalid API response: {exc}")
+        raise RuntimeError(f"Invalid Groq API response: {exc}") from exc
+
+    if not isinstance(result, dict):
+        raise RuntimeError("Groq API review result is not a JSON object.")
 
     return result
 
-def validate_result(result: dict[str, Any]) -> dict[str, Any]:
+
+def _validate_result(result: dict[str, Any]) -> dict[str, Any]:
     verdict = str(result.get("verdict", "")).upper()
     if verdict not in {"PASS", "WARN", "BLOCK"}:
         verdict = "WARN"
 
-    clean = {
+    clean: dict[str, Any] = {
         "verdict": verdict,
         "summary": str(result.get("summary", "")).strip(),
         "blocking_issues": result.get("blocking_issues", []),
@@ -171,10 +152,51 @@ def validate_result(result: dict[str, Any]) -> dict[str, Any]:
 
     return clean
 
-def main() -> None:
-    review_input = read_input()
-    result = validate_result(call_groq(review_input))
-    print(json.dumps(result, ensure_ascii=False, indent=2))
 
-if __name__ == "__main__":
-    main()
+def _candidate_to_text(candidate: Any) -> str:
+    if isinstance(candidate, str):
+        return candidate
+
+    if isinstance(candidate, bytes):
+        return candidate.decode("utf-8", errors="replace")
+
+    if isinstance(candidate, dict):
+        return json.dumps(candidate, ensure_ascii=False, indent=2, default=str)
+
+    if hasattr(candidate, "__dict__"):
+        try:
+            return json.dumps(
+                vars(candidate),
+                ensure_ascii=False,
+                indent=2,
+                default=str,
+            )
+        except Exception:
+            pass
+
+    return str(candidate)
+
+
+def review_candidate(candidate: Any, *args: Any, **kwargs: Any) -> dict[str, Any]:
+    """
+    Bridge-compatible entry point.
+
+    ai_review.py imports this function and calls it for a candidate.
+    Extra positional/keyword arguments are accepted deliberately so the
+    review layer remains compatible with bridge metadata/context arguments.
+    """
+    review_input = _candidate_to_text(candidate)
+
+    if args or kwargs:
+        context: dict[str, Any] = {}
+        if args:
+            context["args"] = args
+        if kwargs:
+            context["kwargs"] = kwargs
+
+        review_input += (
+            "\n\nOSGuide review context:\n"
+            + json.dumps(context, ensure_ascii=False, indent=2, default=str)
+        )
+
+    return _validate_result(_call_groq(review_input))
