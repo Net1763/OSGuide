@@ -239,11 +239,13 @@
       # provider secret is intentionally configured.
       #
 
-      OSGUIDE_AI_PROVIDER: "none"
+      OSGUIDE_AI_PROVIDER: "groq"
 
       OSGUIDE_AI_MODEL: "openai/gpt-oss-120b"
 
-      # Groq is used only by the isolated AI Review Layer.
+      OSGUIDE_AI_API_KEY: ${{ secrets.GROQ_API_KEY }}
+
+      # Groq is used by the OSGuide AI Review Layer.
       # The secret is never printed and remains managed by GitHub Actions.
       GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
       GROQ_MODEL: "openai/gpt-oss-120b"
