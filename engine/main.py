@@ -78,6 +78,11 @@ from decision_engine import (
     decide,
 )
 
+from ai_review import (
+    ai_review_log_summary,
+    review_decision,
+)
+
 from publisher import (
     ApplicationPayload,
     BackendStatus,
@@ -1324,6 +1329,55 @@ def run_discovery_phase(
                                                     "Candidate completed the "
                                                     "read-only Decision Engine path."
                                                 )
+
+                                                # ------------------------------------
+                                                # AI Review Bridge: non-destructive gate.
+                                                # It can only tighten an automatic core
+                                                # decision before Publisher; it never
+                                                # mutates DecisionResult or publishes.
+                                                # ------------------------------------
+                                                ai_review_result = review_decision(
+                                                    candidate=candidate,
+                                                    decision_result=decision_result,
+                                                )
+
+                                                log_info(
+                                                    "AI Review Bridge result: "
+                                                    + ai_review_log_summary(
+                                                        ai_review_result
+                                                    )
+                                                )
+
+                                                if ai_review_result.blocks_automatic_publish:
+                                                    stats.review_required += 1
+                                                    stats.skipped += 1
+
+                                                    ai_review_reason = (
+                                                        "AI Review Bridge held candidate "
+                                                        "for manual review: "
+                                                        + safe_text(
+                                                            ai_review_result.reason,
+                                                            max_length=300,
+                                                        )
+                                                    )
+
+                                                    log_warning(ai_review_reason)
+
+                                                    engine_memory.mark_review(
+                                                        memory_key,
+                                                        ai_review_reason,
+                                                        metadata={
+                                                            "stage": "ai-review",
+                                                            "action": action_value,
+                                                            "ai_decision": (
+                                                                ai_review_result.decision.value
+                                                            ),
+                                                        },
+                                                    )
+
+                                                    save_memory_safely()
+                                                    stats.current_candidate = None
+                                                    continue
 
                                                 # ------------------------------------
                                                 # Phase 7: Publisher diagnostic dry-run.
