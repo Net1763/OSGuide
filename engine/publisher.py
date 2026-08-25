@@ -247,11 +247,10 @@ class PublisherSchema:
     created_at_column: str = "created_at"
     updated_at_column: str = "metadata_updated_at"
 
-    # These Publisher safety/ownership columns are not present in the
-    # current table. None means "do not write a fabricated column".
-    managed_fields_column: str | None = None
-    tombstone_column: str | None = None
-    tombstone_at_column: str | None = None
+    # Publisher safety/ownership columns present in public.applications.
+    managed_fields_column: str | None = "managed_fields"
+    tombstone_column: str | None = "tombstone"
+    tombstone_at_column: str | None = "tombstone_at"
     engine_metadata_column: str | None = None
 
     def validate(self) -> None:
