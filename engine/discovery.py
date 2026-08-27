@@ -2278,13 +2278,10 @@ def run_default_discovery(
 
     registry = build_default_discovery_registry()
 
-    discovery_pool_limit = min(
-        MAX_DISCOVERY_POOL_SIZE,
-        max(
-            MIN_DISCOVERY_POOL_SIZE,
-            max_apps * DEFAULT_DISCOVERY_POOL_MULTIPLIER,
-        ),
-    )
+    # REPAIR: We force the pool to exactly the requested number of apps.
+    # This prevents the engine from wasting 6 minutes downloading 100 apps,
+    # giving it enough time to actually process the 20 apps it needs.
+    discovery_pool_limit = max_apps
 
     settings = DiscoverySettings(
         max_apps=max_apps,
