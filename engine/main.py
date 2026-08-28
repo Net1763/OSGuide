@@ -814,7 +814,9 @@ def run_discovery_phase(
                     "No new candidate will be processed."
                 )
 
-                break
+                # KEY FIX: Continue instead of Break to process all remaining candidates
+                # if they fit within the time window.
+                continue
 
             if not deadline.can_start_new_work():
                 stats.stopped_by_deadline = True
@@ -824,7 +826,9 @@ def run_discovery_phase(
                     "No new candidate will be processed."
                 )
 
-                break
+                # KEY FIX: Continue instead of Break. The remaining seconds
+                # should be used to process the next candidate, not wasted.
+                continue
 
             stats.current_candidate = candidate.name
             stats.candidates_seen += 1
