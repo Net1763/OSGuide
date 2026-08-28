@@ -617,6 +617,114 @@ def build_content_package(app_name: str, evidence_items: Iterable[ContentEvidenc
     return package
 
 
+# --------------- أدوات التشخيص (Diagnostic Tools) التي يحتاجها tests.py ---------------
+
+def run_content_diagnostic() -> ContentPackage:
+    """تشغيل اختبار المحتوى الأساسي."""
+    policy = ContentPolicy()
+    return build_content_package(
+        "OSGuide Diagnostic App",
+        diagnostic_content_evidence(),
+        policy=policy,
+    )
+
+
+def run_ai_content_diagnostic() -> ContentPackage:
+    policy = ContentPolicy(allow_ai=True)
+    return build_content_package(
+        "OSGuide Diagnostic App",
+        diagnostic_content_evidence(),
+        policy=policy,
+        ai_generator=DiagnosticContentGenerator(),
+    )
+
+
+def run_ai_failure_fallback_diagnostic() -> ContentPackage:
+    policy = ContentPolicy(allow_ai=True)
+    return build_content_package(
+        "OSGuide Diagnostic App",
+        diagnostic_content_evidence(),
+        policy=policy,
+        ai_generator=DiagnosticFailingContentGenerator(),
+    )
+
+
+def diagnostic_content_evidence() -> list[ContentEvidence]:
+    return [
+        ContentEvidence(
+            source_name="diagnostic-readme",
+            source_type=SourceType.GITHUB,
+            source_kind=ContentSourceKind.README,
+            source_url="https://github.com/",
+            text="OSGuide Diagnostic App is an open-source Android tool used for testing. It can manage files, work with Git repositories, create backups, and support privacy-focused workflows.",
+            confidence=0.95,
+        ),
+        ContentEvidence(
+            source_name="diagnostic-fdroid",
+            source_type=SourceType.FDROID,
+            source_kind=ContentSourceKind.FDROID,
+            source_url="https://f-droid.org/",
+            text="A diagnostic open-source Android application used to test description generation.",
+            confidence=0.95,
+        ),
+    ]
+
+
+class DiagnosticContentGenerator:
+    name = "diagnostic-ai"
+
+    def generate(self, request: ContentGenerationRequest) -> AiGeneratedContent:
+        return AiGeneratedContent(
+            short_description="OSGuide Diagnostic App is an open-source Android tool for file and Git workflows.",
+            full_description="OSGuide Diagnostic App is an open-source Android tool used for file management and Git workflows.",
+            capabilities=["Manage supported files", "Work with Git repositories"],
+            use_cases=["Manage files directly on Android", "Work with source code and Git repositories"],
+            beginner_note="Start with the main file and repository features.",
+            guide_seed="Introduction\nFile management\nGit repository basics",
+        )
+
+
+class DiagnosticFailingContentGenerator:
+    name = "diagnostic-ai-failure"
+
+    def generate(self, request: ContentGenerationRequest) -> AiGeneratedContent:
+        raise RuntimeError("Intentional AI content failure for diagnostics.")
+
+
+# --------------- الواجهات المفقودة (Required Interfaces) ---------------
+
+class ContentGenerationRequest:
+    def __init__(self, app_name: str, evidence_text: str, requested_fields: tuple, max_short_chars: int, max_full_chars: int, max_capabilities: int, max_use_cases: int):
+        self.app_name = app_name
+        self.evidence_text = evidence_text
+        self.requested_fields = requested_fields
+        self.max_short_chars = max_short_chars
+        self.max_full_chars = max_full_chars
+        self.max_capabilities = max_capabilities
+        self.max_use_cases = max_use_cases
+
+
+class AiGeneratedContent:
+    def __init__(self, short_description: str | None = None, full_description: str | None = None, capabilities: list[str] = None, use_cases: list[str] = None, beginner_note: str | None = None, guide_seed: str | None = None):
+        if capabilities is None:
+            capabilities = []
+        if use_cases is None:
+            use_cases = []
+        self.short_description = short_description
+        self.full_description = full_description
+        self.capabilities = capabilities
+        self.use_cases = use_cases
+        self.beginner_note = beginner_note
+        self.guide_seed = guide_seed
+
+
+class ContentGenerator(Protocol):
+    name: str
+
+    def generate(self, request: ContentGenerationRequest) -> AiGeneratedContent:
+        ...
+
+
 def run_live_content_intelligence(
     *,
     app_name: str,
@@ -682,33 +790,3 @@ def run_live_content_intelligence(
 
     package.status = evaluate_content_status(package, policy=policy)
     return package
-
-
-def generated_field_summary(field_result: GeneratedField) -> dict[str, object]:
-    return {
-        "field": field_result.field.value,
-        "value": field_result.value,
-        "generator": field_result.generator.value,
-        "confidence": field_result.confidence,
-        "evidence_count": len(field_result.evidence_fingerprints),
-        "warnings": list(field_result.warnings),
-    }
-
-
-def content_package_summary(package: ContentPackage) -> dict[str, object]:
-    return {
-        "app_name": package.app_name,
-        "status": package.status.value,
-        "duration_seconds": round(package.duration_seconds, 3),
-        "evidence_count": package.evidence_count,
-        "evidence_chars": package.evidence_chars,
-        "populated_fields": package.populated_fields,
-        "short_description": generated_field_summary(package.short_description),
-        "full_description": generated_field_summary(package.full_description),
-        "capabilities": generated_field_summary(package.capabilities),
-        "use_cases": generated_field_summary(package.use_cases),
-        "beginner_note": generated_field_summary(package.beginner_note),
-        "guide_seed": generated_field_summary(package.guide_seed),
-        "warnings": list(package.warnings),
-        "errors": list(package.errors),
-    }
