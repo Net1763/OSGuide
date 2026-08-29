@@ -33,6 +33,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import signal
 import sys
 import time
@@ -90,6 +91,7 @@ from publisher import (
     SupabaseRestBackend,
     WriteMode,
     execute_publication,
+    live_policy_from_environment,
     parse_existing_application,
 )
 
@@ -125,9 +127,10 @@ DEADLINE_SAFETY_SECONDS: Final[int] = 5
 REPORT_SCHEMA_VERSION: Final[str] = "1"
 RUN_COMPONENT: Final[str] = "discover"
 
-# This protects against accidentally enabling destructive behavior
-# before the Publisher layer is intentionally connected.
-PUBLISHER_CONNECTED: Final[bool] = False
+# The Publisher layer is connected. Real external writes still require
+# BOTH run_mode=publish and OSGUIDE_PUBLISH_ENABLED=true at runtime.
+# Dry-run remains non-destructive and uses the diagnostic backend.
+PUBLISHER_CONNECTED: Final[bool] = True
 
 # Future phase names are centralized here so logs and reports
 # remain stable as the engine grows.
@@ -285,6 +288,45 @@ def safe_text(value: object, *, max_length: int = 500) -> str:
         text = text[:max_length] + "…"
 
     return text
+
+
+def app_name_requires_review(value: object) -> bool:
+    """
+    Reject obviously unsafe/low-quality display names before publication.
+
+    This intentionally does not invent a replacement name. A suspicious
+    name is sent to review instead of being published.
+    """
+    name = str(value or "").strip()
+
+    if not name:
+        return True
+
+    if len(name) < 2 or len(name) > 120:
+        return True
+
+    compact = re.sub(r"[\s._+\-]+", "", name)
+
+    # Examples such as "12345" must never be auto-published.
+    if compact.isdigit():
+        return True
+
+    # A package ID is not an acceptable public application name.
+    if (
+        "." in name
+        and " " not in name
+        and re.fullmatch(
+            r"[A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z0-9_]+)+",
+            name,
+        )
+    ):
+        return True
+
+    # Require at least one alphabetic character for automatic publication.
+    if not any(character.isalpha() for character in name):
+        return True
+
+    return False
 
 
 def sanitize_exception(exc: BaseException) -> str:
@@ -614,17 +656,10 @@ def run_discovery_phase(
 
             return
 
-        if config.publishing_enabled:
-            if not PUBLISHER_CONNECTED:
-                warning = (
-                    "Publish mode was selected, but the Publisher "
-                    "layer is not connected in this phase. "
-                    "The run remains non-destructive."
-                )
-
-                stats.warnings.append(warning)
-
-                log_warning(warning)
+        if config.publishing_enabled and not PUBLISHER_CONNECTED:
+            raise RuntimeError(
+                "Publish mode was selected, but the Publisher layer is not connected."
+            )
 
         log_info(
             "Starting default discovery pipeline."
@@ -645,25 +680,59 @@ def run_discovery_phase(
                 stats,
             )
 
-        # Publisher is connected in diagnostic dry-run mode only.
-        # This backend is in-memory and performs no network requests.
-        # It therefore cannot modify Supabase or any other external system.
-        publisher_backend = DiagnosticPublisherBackend()
-        publisher_counters = PublisherCounters()
-        publisher_policy = PublisherPolicy(
-            enabled=False,
-            write_mode=WriteMode.DRY_RUN,
-        )
-
-        # Read-only existing-application lookup.
-        # This connection is used only for GET requests so the Decision Engine
-        # can distinguish a genuinely new package from an app already present
-        # in Supabase.  All publication writes remain locked to the in-memory
-        # diagnostic backend above.
+        # Publisher backend selection.
+        # Dry-run always uses the local diagnostic backend.
+        # Publish mode uses the real Supabase backend only when the Publisher
+        # environment safety switch is explicitly enabled.
         publisher_schema = PublisherSchema()
+        publisher_counters = PublisherCounters()
+
+        if config.publishing_enabled:
+            publisher_policy = live_policy_from_environment()
+
+            if (
+                not publisher_policy.enabled
+                or publisher_policy.write_mode != WriteMode.LIVE
+            ):
+                raise RuntimeError(
+                    "Publish mode was selected, but the live Publisher safety "
+                    "switch is not enabled. Expected OSGUIDE_PUBLISH_ENABLED=true."
+                )
+
+            publisher_backend = SupabaseRestBackend(
+                schema=publisher_schema,
+                timeout_seconds=publisher_policy.request_timeout_seconds,
+            )
+            publisher_backend_name = "supabase-live"
+            publisher_external_writes_enabled = True
+            log_info(
+                "Publisher: live Supabase backend ready; controlled external writes enabled."
+            )
+        else:
+            publisher_backend = DiagnosticPublisherBackend(
+                schema=publisher_schema
+            )
+            publisher_policy = PublisherPolicy(
+                enabled=False,
+                write_mode=WriteMode.DRY_RUN,
+            )
+            publisher_backend_name = "diagnostic"
+            publisher_external_writes_enabled = False
+            log_info(
+                "Publisher: diagnostic dry-run backend ready; external writes disabled."
+            )
+
+        # Existing-application lookup is always read-only. In live publish mode
+        # the same Supabase transport can safely perform the lookup before the
+        # Publisher later executes a controlled mutation.
         existing_lookup_backend: SupabaseRestBackend | None = None
 
-        if (
+        if isinstance(publisher_backend, SupabaseRestBackend):
+            existing_lookup_backend = publisher_backend
+            log_info(
+                "Existing-application lookup: Supabase read-only connection ready."
+            )
+        elif (
             os.getenv("OSGUIDE_SUPABASE_URL", "").strip()
             and os.getenv("OSGUIDE_ENGINE_KEY", "").strip()
         ):
@@ -820,9 +889,11 @@ def run_discovery_phase(
                 )
 
                 for metadata_field in (
+                    MetadataField.NAME,
                     MetadataField.PACKAGE_ID,
                     MetadataField.VERSION,
                     MetadataField.APK_URL,
+                    MetadataField.ICON_URL,
                     MetadataField.LICENSE,
                     MetadataField.CATEGORY,
                     MetadataField.SHORT_DESCRIPTION,
@@ -1030,6 +1101,36 @@ def run_discovery_phase(
                                         if name_result.resolved and name_result.value
                                         else candidate.name
                                     )
+
+                                    if app_name_requires_review(resolved_name):
+                                        stats.skipped += 1
+                                        stats.review_required += 1
+
+                                        name_warning = (
+                                            "Candidate requires review because the "
+                                            "resolved application name is not suitable "
+                                            "for automatic publication: "
+                                            f"{safe_text(resolved_name, max_length=120)!r}."
+                                        )
+
+                                        stats.warnings.append(name_warning)
+                                        log_warning(name_warning)
+
+                                        engine_memory.mark_review(
+                                            memory_key,
+                                            name_warning,
+                                            metadata={
+                                                "stage": "name-quality",
+                                                "resolved_name": safe_text(
+                                                    resolved_name,
+                                                    max_length=120,
+                                                ),
+                                            },
+                                        )
+
+                                        save_memory_safely()
+                                        stats.current_candidate = None
+                                        continue
 
                                     content_report = (
                                         run_live_content_intelligence(
@@ -1326,6 +1427,9 @@ def run_discovery_phase(
                                                                 or resolved_value(
                                                                     MetadataField.FULL_DESCRIPTION
                                                                 ),
+                                                                icon_url=resolved_value(
+                                                                    MetadataField.ICON_URL
+                                                                ),
                                                                 source=str(
                                                                     candidate.source_type
                                                                 ),
@@ -1360,11 +1464,34 @@ def run_discovery_phase(
                                                             summary={
                                                                 "status": publication_outcome.status.value,
                                                                 "action": publication_action.value,
-                                                                "external_write": False,
+                                                                "external_write": (
+                                                                    publisher_external_writes_enabled
+                                                                    and publication_outcome.status
+                                                                    in {
+                                                                        PublicationStatus.PUBLISHED,
+                                                                        PublicationStatus.UPDATED,
+                                                                        PublicationStatus.REPAIRED,
+                                                                    }
+                                                                ),
                                                             },
                                                         )
 
                                                         if (
+                                                            publication_outcome.status
+                                                            == PublicationStatus.PUBLISHED
+                                                        ):
+                                                            stats.published += 1
+                                                        elif (
+                                                            publication_outcome.status
+                                                            == PublicationStatus.UPDATED
+                                                        ):
+                                                            stats.updated += 1
+                                                        elif (
+                                                            publication_outcome.status
+                                                            == PublicationStatus.REPAIRED
+                                                        ):
+                                                            stats.repaired += 1
+                                                        elif (
                                                             publication_outcome.status
                                                             == PublicationStatus.DRY_RUN
                                                         ):
@@ -1391,11 +1518,22 @@ def run_discovery_phase(
                                                             stats.publisher_failed += 1
                                                             stats.failures += 1
 
+                                                        external_write_happened = (
+                                                            publication_outcome.status
+                                                            in {
+                                                                PublicationStatus.PUBLISHED,
+                                                                PublicationStatus.UPDATED,
+                                                                PublicationStatus.REPAIRED,
+                                                            }
+                                                        )
+
                                                         log_info(
                                                             "Publisher result: "
                                                             f"status={publication_outcome.status.value}; "
                                                             f"action={publication_action.value}; "
-                                                            "backend=diagnostic; external_write=no."
+                                                            f"backend={publisher_backend_name}; "
+                                                            "external_write="
+                                                            f"{'yes' if external_write_happened else 'no'}."
                                                         )
 
                                                         if publication_outcome.error:
@@ -1412,7 +1550,7 @@ def run_discovery_phase(
                                                         stats.failures += 1
 
                                                         publisher_error = (
-                                                            "Publisher dry-run failed for "
+                                                            "Publisher failed for "
                                                             "candidate "
                                                             f"{safe_text(candidate.name, max_length=120)!r}: "
                                                             f"{sanitize_exception(publisher_exc)}"
@@ -1739,13 +1877,22 @@ def build_report_payload(
         },
         "publisher": {
             "connected": PUBLISHER_CONNECTED,
-            "mode": "diagnostic-dry-run",
+            "mode": (
+                "supabase-live"
+                if config.publishing_enabled
+                else "diagnostic-dry-run"
+            ),
+            "published": stats.published,
+            "updated": stats.updated,
+            "repaired": stats.repaired,
             "dry_run": stats.publisher_dry_run,
             "blocked": stats.publisher_blocked,
             "review": stats.publisher_review,
             "skipped": stats.publisher_skipped,
             "failed": stats.publisher_failed,
-            "external_write": False,
+            "external_write": (
+                stats.published + stats.updated + stats.repaired > 0
+            ),
         },
         "discovery": {
             "sources_succeeded": (
@@ -1897,7 +2044,26 @@ def print_human_report(
 
     print("Publisher")
     print("  Connected: yes")
-    print("  Mode: diagnostic dry-run")
+    print(
+        "  Mode: "
+        + (
+            "supabase live"
+            if config.publishing_enabled
+            else "diagnostic dry-run"
+        )
+    )
+    print(
+        "  Published: "
+        f"{stats.published}"
+    )
+    print(
+        "  Updated: "
+        f"{stats.updated}"
+    )
+    print(
+        "  Repaired: "
+        f"{stats.repaired}"
+    )
     print(
         "  Dry-run validated: "
         f"{stats.publisher_dry_run}"
@@ -1918,7 +2084,11 @@ def print_human_report(
         "  Failed: "
         f"{stats.publisher_failed}"
     )
-    print("  External writes: no")
+    external_writes = stats.published + stats.updated + stats.repaired
+    print(
+        "  External writes: "
+        + ("yes" if external_writes > 0 else "no")
+    )
     print()
 
     print(
@@ -1957,11 +2127,15 @@ def print_human_report(
 
     elif PUBLISHER_CONNECTED:
         print()
-        print(
-            "Publisher diagnostic lock confirmed: "
-            "the connected Publisher uses an in-memory backend, "
-            "therefore no external data was modified."
-        )
+        if stats.published + stats.updated + stats.repaired > 0:
+            print(
+                "Live Publisher confirmed: controlled external writes "
+                "were completed through Supabase."
+            )
+        else:
+            print(
+                "Live Publisher completed without a successful external mutation."
+            )
 
 
 def print_machine_report(
