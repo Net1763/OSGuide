@@ -424,7 +424,53 @@ def run_discovery_phase(*, config: EngineConfig, stats: RunStats, deadline: Dead
                 stats.warnings.append(warning)
                 log_warning(warning)
 
+        # ==========================================
+        # SMART FILTER: Scan all candidates for duplicates first
+        # ==========================================
+        new_candidates = []
+        checked_packages = set()
+
         for candidate in report.candidates:
+            if CANCELLATION.requested:
+                stats.cancelled = True
+                break
+
+            # Get package ID directly from candidate
+            package_id = candidate.package_id
+
+            if package_id and package_id in checked_packages:
+                continue
+
+            if package_id and existing_lookup_backend is not None:
+                try:
+                    lookup_response = existing_lookup_backend.get_by_package_id(package_id)
+                    if lookup_response.status == BackendStatus.NOT_FOUND:
+                        # This is a NEW app
+                        new_candidates.append(candidate)
+                        checked_packages.add(package_id)
+                        log_info(f"NEW APP FOUND: {candidate.name} ({package_id})")
+                    elif lookup_response.status == BackendStatus.SUCCESS:
+                        log_info(f"DUPLICATE SKIPPED: {candidate.name} ({package_id})")
+                        checked_packages.add(package_id)
+                    else:
+                        log_warning(f"Lookup failed for {candidate.name}, will treat as new")
+                        new_candidates.append(candidate)
+                except Exception as lookup_exc:
+                    log_warning(f"Error checking {candidate.name}, will treat as new: {sanitize_exception(lookup_exc)}")
+                    new_candidates.append(candidate)
+            else:
+                new_candidates.append(candidate)
+
+        # Limit to the requested max_apps (20)
+        new_candidates = new_candidates[:config.max_apps]
+
+        log_info(f"Found {len(new_candidates)} NEW applications to process.")
+        stats.candidates_seen = len(new_candidates)
+
+        # ==========================================
+        # Process ONLY the new candidates
+        # ==========================================
+        for candidate in new_candidates:
             if CANCELLATION.requested:
                 stats.cancelled = True
                 log_warning("Cancellation requested. No new candidate will be processed.")
@@ -436,7 +482,7 @@ def run_discovery_phase(*, config: EngineConfig, stats: RunStats, deadline: Dead
                 break
 
             stats.current_candidate = candidate.name
-            stats.candidates_seen += 1
+            stats.candidates_processed += 1
 
             log_candidate(candidate)
 
@@ -456,8 +502,6 @@ def run_discovery_phase(*, config: EngineConfig, stats: RunStats, deadline: Dead
                 continue
 
             engine_memory.mark_processing(memory_key)
-
-            stats.candidates_processed += 1
 
             try:
                 resolved = run_live_resolver(candidate)
