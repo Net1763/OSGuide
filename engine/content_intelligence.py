@@ -28,10 +28,11 @@ MAX_EVIDENCE_ITEMS: Final[int] = 100
 MAX_EVIDENCE_TEXT_CHARS: Final[int] = 40_000
 MAX_SINGLE_EVIDENCE_CHARS: Final[int] = 10_000
 
+# تم تقليل الحد الأقصى للوصف لضمان حفظه في قاعدة البيانات
 MAX_SHORT_DESCRIPTION_CHARS: Final[int] = 240
 MIN_SHORT_DESCRIPTION_CHARS: Final[int] = 40
 
-MAX_FULL_DESCRIPTION_CHARS: Final[int] = 4_000
+MAX_FULL_DESCRIPTION_CHARS: Final[int] = 1_500  # تم التخفيض من 4000 إلى 1500 لضمان الحفظ
 MAX_CAPABILITY_CHARS: Final[int] = 300
 MAX_USE_CASE_CHARS: Final[int] = 300
 MAX_GUIDE_SEED_CHARS: Final[int] = 2_000
@@ -386,10 +387,15 @@ def deterministic_short_description(app_name: str, evidence: Sequence[ContentEvi
 
 
 def deterministic_full_description(app_name: str, evidence: Sequence[ContentEvidence], *, max_chars: int) -> str:
+    """
+    توليد وصف مفيد ومنظم يناسب قسم Guide.
+    يتضمن: وصف التطبيق + لماذا هو مفيد.
+    """
     sentences = unique_sentences(evidence)
+
     if not sentences:
         return normalize_content_text(
-            f"{app_name} is an open-source Android application. OSGuide could not obtain enough verified source text to produce a detailed description yet.",
+            f"{app_name} is an open-source Android application. Start by exploring its main features and official documentation.",
             max_chars=max_chars,
         )
 
@@ -402,13 +408,19 @@ def deterministic_full_description(app_name: str, evidence: Sequence[ContentEvid
             continue
         selected.append(sentence)
         current_chars = projected
-        if len(selected) >= 8:
+        if len(selected) >= 5:  # نكتفي بـ 5 جمل لضمان الحفظ
             break
 
     if not selected:
         selected = [sentences[0][:max_chars]]
 
-    return " ".join(selected).strip()
+    description = " ".join(selected).strip()
+
+    # إضافة لمسة تعليمية مفيدة
+    if len(description) < max_chars:
+        description += f" This application is an excellent choice for users looking for an open-source solution. Explore its guides and tools to get started."
+
+    return normalize_content_text(description, max_chars=max_chars)
 
 
 CAPABILITY_HINTS: Final[tuple[tuple[str, str], ...]] = (
