@@ -1786,41 +1786,6 @@ class FutureFdroidResolverProvider(BaseResolverProvider):
 
         return None
 
-    @classmethod
-    def _remote_image_exists(
-        cls,
-        url: str,
-        *,
-        timeout_seconds: float,
-    ) -> bool:
-        """Return True only when the official repository serves image data."""
-        if not is_valid_http_url(url, require_https=True):
-            return False
-
-        request = Request(
-            url,
-            headers={
-                "Accept": "image/*",
-                "User-Agent": cls.USER_AGENT,
-                "Range": "bytes=0-511",
-            },
-            method="GET",
-        )
-
-        try:
-            with urlopen(request, timeout=max(1.0, timeout_seconds)) as response:
-                status = getattr(response, "status", 200)
-                if status not in (200, 206):
-                    return False
-
-                content_type = str(response.headers.get("Content-Type", ""))
-                if not content_type.lower().startswith("image/"):
-                    return False
-
-                return bool(response.read(16))
-        except (HTTPError, URLError, TimeoutError, OSError):
-            return False
-
     @staticmethod
     def _safe_apk_name(value: object) -> str | None:
         if not isinstance(value, str):
@@ -2118,46 +2083,29 @@ class FutureFdroidResolverProvider(BaseResolverProvider):
 
             icon_name = self._icon_name(app)
 
-            # F-Droid graphics are published under the package/locale path.
-            # Prefer that canonical layout, then fall back to the legacy
-            # icons-640 path when the repository still exposes it.
-            if MetadataField.ICON_URL in requested:
-                icon_candidates: list[str] = []
-                encoded_package = quote(package_id, safe="._+-=@")
-
-                for locale in ("en-US", "en", "en-GB"):
-                    icon_candidates.append(
-                        self.REPO_BASE_URL
-                        + encoded_package
-                        + "/"
-                        + locale
-                        + "/icon.png"
+            if icon_name:
+                icon_url = (
+                    self.REPO_BASE_URL
+                    + "icons-640/"
+                    + quote(
+                        icon_name,
+                        safe="._+-=@",
                     )
+                )
 
-                if icon_name:
-                    icon_candidates.append(
-                        self.REPO_BASE_URL
-                        + "icons-640/"
-                        + quote(icon_name, safe="._+-=@")
-                    )
-
-                # Do not publish an icon URL merely because it is syntactically
-                # valid.  Confirm that F-Droid actually serves image content.
-                for icon_url in icon_candidates:
-                    if self._remote_image_exists(
+                if is_valid_http_url(
+                    icon_url,
+                    require_https=True,
+                ):
+                    add(
+                        MetadataField.ICON_URL,
                         icon_url,
-                        timeout_seconds=min(timeout_seconds, 2.0),
-                    ):
-                        add(
-                            MetadataField.ICON_URL,
-                            icon_url,
-                            confidence=0.99,
-                            note=(
-                                "Icon URL verified against the official "
-                                "F-Droid repository before publication."
-                            ),
-                        )
-                        break
+                        confidence=0.98,
+                        note=(
+                            "Icon URL derived from official F-Droid "
+                            "repository index metadata."
+                        ),
+                    )
 
             license_value = app.get("license")
 
