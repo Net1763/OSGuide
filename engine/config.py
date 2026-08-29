@@ -651,13 +651,13 @@ class DiscoverySettings:
 
     sources: tuple[str, ...] = DEFAULT_DISCOVERY_SOURCES
 
-    per_source_limit: int = 50  # تم رفع الحد من 20 إلى 50 لضمان العثور على المزيد
+    per_source_limit: int = 20
 
-    minimum_candidate_confidence: float = 0.0  # تم تخفيض النسبة لتقبل كل المرشحين
+    minimum_candidate_confidence: float = 0.0
 
     deduplicate: bool = True
 
-    validate_candidates: bool = False  # تم تعطيل الفلترة الصارمة للتحقق
+    validate_candidates: bool = True
 
     preserve_evidence: bool = True
 
@@ -814,7 +814,7 @@ class ContentSettings:
 
     do_not_reject_for_short_source_description: bool = True
 
-    evidence_required: bool = False  # تم تخفيف شرط الأدلة لإنتاج المزيد
+    evidence_required: bool = True
 
     max_source_documents: int = 8
 
@@ -866,15 +866,15 @@ class AiSettings:
 
     deterministic_fallback_enabled: bool = True
 
-    evidence_grounding_required: bool = False  # تم إلغاء شرط إثبات المصدر 100%
+    evidence_grounding_required: bool = True
 
-    allow_ai_package_id_guessing: bool = True  # تم السماح بالتكهن بالبيانات الناقصة
+    allow_ai_package_id_guessing: bool = False
 
-    allow_ai_apk_guessing: bool = True  # تم السماح بالتكهن بالروابط
+    allow_ai_apk_guessing: bool = False
 
-    allow_ai_version_guessing: bool = True  # تم السماح بالتكهن بالإصدارات
+    allow_ai_version_guessing: bool = False
 
-    allow_ai_license_guessing: bool = True  # تم السماح بالتكهن بالتراخيص
+    allow_ai_license_guessing: bool = False
 
     max_calls_per_run: int = 30
 
@@ -979,11 +979,11 @@ class DecisionSettings:
 
     do_not_reject_for_short_description: bool = True
 
-    minimum_publish_confidence: float = 0.50  # تم تخفيض النسبة من 0.80 لتقبل الأغلبية
+    minimum_publish_confidence: float = 0.80
 
-    minimum_update_confidence: float = 0.60  # تم تخفيض النسبة من 0.85
+    minimum_update_confidence: float = 0.85
 
-    minimum_repair_confidence: float = 0.45  # تم تخفيض النسبة من 0.75
+    minimum_repair_confidence: float = 0.75
 
     def validate(self) -> None:
         for field_name, value in (
@@ -1017,7 +1017,7 @@ class PublisherSettings:
 
     automatic_delete: bool = False
 
-    max_new_apps_per_run: int = 50  # تم رفع الحد الأقصى من 20 إلى 50
+    max_new_apps_per_run: int = 20
 
     max_updates_per_run: int = 50
 
@@ -1575,10 +1575,10 @@ def _build_discovery_settings() -> DiscoverySettings:
             True,
         ),
         sources=DEFAULT_DISCOVERY_SOURCES,
-        per_source_limit=50,  # تم رفع الحد من 20 إلى 50
+        per_source_limit=20,
         minimum_candidate_confidence=0.0,
         deduplicate=True,
-        validate_candidates=False,  # تم تعطيل الفلترة الصارمة للتحقق
+        validate_candidates=True,
         preserve_evidence=True,
         skip_known_admin_deleted=True,
         skip_known_cooldown_candidates=True,
@@ -1653,11 +1653,11 @@ def _build_ai_settings() -> AiSettings:
             for provider_name in fallback_providers
         ),
         deterministic_fallback_enabled=True,
-        evidence_grounding_required=False,  # تم إلغاء شرط إثبات المصدر
-        allow_ai_package_id_guessing=True,  # تم السماح بالتكهن بالبيانات الناقصة
-        allow_ai_apk_guessing=True,  # تم السماح بالتكهن بالروابط
-        allow_ai_version_guessing=True,  # تم السماح بالتكهن بالإصدارات
-        allow_ai_license_guessing=True,  # تم السماح بالتكهن بالتراخيص
+        evidence_grounding_required=True,
+        allow_ai_package_id_guessing=False,
+        allow_ai_apk_guessing=False,
+        allow_ai_version_guessing=False,
+        allow_ai_license_guessing=False,
         max_calls_per_run=30,
         max_calls_per_app=3,
         timeout_seconds=20.0,
@@ -1711,7 +1711,7 @@ def _build_publisher_settings(
         allow_repair=True,
         allow_delete=False,
         automatic_delete=False,
-        max_new_apps_per_run=50,  # تم رفع الحد الأقصى من 20 إلى 50
+        max_new_apps_per_run=20,
         max_updates_per_run=50,
         max_repairs_per_run=50,
         require_atomic_release_update=True,
