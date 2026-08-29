@@ -87,7 +87,6 @@ from memory import (
     remember_resolution,
 )
 
-
 EXIT_SUCCESS: Final[int] = 0
 EXIT_CONFIGURATION_ERROR: Final[int] = 2
 EXIT_RUNTIME_ERROR: Final[int] = 3
@@ -357,7 +356,8 @@ def run_discovery_phase(*, config: EngineConfig, stats: RunStats, deadline: Dead
 
         log_info("Starting default discovery pipeline.")
 
-        report = run_default_discovery(max_apps=config.max_apps)
+        # CRITICAL: Read 100 candidates to ensure we find new apps
+        report = run_default_discovery(max_apps=config.max_apps * 5)
 
         apply_discovery_report(report, stats)
 
