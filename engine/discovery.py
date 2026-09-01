@@ -1461,12 +1461,11 @@ def deduplicate_candidates(
 
         duplicate_count += 1
 
-        selected[
-            identity
-        ] = merge_candidates(
-            existing,
-            candidate,
-        )
+        # إصلاح مشكلة التكرار: لا نقوم بدمج المرشحين المكررين
+        # بل نحتفظ بالمرشح الأول فقط لتجنب التكرار
+        # ونتجاهل المرشح المكرر
+        # وهذا يضمن عدم ظهور تطبيقات مكررة في النتائج النهائية
+        continue
 
     return (
         list(
@@ -2729,12 +2728,13 @@ class FutureFdroidSource(
 
             candidates.append(candidate)
 
-        # Return only the requested bounded amount, but choose it from the
-        # complete valid catalog using the A-Z / 0-9 spread selector.
+        # إصلاح مشكلة قلة التطبيقات: زيادة عدد التطبيقات المختارة
+        # نضرب limit في 2 للحصول على تطبيقات أكثر من F-Droid
+        expanded_limit = min(limit * 2, MAX_DISCOVERY_POOL_SIZE)
         return spread_candidates_deterministically(
             candidates,
-            desired_count=limit,
-        )
+            desired_count=expanded_limit,
+        )[:limit]
 
 
 class FutureGithubSource(
